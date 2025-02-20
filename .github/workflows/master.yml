@@ -1,0 +1,177 @@
+name: master nightly
+
+on:
+  push:
+    branches:
+      - 'master'
+    tags:
+      - '*'
+
+#env:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build_and_upload:
+    name: Building
+    strategy:
+      matrix:
+        include:
+          - target: android
+            os: ubuntu-latest
+            flutter_version: '3.41.2'
+            flutter_channel: 'stable'
+            artifact_name: nightly-apk
+            artifact_path: build/app/outputs/flutter-apk/*.apk
+
+          - target: ios
+            os: macos-latest
+            flutter_version: '3.41.2'
+            flutter_channel: 'stable'
+            artifact_name: nightly-ios
+            artifact_path: build/*.ipa
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Set up JDK 17
+        if: matrix.target == 'android'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        if: matrix.target == 'android'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+#
+#     Unnecessary if you using Github Actions image
+#
+#      - name: Setup Android SDK
+#        uses: android-actions/setup-android@v3
+#        with:
+#          accept-android-sdk-licenses: true
+#          log-accepted-android-sdk-licenses: false
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter_version }}
+          channel: ${{ matrix.flutter_channel }}
+          cache: true
+
+      - name: Decode keystore (Android)
+        if: matrix.target == 'android'
+        run: echo ${{ secrets.ENCODED_KEYSTORE }} | base64 -di > android/app/key.jks
+
+      - name: Create key.properties (Android)
+        if: matrix.target == 'android'
+        run: |
+          echo 'storePassword=${{ secrets.KEYSTORE_PASSWORD }}' >> android/key.properties
+          echo 'keyPassword=${{ secrets.KEY_PASSWORD }}' >> android/key.properties
+          echo 'keyAlias=${{ secrets.KEY_ALIAS }}' >> android/key.properties
+          echo 'storeFile=key.jks' >> android/key.properties
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Generate boilerplate code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Generate i18n codes
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/packages/i18n && dart run slang && dart run tools/generate_language.dart
+          cd $GITHUB_WORKSPACE/packages/booru_clients && dart run tools/generate_config.dart
+          cd $GITHUB_WORKSPACE/packages/booru_clients && dart run tools/generate_yaml_configs.dart
+          cd $GITHUB_WORKSPACE/packages/booru_clients && dart run tools/generate_registry.dart
+
+      - name: Get app version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(head -n 5 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2)" >> $GITHUB_OUTPUT
+          echo "appname=$(head -n 1 pubspec.yaml | cut -d ' ' -f 2)" >> $GITHUB_OUTPUT
+
+      - name: Build APKs (Android)
+        if: matrix.target == 'android'
+        run: |
+          flutter build apk --release --flavor prod --dart-define-from-file env/prod.json
+          mv build/app/outputs/flutter-apk/app-prod-release.apk \
+             build/app/outputs/flutter-apk/${{ steps.get_version.outputs.appname }}_${{ steps.get_version.outputs.version }}.apk
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_FILE: key.jks
+
+      - name: Build release (iOS)
+        if: matrix.target == 'ios'
+        run: flutter build ios --release --no-codesign --flavor prod --dart-define-from-file env/prod.json -t lib/main.dart
+
+      - name: Build ipa (iOS)
+        if: matrix.target == 'ios'
+        run: |
+          mkdir build/Payload
+          cp -r build/ios/iphoneos/Boorusama.app/ build/Payload/Boorusama.app/
+          cd build
+          zip -ro ${{ steps.get_version.outputs.appname }}_${{ steps.get_version.outputs.version }}.ipa Payload
+          rm -rf Payload
+
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+
+  publish_release:
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Publish
+    needs: build_and_upload
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - run: mkdir /tmp/artifacts
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/artifacts
+
+      - name: Get app version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(head -n 5 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2)" >> $GITHUB_OUTPUT
+          echo "appname=$(head -n 1 pubspec.yaml | cut -d ' ' -f 2)" >> $GITHUB_OUTPUT
+
+      - name: Publishing
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "/tmp/artifacts/nightly-apk/*.apk,/tmp/artifacts/nightly-ios/*.ipa"
+          tag: ${{ github.ref_name }}
+          bodyFile: changelogs/v${{ steps.get_version.outputs.version }}.md
+          prerelease: ${{ contains(github.ref, 'pre') }}
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          replacesArtifacts: true
