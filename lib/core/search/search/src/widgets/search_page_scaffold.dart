@@ -24,6 +24,7 @@ import '../../../../utils/stream/text_editing_controller_utils.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../histories/providers.dart';
 import '../../../selected_tags/selected_tag_controller.dart';
+import '../../../selected_tags/tag.dart';
 import '../../../suggestions/suggestions_notifier.dart';
 import '../../../suggestions/tag_suggestion_items.dart';
 import '../views/search_landing_view.dart';
@@ -44,6 +45,19 @@ typedef IndexedSelectableSearchWidgetBuilder<T extends Post> = Widget Function(
 const _kSearchBarHeight = kToolbarHeight * 1.2;
 const _kSelectedTagHeight = 56;
 const _kViewTopPadding = 8;
+const _kMultiSelectTopHeight = kToolbarHeight;
+
+double _calcBaseSearchHeight(List<TagSearchItem> tags) {
+  return _kSearchBarHeight + (tags.isNotEmpty ? _kSelectedTagHeight : 0);
+}
+
+double _calcSearchRegionHeight(List<TagSearchItem> selectedTags) {
+  return _calcBaseSearchHeight(selectedTags);
+}
+
+double _calcDisplacement(List<TagSearchItem> value) {
+  return _kViewTopPadding + _calcBaseSearchHeight(value);
+}
 
 class SearchPageScaffold<T extends Post> extends ConsumerStatefulWidget {
   const SearchPageScaffold({
@@ -105,6 +119,8 @@ class _SearchPageScaffoldState<T extends Post>
     curve: Curves.easeInOut,
   );
 
+  final _multiSelectController = MultiSelectController<T>();
+
   @override
   void initState() {
     super.initState();
@@ -137,9 +153,34 @@ class _SearchPageScaffoldState<T extends Post>
 
     _tagsController.addListener(_onSelectedTagChanged);
     _controller.tagString.addListener(_onTagChanged);
+
+    _previousMultiSelectState = _multiSelectController.multiSelectEnabled;
+    _multiSelectController.multiSelectNotifier
+        .addListener(_onMultiSelectChanged);
+  }
+
+  void _onMultiSelectChanged() {
+    final currentSelected = _multiSelectController.multiSelectEnabled;
+
+    if (_previousMultiSelectState != currentSelected) {
+      final currentOffset = _scrollController.offset;
+      final offsetSearchHeight = _calcSearchRegionHeight(_tagsController.value);
+      final sign = currentSelected ? -1 : 1;
+      final jumpTo =
+          (currentOffset + sign * (offsetSearchHeight + _kMultiSelectTopHeight))
+              .clamp(0, double.infinity)
+              .toDouble();
+
+      // Scroll backward to compensate for the change in height
+      _scrollController.jumpTo(jumpTo);
+
+      _previousMultiSelectState = currentSelected;
+    }
   }
 
   var _searchBarOffset = 0.0;
+
+  late bool? _previousMultiSelectState;
 
   void _onTagChanged() {
     // check if scroll controller is attached
@@ -169,6 +210,8 @@ class _SearchPageScaffoldState<T extends Post>
   void dispose() {
     _tagsController.removeListener(_onSelectedTagChanged);
     _controller.tagString.removeListener(_onTagChanged);
+    _multiSelectController.multiSelectNotifier
+        .removeListener(_onMultiSelectChanged);
 
     _subscriptions.dispose();
     _controller.dispose();
@@ -176,6 +219,7 @@ class _SearchPageScaffoldState<T extends Post>
     _scrollController.dispose();
     _searchBarAnimController.dispose();
     _searchBarCurve.dispose();
+    _multiSelectController.dispose();
 
     super.dispose();
   }
@@ -279,41 +323,34 @@ class _SearchPageScaffoldState<T extends Post>
                 ),
                 _buildSuggestions(context),
                 NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    return true;
-                  },
+                  onNotification: (notification) => true,
                   child: AnimatedBuilder(
                     animation: _searchBarCurve,
-                    builder: (context, child) {
-                      return ValueListenableBuilder(
-                        valueListenable: _controller.didSearchOnce,
-                        builder: (_, searchOnce, __) {
-                          return ValueListenableBuilder(
-                            valueListenable: _controller.state,
-                            builder: (_, state, __) => ValueListenableBuilder(
-                              valueListenable: _tagsController,
-                              builder: (_, selectedTags, __) {
-                                final hasSelectedTag = selectedTags.isNotEmpty;
-                                final searchRegionHeight = _kSearchBarHeight +
-                                    (hasSelectedTag ? _kSelectedTagHeight : 0);
+                    builder: (context, child) => MultiValueListenableBuilder4(
+                      first: _controller.didSearchOnce,
+                      second: _controller.state,
+                      third: _tagsController,
+                      fourth: _multiSelectController.multiSelectNotifier,
+                      builder:
+                          (_, searchOnce, state, selectedTags, multiSelect) {
+                        final searchRegionHeight =
+                            _calcSearchRegionHeight(selectedTags);
 
-                                return Positioned(
-                                  top: searchOnce
-                                      ? state == SearchState.suggestions
-                                          ? 0
-                                          : -(_searchBarCurve.value *
-                                              searchRegionHeight)
-                                      : 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: child!,
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      );
-                    },
+                        return Positioned(
+                          top: multiSelect
+                              ? -searchRegionHeight
+                              : searchOnce
+                                  ? state == SearchState.suggestions
+                                      ? 0
+                                      : -(_searchBarCurve.value *
+                                          searchRegionHeight)
+                                  : 0,
+                          left: 0,
+                          right: 0,
+                          child: child!,
+                        );
+                      },
+                    ),
                     child: _buildSearchRegion(context),
                   ),
                 ),
@@ -415,61 +452,59 @@ class _SearchPageScaffoldState<T extends Post>
   Widget _buildSuggestions(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return ValueListenableBuilder(
-      valueListenable: _controller.state,
-      builder: (_, state, child) =>
-          state == SearchState.suggestions ? child! : const SizedBox.shrink(),
-      child: ValueListenableBuilder(
-        valueListenable: _controller.didSearchOnce,
-        builder: (_, searchOnce, __) => ColoredBox(
-          color: colorScheme.surface,
-          child: Container(
-            padding: const EdgeInsets.only(
-              top: _kSearchBarHeight,
-            ),
-            child: Column(
-              children: [
-                ref.watch(analyticsProvider).maybeWhen(
-                      data: (analytics) => SearchViewAnalyticsAnchor(
-                        routeName: '/search_suggestions',
-                        previousRoute: !searchOnce
-                            ? ModalRoute.of(context)?.settings
-                            : const RouteSettings(name: '/search_result'),
-                        analytics: analytics,
-                      ),
-                      orElse: () => const SizedBox.shrink(),
-                    ),
-                SelectedTagListWithData(
-                  controller: _tagsController,
+    return MultiValueListenableBuilder2(
+      first: _controller.state,
+      second: _controller.didSearchOnce,
+      builder: (_, state, searchOnce) => state == SearchState.suggestions
+          ? ColoredBox(
+              color: colorScheme.surface,
+              child: Container(
+                padding: const EdgeInsets.only(
+                  top: _kSearchBarHeight,
                 ),
-                Expanded(
-                  child: ValueListenableBuilder(
-                    valueListenable: _controller.textController,
-                    builder: (context, query, child) {
-                      final suggestionTags =
-                          ref.watch(suggestionProvider(query.text));
-
-                      return TagSuggestionItems(
-                        config: ref.watchConfigAuth,
-                        tags: suggestionTags,
-                        currentQuery: query.text,
-                        onItemTap: (tag) {
-                          _controller.tapTag(tag.value);
-                        },
-                        emptyBuilder: () => Center(
-                          child: ColoredBox(
-                            color: colorScheme.surface,
+                child: Column(
+                  children: [
+                    ref.watch(analyticsProvider).maybeWhen(
+                          data: (analytics) => SearchViewAnalyticsAnchor(
+                            routeName: '/search_suggestions',
+                            previousRoute: !searchOnce
+                                ? ModalRoute.of(context)?.settings
+                                : const RouteSettings(name: '/search_result'),
+                            analytics: analytics,
                           ),
+                          orElse: () => const SizedBox.shrink(),
                         ),
-                      );
-                    },
-                  ),
+                    SelectedTagListWithData(
+                      controller: _tagsController,
+                    ),
+                    Expanded(
+                      child: ValueListenableBuilder(
+                        valueListenable: _controller.textController,
+                        builder: (context, query, child) {
+                          final suggestionTags =
+                              ref.watch(suggestionProvider(query.text));
+
+                          return TagSuggestionItems(
+                            config: ref.watchConfigAuth,
+                            tags: suggestionTags,
+                            currentQuery: query.text,
+                            onItemTap: (tag) {
+                              _controller.tapTag(tag.value);
+                            },
+                            emptyBuilder: () => Center(
+                              child: ColoredBox(
+                                color: colorScheme.surface,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 
@@ -494,9 +529,7 @@ class _SearchPageScaffoldState<T extends Post>
               valueListenable: _tagsController,
               builder: (_, value, __) {
                 return SizedBox(
-                  height: _kSearchBarHeight +
-                      _kViewTopPadding +
-                      (value.isNotEmpty ? _kSelectedTagHeight : 0),
+                  height: _calcDisplacement(value),
                 );
               },
             ),
@@ -531,6 +564,7 @@ class _SearchPageScaffoldState<T extends Post>
       child: SafeArea(
         bottom: false,
         child: PostGrid<T>(
+          multiSelectController: _multiSelectController,
           scrollController: _scrollController,
           controller: controller,
           itemBuilder: widget.itemBuilder != null
@@ -556,9 +590,7 @@ class _SearchPageScaffoldState<T extends Post>
               valueListenable: _tagsController,
               builder: (_, value, __) {
                 return SliverSizedBox(
-                  height: _kSearchBarHeight +
-                      _kViewTopPadding +
-                      (value.isNotEmpty ? _kSelectedTagHeight : 0),
+                  height: _calcDisplacement(value),
                 );
               },
             ),
@@ -628,9 +660,7 @@ class _SearchOptionsView extends ConsumerWidget {
                       valueListenable: controller.tagsController,
                       builder: (_, value, __) {
                         return SizedBox(
-                          height: _kSearchBarHeight +
-                              _kViewTopPadding +
-                              (value.isNotEmpty ? _kSelectedTagHeight : 0),
+                          height: _calcDisplacement(value),
                         );
                       },
                     ),
