@@ -1,6 +1,9 @@
 // Flutter imports:
 import 'package:flutter/material.dart';
 
+// Package imports:
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 // Project imports:
 import 'multi_select_controller.dart';
 
@@ -8,6 +11,8 @@ typedef FooterBuilder<T> = Widget Function(
   BuildContext context,
   List<T> selectedItems,
 );
+
+const _kAnimDuration = Duration(milliseconds: 100);
 
 class MultiSelectWidget<T> extends StatefulWidget {
   const MultiSelectWidget({
@@ -62,21 +67,61 @@ class _MultiSelectWidgetState<T> extends State<MultiSelectWidget<T>> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        resizeToAvoidBottomInset: false,
-        appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(kToolbarHeight),
-            child: multiSelect && widget.header != null
-                ? widget.header!
-                : const SizedBox.shrink()),
-        body: widget.child,
-        bottomSheet: multiSelect && widget.footer != null
-            ? Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.viewPaddingOf(context).bottom,
-                ),
-                child: widget.footer,
-              )
-            : const SizedBox.shrink());
+      resizeToAvoidBottomInset: false,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: multiSelect && widget.header != null
+            ? widget.header!
+            : const SizedBox.shrink(),
+      ),
+      body: Stack(
+        children: [
+          widget.child,
+          if (widget.footer != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _AnimatedFooter(
+                multiSelect: multiSelect,
+                footer: widget.footer!,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnimatedFooter extends StatelessWidget {
+  const _AnimatedFooter({
+    required this.multiSelect,
+    required this.footer,
+  });
+
+  final bool multiSelect;
+  final Widget footer;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: multiSelect ? colorScheme.surface : Colors.transparent,
+      child: SafeArea(
+        top: false,
+        child: AnimatedSlide(
+          duration: _kAnimDuration,
+          curve: Curves.easeInOut,
+          offset: multiSelect ? Offset.zero : const Offset(0, 1),
+          child: AnimatedOpacity(
+            duration: _kAnimDuration,
+            opacity: multiSelect ? 1.0 : 0.0,
+            child: multiSelect ? footer : const SizedBox.shrink(),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -87,10 +132,12 @@ class SelectableItem extends StatefulWidget {
     required this.onTap,
     required this.itemBuilder,
     required this.index,
+    this.onLongPress,
   });
   final int index;
   final bool isSelected;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final IndexedWidgetBuilder itemBuilder;
 
   @override
@@ -140,6 +187,7 @@ class _SelectableItemState extends State<SelectableItem>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) => Transform.scale(
@@ -150,22 +198,32 @@ class _SelectableItemState extends State<SelectableItem>
           alignment: Alignment.bottomRight,
           children: [
             widget.itemBuilder(context, widget.index),
-            if (widget.isSelected)
-              Container(
-                margin: const EdgeInsets.all(8.0),
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
+            if (widget.isSelected) _Icon(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _Icon extends StatelessWidget {
+  const _Icon();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colorScheme.primary,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        FontAwesomeIcons.check,
+        size: 18,
+        color: colorScheme.onPrimary,
       ),
     );
   }

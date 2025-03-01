@@ -18,8 +18,6 @@ import 'package:stack_trace/stack_trace.dart';
 // Project imports:
 import 'boorus/providers.dart';
 import 'core/app.dart';
-import 'core/blacklists/src/data/providers.dart';
-import 'core/bookmarks/providers.dart';
 import 'core/boorus/booru/booru.dart';
 import 'core/boorus/booru/providers.dart';
 import 'core/boorus/engine/providers.dart';
@@ -41,7 +39,6 @@ import 'core/settings/providers.dart';
 import 'core/settings/settings.dart';
 import 'core/tags/categories/providers.dart';
 import 'core/tags/configs/providers.dart';
-import 'core/tags/favorites/providers.dart';
 import 'core/utils/file_utils.dart';
 import 'core/widgets/widgets.dart';
 
@@ -154,16 +151,6 @@ Future<void> boot(BootLogger bootLogger) async {
   bootLogger.l('Load all configs');
   final allConfigs = await booruUserRepo.getAll();
 
-  final favoriteTagsRepoOverride = await createFavoriteTagOverride(
-    bootLogger: bootLogger,
-  );
-
-  final bookmarkRepoOverride = await createBookmarkRepoProviderOverride(
-    bootLogger: bootLogger,
-  );
-
-  initBlacklistTagRepo();
-
   final tempPath = await getAppTemporaryDirectory();
 
   bootLogger.l('Initialize misc data box');
@@ -186,9 +173,6 @@ Future<void> boot(BootLogger bootLogger) async {
   bootLogger.l('Initialize i18n');
   await ensureI18nInitialized();
 
-  bootLogger.l('Load supported languages');
-  final supportedLanguages = await loadLanguageNames();
-
   FlutterError.demangleStackTrace = (stack) {
     if (stack is Trace) return stack.vmTrace;
     if (stack is Chain) return stack.toTrace().vmTrace;
@@ -205,6 +189,9 @@ Future<void> boot(BootLogger bootLogger) async {
 
   // Prepare for Android 15
   unawaited(showSystemStatus());
+
+  bootLogger.l('Check Google Play Services availability');
+  final googleApiAvailable = await isGooglePlayServiceAvailable();
 
   logger.logI(
     'Start up',
@@ -227,7 +214,6 @@ Future<void> boot(BootLogger bootLogger) async {
             booruEngineRegistryProvider.overrideWith(
               (ref) => ref.watch(booruInitEngineProvider(booruFactory)),
             ),
-            favoriteTagsRepoOverride,
             booruFactoryProvider.overrideWithValue(booruFactory),
             tagInfoOverride,
             settingsRepoProvider.overrideWithValue(settingRepository),
@@ -243,14 +229,15 @@ Future<void> boot(BootLogger bootLogger) async {
             initialSettingsBooruConfigProvider.overrideWithValue(data.config),
             httpCacheDirProvider.overrideWithValue(tempPath),
             loggerProvider.overrideWithValue(logger),
-            bookmarkRepoOverride,
             deviceInfoProvider.overrideWithValue(deviceInfo),
             packageInfoProvider.overrideWithValue(packageInfo),
             appInfoProvider.overrideWithValue(appInfo),
             appLoggerProvider.overrideWithValue(appLogger),
-            supportedLanguagesProvider.overrideWithValue(supportedLanguages),
             miscDataBoxProvider.overrideWithValue(miscDataBox),
             booruTagTypePathProvider.overrideWithValue(dbDirectory.path),
+            isGooglePlayServiceAvailableProvider.overrideWithValue(
+              googleApiAvailable,
+            ),
           ],
           child: const App(),
         ),
@@ -258,3 +245,12 @@ Future<void> boot(BootLogger bootLogger) async {
     ),
   );
 }
+
+//FIXME: Duplicate code with the one in boot
+final dbPathProvider = FutureProvider<String>((ref) async {
+  final dbDirectory = isAndroid()
+      ? await getApplicationDocumentsDirectory()
+      : await getApplicationSupportDirectory();
+
+  return dbDirectory.path;
+});

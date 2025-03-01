@@ -11,6 +11,7 @@ import '../../../../settings/settings.dart';
 import '../../../../utils/collection_utils.dart';
 import '../../../filter/filter.dart';
 import '../../../post/post.dart';
+import 'post_duplicate_checker.dart';
 
 const _kFirstPage = 1;
 const _kJumpStep = 1;
@@ -31,10 +32,13 @@ class PostGridController<T extends Post> extends ChangeNotifier {
     required this.fetcher,
     required this.blacklistedTagsFetcher,
     required this.mountedChecker,
+    required PostDuplicateTracker<T> duplicateTracker,
     this.debounceDuration = const Duration(milliseconds: 500),
     PageMode pageMode = PageMode.infinite,
     this.blacklistedUrlsFetcher,
-  }) : _pageMode = pageMode;
+  })  : _pageMode = pageMode,
+        _duplicateTracker = duplicateTracker,
+        _eventController = StreamController<PostControllerEvent>.broadcast();
 
   final PostGridFetcher<T> fetcher;
   PageMode _pageMode;
@@ -49,7 +53,9 @@ class PostGridController<T extends Post> extends ChangeNotifier {
 
   List<T> _items = [];
   List<T> _filteredItems = [];
-  Set<int> _keys = {};
+
+  final PostDuplicateTracker<T> _duplicateTracker;
+
   int _page = _kFirstPage;
   bool _hasMore = true;
   bool _loading = false;
@@ -82,6 +88,9 @@ class PostGridController<T extends Post> extends ChangeNotifier {
   final hasBlacklist = ValueNotifier(false);
 
   final errors = ValueNotifier<BooruError?>(null);
+
+  final StreamController<PostControllerEvent> _eventController;
+  Stream<PostControllerEvent> get events => _eventController.stream;
 
   Future<PostResult<T>> _refreshPosts() => _fetchPosts(_kFirstPage);
 
@@ -212,6 +221,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
   }) async {
     if (_refreshing) return;
     _setRefreshing(true);
+    _eventController.add(const PostControllerRefreshStarted());
     _page = switch (_pageMode) {
       PageMode.infinite => _kFirstPage,
       PageMode.paginated => maintainPage ? _page : _kFirstPage,
@@ -233,6 +243,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
     _hasMore = newItems.posts.isNotEmpty;
     count.value = newItems.total;
     _setRefreshing(false);
+    _eventController.add(const PostControllerRefreshCompleted());
     notifyListeners();
   }
 
@@ -327,8 +338,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
     final data = [..._items]
       ..removeWhere((e) => postIds.contains(itemIdExtractor(e)));
 
-    // remove keys
-    _keys = data.map((e) => itemIdExtractor(e)).toSet();
+    _duplicateTracker.rebuildFrom(data);
 
     _items = data;
     _setFilteringItems(data);
@@ -337,10 +347,9 @@ class PostGridController<T extends Post> extends ChangeNotifier {
 
   Future<void> _addAll(List<T> newItems) async {
     for (final item in newItems) {
-      final key = item.id;
-      if (!_keys.contains(key)) {
+      if (!_duplicateTracker.isDuplicate(item)) {
         _items.add(item);
-        _keys.add(key);
+        _duplicateTracker.trackItem(item);
       }
     }
 
@@ -367,7 +376,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
     _items.clear();
     _filteredItems.clear();
     _setFilteringItems([]);
-    _keys.clear();
+    _duplicateTracker.clear();
     tagCounts.value = {};
     hasBlacklist.value = false;
     activeFilters.value = {};
@@ -391,6 +400,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
 
   @override
   void dispose() {
+    _eventController.close();
     _debounceTimer?.cancel();
 
     itemsNotifier.dispose();
@@ -467,4 +477,16 @@ Map<String, Set<int>> _countInIsolate<T extends Post>(
   } catch (e) {
     return {};
   }
+}
+
+abstract class PostControllerEvent {
+  const PostControllerEvent();
+}
+
+class PostControllerRefreshStarted extends PostControllerEvent {
+  const PostControllerRefreshStarted();
+}
+
+class PostControllerRefreshCompleted extends PostControllerEvent {
+  const PostControllerRefreshCompleted();
 }

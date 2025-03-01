@@ -20,7 +20,7 @@ final sankakuClientProvider = Provider.family<SankakuClient, BooruConfigAuth>(
 );
 
 final sankakuPseudoIdGeneratorProvider = Provider((ref) {
-  return SankakuWorkaroundIdGenerator();
+  return PostIdGenerator();
 });
 
 final sankakuPostRepoProvider =
@@ -135,6 +135,7 @@ final sankakuPostRepoProvider =
                     : null,
                 // uploaderId: e.author?.id,
                 uploaderId: 0, // The id is now a string
+                uploaderName: e.author?.name,
                 metadata: PostMetadata(
                   page: page,
                   search: tags.join(' '),

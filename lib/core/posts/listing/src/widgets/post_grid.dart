@@ -8,8 +8,6 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 
 // Project imports:
 import '../../../../boorus/engine/providers.dart';
-import '../../../../foundation/animations.dart';
-import '../../../../foundation/toast.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/settings.dart';
 import '../../../../widgets/widgets.dart';
@@ -108,7 +106,9 @@ class _PostGridState<T extends Post> extends State<PostGrid<T>> {
             multiSelectController: _multiSelectController,
             controller: widget.controller,
             safeArea: widget.safeArea,
-            gridHeader: _GridHeader<T>(),
+            gridHeader: _GridHeader<T>(
+              multiSelectController: _multiSelectController,
+            ),
             topPageIndicator: Consumer(
               builder: (_, ref, __) {
                 final visibleAtTop = ref.watch(
@@ -117,7 +117,10 @@ class _PostGridState<T extends Post> extends State<PostGrid<T>> {
                 );
 
                 return visibleAtTop
-                    ? _PageIndicator<T>()
+                    ? Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _PageIndicator<T>(),
+                      )
                     : const SizedBox.shrink();
               },
             ),
@@ -238,11 +241,13 @@ final _expandedProvider = StateProvider.autoDispose<bool?>((ref) => null);
 
 class _GridHeader<T extends Post> extends ConsumerWidget {
   const _GridHeader({
+    required this.multiSelectController,
     this.axis = Axis.horizontal,
     super.key,
   });
 
   final Axis axis;
+  final MultiSelectController<T> multiSelectController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -309,47 +314,9 @@ class _GridHeader<T extends Post> extends ConsumerWidget {
                     trailing: axis == Axis.horizontal
                         ? PostGridConfigIconButton(
                             postController: controller,
+                            multiSelectController: multiSelectController,
                           )
                         : null,
-                    onClosed: () {
-                      final hasCustomListing =
-                          ref.read(hasCustomListingSettingsProvider);
-
-                      if (hasCustomListing) {
-                        showErrorToast(
-                          context,
-                          'Cannot hide header when using custom listing',
-                        );
-                        return;
-                      }
-
-                      final settingsNotifier =
-                          ref.read(settingsNotifierProvider.notifier)
-                            ..updateWith(
-                              (s) => s.copyWith(
-                                listing: s.listing.copyWith(
-                                  showPostListConfigHeader: false,
-                                ),
-                              ),
-                            );
-                      showSimpleSnackBar(
-                        duration: AppDurations.extraLongToast,
-                        context: context,
-                        content: const Text(
-                          'You can always show this header again in Settings.',
-                        ),
-                        action: SnackBarAction(
-                          label: 'Undo',
-                          onPressed: () => settingsNotifier.updateWith(
-                            (s) => s.copyWith(
-                              listing: s.listing.copyWith(
-                                showPostListConfigHeader: true,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
                     hiddenCount: tagCounts.totalNonDuplicatesPostCount,
                   ),
                 );

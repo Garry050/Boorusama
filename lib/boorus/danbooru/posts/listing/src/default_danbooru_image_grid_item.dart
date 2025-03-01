@@ -61,7 +61,9 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
             contextMenu: contextMenu ??
                 DanbooruPostContextMenu(
                   onMultiSelect: () {
-                    multiSelectController.enableMultiSelect();
+                    multiSelectController.enableMultiSelect(
+                      initialSelected: [post],
+                    );
                   },
                   post: post,
                 ),
@@ -129,16 +131,11 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
                       );
 
                       return multiSelect
-                          ? ValueListenableBuilder(
-                              valueListenable:
-                                  multiSelectController.selectedItemsNotifier,
-                              builder: (_, selectedItems, __) => SelectableItem(
-                                index: index,
-                                isSelected: selectedItems.contains(post),
-                                onTap: () =>
-                                    multiSelectController.toggleSelection(post),
-                                itemBuilder: (context, isSelected) => item,
-                              ),
+                          ? DefaultSelectableItem(
+                              multiSelectController: multiSelectController,
+                              index: index,
+                              post: post,
+                              item: item,
                             )
                           : item;
                     },
@@ -158,64 +155,70 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
     BuildContext context,
   ) {
     return BlockOverlayItem(
-      overlay: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: switch (post.source) {
+      overlay: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                switch (post.source) {
                   final WebSource source => WebsiteLogo(
+                      size: 18,
                       url: source.faviconUrl,
                     ),
                   _ => const SizedBox.shrink(),
                 },
-              ),
-              const SizedBox(width: 4),
-              const Text(
-                maxLines: 1,
-                'Banned post',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                const SizedBox(width: 4),
+                const Text(
+                  maxLines: 1,
+                  'Banned post',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            if (artistTags.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 8,
+                ),
+                child: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    for (final tag in artistTags)
+                      RawCompactChip(
+                        label: Text(
+                          tag.replaceAll('_', ' '),
+                          maxLines: 1,
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onErrorContainer,
+                          ),
+                        ),
+                        backgroundColor:
+                            Theme.of(context).colorScheme.errorContainer,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onTap: () {
+                          AppClipboard.copyAndToast(
+                            context,
+                            artistTags.join(' '),
+                            message: 'Tag copied to clipboard',
+                          );
+                        },
+                      ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          if (artistTags.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-              ),
-              child: Wrap(
-                children: [
-                  for (final tag in artistTags)
-                    ActionChip(
-                      visualDensity: VisualDensity.compact,
-                      label: Text(
-                        tag.replaceAll('_', ' '),
-                        maxLines: 1,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                        ),
-                      ),
-                      backgroundColor:
-                          Theme.of(context).colorScheme.errorContainer,
-                      onPressed: () {
-                        AppClipboard.copyAndToast(
-                          context,
-                          artistTags.join(' '),
-                          message: 'Tag copied to clipboard',
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
       onTap: switch (post.source) {
         final WebSource source => () => launchExternalUrlString(source.url),

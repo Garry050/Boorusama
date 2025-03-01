@@ -36,6 +36,7 @@ class SankakuPost extends Equatable
     required this.characterDetailsTags,
     required this.copyrightDetailsTags,
     required this.uploaderId,
+    required this.uploaderName,
     required this.metadata,
     this.createdAt,
     this.parentId,
@@ -120,18 +121,11 @@ class SankakuPost extends Equatable
   @override
   final int? uploaderId;
 
+  @override
+  final String? uploaderName;
+
   final String sankakuId;
 
   @override
   final PostMetadata? metadata;
-}
-
-class SankakuWorkaroundIdGenerator {
-  final Set<int> _generatedIds = {};
-
-  int generateId() {
-    final id = _generatedIds.length + 1;
-    _generatedIds.add(id);
-    return id;
-  }
 }

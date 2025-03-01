@@ -11,9 +11,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/semantics.dart';
 
 import 'dio_extended_image_provider.dart';
+import 'fetch_strategy.dart';
 import 'utils.dart';
 
-const kDefaultImageCacheDuration = Duration(days: 2);
+const kDefaultImageCacheDuration = Duration(hours: 1);
 
 /// extended image base on official
 /// [Image]
@@ -55,12 +56,9 @@ class ExtendedImage extends StatefulWidget {
     this.clearMemoryCacheIfFailed = true,
     BoxConstraints? constraints,
     CancellationToken? cancelToken,
-    int retries = 3,
-    Duration? timeLimit,
     Map<String, String>? headers,
     bool cache = true,
     double scale = 1.0,
-    Duration timeRetry = const Duration(milliseconds: 100),
     this.clearMemoryCacheWhenDispose = false,
     int? cacheWidth,
     int? cacheHeight,
@@ -71,6 +69,7 @@ class ExtendedImage extends StatefulWidget {
     bool cacheRawData = false,
     String? imageCacheName,
     Duration? cacheMaxAge,
+    FetchStrategyBuilder? fetchStrategy,
     required Dio dio,
     this.controller,
     this.placeholderWidget,
@@ -85,14 +84,12 @@ class ExtendedImage extends StatefulWidget {
             headers: headers,
             cache: cache,
             cancelToken: cancelToken,
-            retries: retries,
-            timeRetry: timeRetry,
-            timeLimit: timeLimit,
             cacheKey: cacheKey,
             printError: printError,
             cacheRawData: cacheRawData,
             imageCacheName: imageCacheName,
             cacheMaxAge: cacheMaxAge ?? kDefaultImageCacheDuration,
+            fetchStrategy: fetchStrategy,
           ),
           compressionRatio: compressionRatio,
           maxBytes: maxBytes,

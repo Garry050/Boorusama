@@ -10,11 +10,11 @@ import '../../../downloads/l10n.dart' as d;
 import '../../../downloads/widgets/download_folder_selector_section.dart';
 import '../../../foundation/toast.dart';
 import '../../../info/device_info.dart';
+import '../../../router.dart';
 import '../../../settings/providers.dart';
 import '../../../settings/settings.dart';
 import '../../../settings/widgets.dart';
 import '../../../theme.dart';
-import '../../../widgets/drag_line.dart';
 import '../providers/bulk_download_notifier.dart';
 import '../providers/create_download_options_notifier.dart';
 import '../routes/route_utils.dart';
@@ -37,8 +37,9 @@ class CreateDownloadOptionsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final navigatorContext = navigatorKey.currentContext;
 
-    void showSnackBar(String message) {
+    void showSnackBar(BuildContext context, String message) {
       if (showStartNotification) {
         showSimpleSnackBar(
           context: context,
@@ -90,7 +91,10 @@ class CreateDownloadOptionsSheet extends ConsumerWidget {
                       notifier.queueDownloadLater(
                         options,
                       );
-                      showSnackBar('Created');
+
+                      if (navigatorContext != null) {
+                        showSnackBar(navigatorContext, 'Created');
+                      }
 
                       Navigator.of(context).pop();
                     }
@@ -116,7 +120,12 @@ class CreateDownloadOptionsSheet extends ConsumerWidget {
                           options,
                           downloadConfigs: DownloadConfigs(
                             onDownloadStart: () {
-                              showSnackBar('Download started');
+                              if (navigatorContext != null) {
+                                showSnackBar(
+                                  navigatorContext,
+                                  'Download started',
+                                );
+                              }
                             },
                           ),
                         );
@@ -174,110 +183,86 @@ class _CreateDownloadOptionsRawSheetState
       false => true,
     };
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        BulkDownloadTagList(
+          tags: options.tags,
+          onSubmit: notifier.addTag,
+          onRemove: notifier.removeTag,
+          onHistoryTap: notifier.addFromSearchHistory,
         ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    DragLine(),
-                  ],
-                ),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+          ),
+          child: DownloadFolderSelectorSection(
+            title: Text(
+              DownloadTranslations.saveToFolder.tr().toUpperCase(),
+              style: textTheme.titleSmall?.copyWith(
+                color: colorScheme.hintColor,
+                fontWeight: FontWeight.w800,
               ),
-              BulkDownloadTagList(
-                tags: options.tags,
-                onSubmit: notifier.addTag,
-                onRemove: notifier.removeTag,
-                onHistoryTap: notifier.addFromSearchHistory,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                ),
-                child: DownloadFolderSelectorSection(
-                  title: Text(
-                    DownloadTranslations.saveToFolder.tr().toUpperCase(),
-                    style: textTheme.titleSmall?.copyWith(
-                      color: colorScheme.hintColor,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  backgroundColor: colorScheme.surfaceContainerHigh,
-                  storagePath: options.path,
-                  deviceInfo: ref.watch(deviceInfoProvider),
-                  onPathChanged: (path) {
-                    notifier.setPath(path);
-                  },
-                  hint: DownloadTranslations.selectFolder.tr(),
-                ),
-              ),
-              if (widget.advancedToggle)
-                SwitchListTile(
-                  title: const Text(
-                    DownloadTranslations.showAdvancedOptions,
-                  ).tr(),
-                  value: advancedOptions,
-                  onChanged: (value) {
-                    setState(() {
-                      advancedOptions = value;
-                    });
-                  },
-                ),
-              if (showAll || advancedOptions) ...[
-                SwitchListTile(
-                  title: const Text(
-                    DownloadTranslations.enableNotifications,
-                  ).tr(),
-                  value: options.notifications,
-                  onChanged: (value) {
-                    notifier.setNotifications(value);
-                  },
-                ),
-                SwitchListTile(
-                  title: const Text(d.DownloadTranslations.skipDownloadIfExists)
-                      .tr(),
-                  value: options.skipIfExists,
-                  onChanged: (value) {
-                    notifier.setSkipIfExists(value);
-                  },
-                ),
-                SettingsTile(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  title: const Text('settings.download.quality').tr(),
-                  selectedOption:
-                      options.quality ?? DownloadQuality.original.name,
-                  items: DownloadQuality.values.map((e) => e.name).toList(),
-                  onChanged: (value) {
-                    notifier.setQuality(value);
-                  },
-                  optionBuilder: (value) =>
-                      Text('settings.download.qualities.$value').tr(),
-                ),
-              ],
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                child: widget.actions,
-              ),
-            ],
+            ),
+            backgroundColor: colorScheme.surfaceContainerHigh,
+            storagePath: options.path,
+            deviceInfo: ref.watch(deviceInfoProvider),
+            onPathChanged: (path) {
+              notifier.setPath(path);
+            },
+            hint: DownloadTranslations.selectFolder.tr(),
           ),
         ),
-      ),
+        if (widget.advancedToggle)
+          SwitchListTile(
+            title: const Text(
+              DownloadTranslations.showAdvancedOptions,
+            ).tr(),
+            value: advancedOptions,
+            onChanged: (value) {
+              setState(() {
+                advancedOptions = value;
+              });
+            },
+          ),
+        if (showAll || advancedOptions) ...[
+          SwitchListTile(
+            title: const Text(
+              DownloadTranslations.enableNotifications,
+            ).tr(),
+            value: options.notifications,
+            onChanged: (value) {
+              notifier.setNotifications(value);
+            },
+          ),
+          SwitchListTile(
+            title: const Text(d.DownloadTranslations.skipDownloadIfExists).tr(),
+            value: options.skipIfExists,
+            onChanged: (value) {
+              notifier.setSkipIfExists(value);
+            },
+          ),
+          SettingsTile(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            title: const Text('settings.download.quality').tr(),
+            selectedOption: options.quality ?? DownloadQuality.original.name,
+            items: DownloadQuality.values.map((e) => e.name).toList(),
+            onChanged: (value) {
+              notifier.setQuality(value);
+            },
+            optionBuilder: (value) =>
+                Text('settings.download.qualities.$value').tr(),
+          ),
+        ],
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          child: widget.actions,
+        ),
+      ],
     );
   }
 }
