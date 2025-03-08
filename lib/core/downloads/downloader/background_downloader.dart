@@ -118,36 +118,18 @@ class BackgroundDownloader implements DownloadService {
       );
 
   @override
-  Future<bool> cancelTasksWithIds(List<String> ids) {
-    return FileDownloader().cancelTasksWithIds(ids);
+  Future<bool> cancelAll(String group) {
+    return FileDownloader().cancelAll(group: group);
   }
 
   @override
-  Future<void> pauseAll(String group) async {
-    final tasks = await FileDownloader().allTasks(
-      group: group,
-    );
-
-    final taskFutures = tasks
-        .whereType<DownloadTask>()
-        .map((task) => FileDownloader().pause(task))
-        .toList();
-
-    await Future.wait(taskFutures);
+  Future<void> pauseAll(String group) {
+    return FileDownloader().pauseAll(group: group);
   }
 
   @override
-  Future<void> resumeAll(String group) async {
-    final tasks = await FileDownloader().allTasks(
-      group: group,
-    );
-
-    final taskFutures = tasks
-        .whereType<DownloadTask>()
-        .map((task) => FileDownloader().resume(task))
-        .toList();
-
-    await Future.wait(taskFutures);
+  Future<void> resumeAll(String group) {
+    return FileDownloader().resumeAll(group: group);
   }
 }
 

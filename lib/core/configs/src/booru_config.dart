@@ -17,6 +17,7 @@ import '../../posts/rating/rating.dart';
 import '../../proxy/proxy.dart';
 import '../../settings/settings.dart';
 import '../../theme/theme_configs.dart';
+import 'create/search_blacklist.dart';
 import 'data/booru_config_data.dart';
 import 'gestures.dart';
 import 'rating_parser.dart';
@@ -45,6 +46,7 @@ class BooruConfig extends Equatable {
     required this.listing,
     required this.theme,
     required this.alwaysIncludeTags,
+    required this.blacklistConfigs,
     required this.layout,
     required this.proxySettings,
     required this.viewerNotesFetchBehavior,
@@ -97,6 +99,11 @@ class BooruConfig extends Equatable {
           ? null
           : ThemeConfigs.fromJson(json['theme'] as Map<String, dynamic>),
       alwaysIncludeTags: json['alwaysIncludeTags'] as String?,
+      blacklistConfigs: json['blacklistedConfigs'] != null
+          ? BlacklistConfigs.fromJson(
+              json['blacklistedConfigs'] as Map<String, dynamic>,
+            )
+          : null,
       layout: json['layout'] == null
           ? null
           : LayoutConfigs.fromJson(json['layout'] as Map<String, dynamic>),
@@ -134,6 +141,7 @@ class BooruConfig extends Equatable {
     listing: null,
     theme: null,
     alwaysIncludeTags: null,
+    blacklistConfigs: null,
     layout: null,
     proxySettings: null,
     viewerNotesFetchBehavior: null,
@@ -167,6 +175,7 @@ class BooruConfig extends Equatable {
         listing: null,
         theme: null,
         alwaysIncludeTags: null,
+        blacklistConfigs: null,
         layout: null,
         proxySettings: null,
         viewerNotesFetchBehavior: null,
@@ -193,6 +202,7 @@ class BooruConfig extends Equatable {
   final ListingConfigs? listing;
   final ThemeConfigs? theme;
   final String? alwaysIncludeTags;
+  final BlacklistConfigs? blacklistConfigs;
   final LayoutConfigs? layout;
   final ProxySettings? proxySettings;
   final BooruConfigViewerNotesFetchBehavior? viewerNotesFetchBehavior;
@@ -226,6 +236,7 @@ class BooruConfig extends Equatable {
       listing: listing,
       theme: theme,
       alwaysIncludeTags: alwaysIncludeTags,
+      blacklistConfigs: blacklistConfigs,
       layout: layout != null ? layout() : this.layout,
       proxySettings: proxySettings,
       viewerNotesFetchBehavior: viewerNotesFetchBehavior,
@@ -255,6 +266,7 @@ class BooruConfig extends Equatable {
         listing,
         theme,
         alwaysIncludeTags,
+        blacklistConfigs,
         layout,
         proxySettings,
         viewerNotesFetchBehavior,
@@ -290,6 +302,7 @@ class BooruConfig extends Equatable {
       'listing': listing?.toJson(),
       'theme': theme?.toJson(),
       'alwaysIncludeTags': alwaysIncludeTags,
+      'blacklistedTags': blacklistConfigs?.toJson(),
       'layout': layout?.toJson(),
       'proxySettings': proxySettings?.toJson(),
       'viewerNotesFetchBehavior': viewerNotesFetchBehavior?.index,
@@ -369,22 +382,25 @@ class BooruConfigAuth extends Equatable with BooruConfigAuthMixin {
       ];
 }
 
-class BooruConfigFilter extends Equatable with BooruConfigFilterMixin {
-  const BooruConfigFilter({
+class BooruConfigSearchFilter extends Equatable
+    with BooruConfigSearchFilterMixin {
+  const BooruConfigSearchFilter({
     required this.ratingFilter,
     required this.granularRatingFilters,
     required this.alwaysIncludeTags,
     required this.deletedItemBehavior,
     required this.bannedPostVisibility,
+    required this.blacklistConfigs,
   });
 
-  factory BooruConfigFilter.fromConfig(BooruConfig config) {
-    return BooruConfigFilter(
+  factory BooruConfigSearchFilter.fromConfig(BooruConfig config) {
+    return BooruConfigSearchFilter(
       ratingFilter: config.ratingFilter,
       granularRatingFilters: config.granularRatingFilters,
       alwaysIncludeTags: config.alwaysIncludeTags,
       deletedItemBehavior: config.deletedItemBehavior,
       bannedPostVisibility: config.bannedPostVisibility,
+      blacklistConfigs: config.blacklistConfigs,
     );
   }
 
@@ -395,6 +411,8 @@ class BooruConfigFilter extends Equatable with BooruConfigFilterMixin {
   final BooruConfigDeletedItemBehavior deletedItemBehavior;
   @override
   final BooruConfigBannedPostVisibility bannedPostVisibility;
+
+  final BlacklistConfigs? blacklistConfigs;
 
   String get ratingVerdict => switch (ratingFilter) {
         BooruConfigRatingFilter.none => 'unfiltered',
@@ -420,6 +438,7 @@ class BooruConfigFilter extends Equatable with BooruConfigFilterMixin {
         alwaysIncludeTags,
         deletedItemBehavior,
         bannedPostVisibility,
+        blacklistConfigs,
       ];
 }
 
@@ -431,18 +450,38 @@ class BooruConfigSearch extends Equatable {
 
   factory BooruConfigSearch.fromConfig(BooruConfig config) {
     return BooruConfigSearch(
-      filter: BooruConfigFilter.fromConfig(config),
+      filter: BooruConfigSearchFilter.fromConfig(config),
       auth: BooruConfigAuth.fromConfig(config),
     );
   }
 
-  final BooruConfigFilter filter;
+  final BooruConfigSearchFilter filter;
   final BooruConfigAuth auth;
 
   BooruType get booruType => auth.booruType;
 
   @override
   List<Object?> get props => [filter, auth];
+}
+
+class BooruConfigFilter extends Equatable {
+  const BooruConfigFilter({
+    required this.auth,
+    required this.blacklistConfigs,
+  });
+
+  factory BooruConfigFilter.fromConfig(BooruConfig config) {
+    return BooruConfigFilter(
+      auth: BooruConfigAuth.fromConfig(config),
+      blacklistConfigs: config.blacklistConfigs,
+    );
+  }
+
+  final BooruConfigAuth auth;
+  final BlacklistConfigs? blacklistConfigs;
+
+  @override
+  List<Object?> get props => [auth, blacklistConfigs];
 }
 
 mixin BooruConfigAuthMixin {
@@ -473,7 +512,7 @@ mixin BooruConfigAuthMixin {
   bool get hasSoftSFW => url == kDanbooruSafeUrl;
 }
 
-mixin BooruConfigFilterMixin {
+mixin BooruConfigSearchFilterMixin {
   Set<Rating>? get granularRatingFilters;
   BooruConfigBannedPostVisibility get bannedPostVisibility;
 
@@ -500,8 +539,8 @@ extension BooruConfigX on BooruConfig {
       };
 
   BooruConfigAuth get auth => BooruConfigAuth.fromConfig(this);
-  BooruConfigFilter get filter => BooruConfigFilter.fromConfig(this);
   BooruConfigSearch get search => BooruConfigSearch.fromConfig(this);
+  BooruConfigFilter get filter => BooruConfigFilter.fromConfig(this);
 
   bool get autoFetchNotes =>
       viewerNotesFetchBehavior == BooruConfigViewerNotesFetchBehavior.auto;

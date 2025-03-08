@@ -2,7 +2,7 @@ name: boorusama
 description: A mobile client for Booru sites.
 
 publish_to: "none"
-version: 4.0.6-dev+146
+version: 4.0.9+149
 
 environment:
   sdk: ">=3.6.0 <4.0.0"
@@ -32,7 +32,7 @@ dependencies:
 
   android_intent_plus: ^5.1.0
   animated_list_plus: ^0.5.2
-  background_downloader: ^8.8.0
+  background_downloader: ^9.1.1
   bonsoir: ^5.1.11
   collection: ^1.17.0
   connectivity_plus: ^6.1.0

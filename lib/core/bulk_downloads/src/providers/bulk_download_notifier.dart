@@ -11,6 +11,7 @@ import 'package:path/path.dart';
 import '../../../analytics.dart';
 import '../../../blacklists/providers.dart';
 import '../../../boorus/engine/providers.dart';
+import '../../../configs/config.dart';
 import '../../../configs/ref.dart';
 import '../../../downloads/downloader.dart';
 import '../../../downloads/filename/generator_impl.dart';
@@ -437,7 +438,6 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     DownloadSession session, {
     DownloadConfigs? downloadConfigs,
   }) async {
-    final authConfig = ref.readConfigAuth;
     final config = ref.readConfig;
 
     final path = task.path;
@@ -459,7 +459,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     final settings = downloadConfigs?.settings ?? fallbackSettings;
 
     final fallbackDownloadFileUrlExtractor =
-        ref.read(downloadFileUrlExtractorProvider(authConfig));
+        ref.read(downloadFileUrlExtractorProvider(config.auth));
     final downloadFileUrlExtractor =
         downloadConfigs?.urlExtractor ?? fallbackDownloadFileUrlExtractor;
 
@@ -472,7 +472,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         fallbackFileNameBuilder;
 
     final fallbackBlacklistedTags =
-        await ref.read(blacklistTagsProvider(authConfig).future);
+        await ref.read(blacklistTagsProvider(config.filter).future);
     final blacklistedTags =
         downloadConfigs?.blacklistedTags ?? fallbackBlacklistedTags;
     final patterns = blacklistedTags
@@ -784,13 +784,6 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
           .where((e) => e != DownloadRecordStatus.completed)
           .toList();
 
-      final records = await _withRepo(
-        (repo) => repo.getRecordsBySessionIdAndStatuses(
-          sessionId,
-          nonCompletedStatuses,
-        ),
-      );
-
       await _withRepo(
         (repo) => repo.updateRecordsByStatus(
           sessionId,
@@ -799,9 +792,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         ),
       );
 
-      await downloader.cancelTasksWithIds(
-        records.map((e) => e.downloadId).nonNulls.toList(),
-      );
+      await downloader.cancelAll(sessionId);
     } catch (e) {
       state = state.copyWith(error: () => e);
     }
@@ -1061,9 +1052,6 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         return;
       }
 
-      final records =
-          await _withRepo((repo) => repo.getRecordsBySessionId(sessionId));
-
       await _updateSession(
         sessionId,
         status: DownloadSessionStatus.cancelled,
@@ -1078,9 +1066,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       );
 
       unawaited(
-        downloader.cancelTasksWithIds(
-          records.map((e) => e.downloadId).nonNulls.toList(),
-        ),
+        downloader.cancelAll(sessionId),
       );
 
       progressNotifier.removeSession(sessionId);

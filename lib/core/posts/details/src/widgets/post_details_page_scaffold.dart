@@ -417,7 +417,10 @@ class _PostDetailPageScaffoldState<T extends Post>
               onTap: onItemTap,
               child: InteractiveViewerExtended(
                 controller: _transformController,
-                enable: !state.isExpanded,
+                enable: switch (state.isExpanded) {
+                  true => context.isLargeScreen,
+                  false => true,
+                },
                 onZoomUpdated: _controller.onZoomUpdated,
                 onTap: onItemTap,
                 onDoubleTap:
@@ -631,7 +634,10 @@ class _PostDetailPageScaffoldState<T extends Post>
             return !post.isVideo
                 ? DecoratedSliver(
                     decoration: decoration,
-                    sliver: multiSliver,
+                    sliver: SliverPadding(
+                      padding: const EdgeInsets.only(top: 8),
+                      sliver: multiSliver,
+                    ),
                   )
                 : multiSliver;
           },
