@@ -46,12 +46,12 @@ class SimpleTagSearchView extends ConsumerStatefulWidget {
   });
 
   final BooruConfigAuth? initialConfig;
-  final void Function(String tag, bool isMultiple) onSelected;
+  final void Function(String tag, bool isRaw) onSelected;
   final bool ensureValidTag;
   final bool closeOnSelected;
   final Widget Function(String currentText)? floatingActionButton;
   final Widget? backButton;
-  final void Function(BuildContext context, String text, bool isMultiple)?
+  final void Function(BuildContext context, String text, bool isRaw)?
       onSubmitted;
   final Color? Function(AutocompleteData tag)? textColorBuilder;
   final Widget Function(TextEditingController controller)? emptyBuilder;
@@ -67,28 +67,30 @@ class _SimpleTagSearchViewState extends ConsumerState<SimpleTagSearchView> {
 
   @override
   void dispose() {
-    super.dispose();
     textEditingController.dispose();
     focus.dispose();
+
+    super.dispose();
   }
 
-  String _getQuery(String text, isMultiple) {
-    return isMultiple ? text.lastQuery ?? text : text;
+  String _getQuery(String text, isRaw) {
+    return isRaw ? text.lastQuery ?? text : text;
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final config = widget.initialConfig ?? ref.watchConfigAuth;
     final suggestionNotifier =
         ref.watch(suggestionsNotifierProvider(config).notifier);
 
     final inputType = ref.watch(selectedInputTypeSelectorProvider);
-    final isMultiple = inputType == InputType.multiple;
+    final isRaw = inputType == InputType.raw;
 
     return ValueListenableBuilder(
       valueListenable: textEditingController,
       builder: (context, query, child) {
-        final q = _getQuery(query.text, isMultiple);
+        final q = _getQuery(query.text, isRaw);
         final suggestionTags = ref.watch(suggestionProvider(q));
         final tags = widget.ensureValidTag
             ? suggestionTags.where((e) => e.category != null).toIList()
@@ -99,8 +101,10 @@ class _SimpleTagSearchViewState extends ConsumerState<SimpleTagSearchView> {
           body: Column(
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 8,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -108,35 +112,31 @@ class _SimpleTagSearchViewState extends ConsumerState<SimpleTagSearchView> {
                         focus: focus,
                         controller: textEditingController,
                         leading: widget.backButton,
-                        trailing: isMultiple
+                        trailing: isRaw
                             ? Padding(
                                 padding: const EdgeInsets.only(right: 8),
-                                child: ValueListenableBuilder(
-                                  valueListenable: textEditingController,
-                                  builder: (context, query, child) =>
-                                      query.text.isEmpty
-                                          ? const _AddButton(
-                                              onTap: null,
-                                            )
-                                          : _AddButton(
-                                              onTap: () {
-                                                widget.onSelected(
-                                                  query.text.trimRight(),
-                                                  isMultiple,
-                                                );
-                                                if (widget.closeOnSelected) {
-                                                  Navigator.of(context).pop();
-                                                }
-                                              },
-                                            ),
-                                ),
+                                child: query.text.isEmpty
+                                    ? const _AddButton(
+                                        onTap: null,
+                                      )
+                                    : _AddButton(
+                                        onTap: () {
+                                          widget.onSelected(
+                                            query.text.trimRight(),
+                                            isRaw,
+                                          );
+                                          if (widget.closeOnSelected) {
+                                            Navigator.of(context).pop();
+                                          }
+                                        },
+                                      ),
                               )
                             : null,
                         autofocus: true,
                         onSubmitted: (text) =>
-                            widget.onSubmitted?.call(context, text, isMultiple),
+                            widget.onSubmitted?.call(context, text, isRaw),
                         onChanged: (value) {
-                          final query = _getQuery(value, isMultiple);
+                          final query = _getQuery(value, isRaw);
 
                           suggestionNotifier.getSuggestions(query);
                         },
@@ -152,11 +152,11 @@ class _SimpleTagSearchViewState extends ConsumerState<SimpleTagSearchView> {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: TagSuggestionItems(
                       config: config,
-                      backgroundColor: Theme.of(context).colorScheme.surface,
+                      backgroundColor: colorScheme.surface,
                       tags: tags,
                       padding: EdgeInsets.zero,
                       onItemTap: (tag) {
-                        if (isMultiple) {
+                        if (isRaw) {
                           textEditingController.text = textEditingController
                               .text
                               .replaceLastQuery(tag.value);
@@ -166,10 +166,10 @@ class _SimpleTagSearchViewState extends ConsumerState<SimpleTagSearchView> {
                           if (widget.closeOnSelected) {
                             Navigator.of(context).pop();
                           }
-                          widget.onSelected(tag.value, isMultiple);
+                          widget.onSelected(tag.value, isRaw);
                         }
                       },
-                      currentQuery: isMultiple
+                      currentQuery: isRaw
                           ? query.text.lastQuery ?? query.text
                           : query.text,
                     ),
@@ -194,11 +194,11 @@ class _SimpleTagSearchViewState extends ConsumerState<SimpleTagSearchView> {
 }
 
 final selectedInputTypeSelectorProvider =
-    StateProvider.autoDispose<InputType>((ref) => InputType.single);
+    StateProvider<InputType>((ref) => InputType.single);
 
 enum InputType {
   single,
-  multiple,
+  raw,
 }
 
 class InputSelectorButton extends ConsumerWidget {
@@ -239,12 +239,14 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Semantics(
       button: true,
       child: Material(
         color: onTap == null
-            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)
-            : Theme.of(context).colorScheme.primary,
+            ? colorScheme.onSurface.withValues(alpha: 0.1)
+            : colorScheme.primary,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           customBorder: RoundedRectangleBorder(
@@ -255,7 +257,7 @@ class _AddButton extends StatelessWidget {
             margin: const EdgeInsets.all(4),
             child: Icon(
               Symbols.add,
-              color: Theme.of(context).colorScheme.onPrimary,
+              color: colorScheme.onPrimary,
             ),
           ),
         ),

@@ -373,12 +373,14 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
   Future<void> queueDownloadLater(
     DownloadOptions options, {
     DownloadConfigs? downloadConfigs,
+    void Function(BulkDownloadOptionsError e)? onOptionsError,
   }) async {
     final androidSdkVersion = downloadConfigs?.androidSdkVersion;
     final config = ref.readConfigAuth;
 
     if (!options.valid(androidSdkInt: androidSdkVersion)) {
-      throw const InvalidDownloadOptionsError();
+      onOptionsError?.call(const InvalidDownloadOptionsError());
+      return;
     }
 
     final task = await _withRepo((repo) => repo.createTask(options));
@@ -475,7 +477,11 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         await ref.read(blacklistTagsProvider(config.filter).future);
     final blacklistedTags =
         downloadConfigs?.blacklistedTags ?? fallbackBlacklistedTags;
-    final patterns = blacklistedTags
+    final effectiveBlacklistedTags = {
+      ...queryAsList(task.blacklistedTags),
+      ...blacklistedTags,
+    };
+    final patterns = effectiveBlacklistedTags
         .map((tag) => tag.split(' ').map(TagExpression.parse).toList())
         .toList();
 
@@ -986,11 +992,13 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
   Future<void> downloadFromOptions(
     DownloadOptions options, {
     DownloadConfigs? downloadConfigs,
+    void Function(BulkDownloadOptionsError e)? onOptionsError,
   }) async {
     final androidSdkVersion = downloadConfigs?.androidSdkVersion;
 
     if (!options.valid(androidSdkInt: androidSdkVersion)) {
-      throw const InvalidDownloadOptionsError();
+      onOptionsError?.call(const InvalidDownloadOptionsError());
+      return;
     }
 
     final task = await _withRepo((repo) => repo.createTask(options));

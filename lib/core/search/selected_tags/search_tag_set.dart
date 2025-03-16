@@ -6,9 +6,11 @@ import 'package:equatable/equatable.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
+import '../../tags/favorites/favorited.dart';
 import '../../tags/metatag/metatag.dart';
 import '../histories/history.dart';
 import '../queries/filter_operator.dart';
+import 'query.dart';
 import 'tag_search_item.dart';
 
 class SearchTagSet extends Equatable {
@@ -66,6 +68,13 @@ class SearchTagSet extends Equatable {
         isRaw: true,
       );
     }
+  }
+
+  void addTagFromFavTag(FavoriteTag tag) {
+    addTag(
+      tag.name,
+      isRaw: tag.queryType == QueryType.simple,
+    );
   }
 
   TagSearchItem? addTag(

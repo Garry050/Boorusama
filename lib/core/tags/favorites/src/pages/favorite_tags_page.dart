@@ -13,9 +13,9 @@ import '../../../../../core/widgets/widgets.dart';
 import '../../../../foundation/toast.dart';
 import '../../../../search/search/routes.dart';
 import '../../../../search/search/widgets.dart';
-import '../favorite_tag.dart';
-import '../favorite_tags_notifier.dart';
-import '../local_providers.dart';
+import '../providers/favorite_tags_notifier.dart';
+import '../providers/local_providers.dart';
+import '../types/favorite_tag.dart';
 import '../widgets/favorite_tag_label_chip.dart';
 import '../widgets/favorite_tags_filter_scope.dart';
 import 'edit_favorite_tag_sheet.dart';
@@ -61,7 +61,7 @@ class FavoriteTagsPage extends ConsumerWidget {
           goToQuickSearchPage(
             context,
             ref: ref,
-            onSubmitted: (context, text, _) {
+            onSubmitted: (context, text, isRaw) {
               Navigator.of(context).pop();
               favoritesNotifier.add(
                 text,
@@ -69,17 +69,19 @@ class FavoriteTagsPage extends ConsumerWidget {
                   context,
                   '$tag already exists',
                 ),
+                isRaw: isRaw,
                 // labels: [
                 //   selectedLabel,
                 // ],
               );
             },
-            onSelected: (tag, _) => favoritesNotifier.add(
+            onSelected: (tag, isRaw) => favoritesNotifier.add(
               tag,
               onDuplicate: (tag) => showErrorToast(
                 context,
                 '$tag already exists',
               ),
+              isRaw: isRaw,
               // labels: [
               //   selectedLabel,
               // ],

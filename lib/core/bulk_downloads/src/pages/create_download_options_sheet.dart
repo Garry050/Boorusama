@@ -4,21 +4,26 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
+import '../../../blacklists/providers.dart';
+import '../../../configs/create.dart';
+import '../../../configs/ref.dart';
 import '../../../downloads/l10n.dart' as d;
 import '../../../downloads/widgets/download_folder_selector_section.dart';
 import '../../../foundation/toast.dart';
 import '../../../info/device_info.dart';
 import '../../../router.dart';
+import '../../../search/search/routes.dart';
 import '../../../settings/providers.dart';
 import '../../../settings/settings.dart';
 import '../../../settings/widgets.dart';
 import '../../../theme.dart';
+import '../../../utils/collection_utils.dart';
 import '../providers/bulk_download_notifier.dart';
 import '../providers/create_download_options_notifier.dart';
 import '../routes/route_utils.dart';
-import '../types/bulk_download_error.dart';
 import '../types/download_configs.dart';
 import '../types/download_options.dart';
 import '../types/l10n.dart';
@@ -68,6 +73,7 @@ class CreateDownloadOptionsSheet extends ConsumerWidget {
           .select((value) => value.androidDeviceInfo?.version.sdkInt),
     );
     final validOptions = options.valid(androidSdkInt: androidSdkInt);
+    final navigator = Navigator.of(context);
 
     return CreateDownloadOptionsRawSheet(
       initial: initial,
@@ -90,13 +96,17 @@ class CreateDownloadOptionsSheet extends ConsumerWidget {
                   ? () {
                       notifier.queueDownloadLater(
                         options,
+                        onOptionsError: (e) {
+                          showErrorToast(context, e.message);
+                        },
                       );
 
-                      if (navigatorContext != null) {
+                      if (navigatorContext != null &&
+                          navigatorContext.mounted) {
                         showSnackBar(navigatorContext, 'Created');
                       }
 
-                      Navigator.of(context).pop();
+                      navigator.pop();
                     }
                   : null,
               child: const Text(
@@ -115,25 +125,24 @@ class CreateDownloadOptionsSheet extends ConsumerWidget {
               ),
               onPressed: validOptions
                   ? () {
-                      try {
-                        notifier.downloadFromOptions(
-                          options,
-                          downloadConfigs: DownloadConfigs(
-                            onDownloadStart: () {
-                              if (navigatorContext != null) {
-                                showSnackBar(
-                                  navigatorContext,
-                                  'Download started',
-                                );
-                              }
-                            },
-                          ),
-                        );
+                      notifier.downloadFromOptions(
+                        options,
+                        downloadConfigs: DownloadConfigs(
+                          onDownloadStart: () {
+                            if (navigatorContext != null) {
+                              showSnackBar(
+                                navigatorContext,
+                                'Download started',
+                              );
+                            }
+                          },
+                        ),
+                        onOptionsError: (e) {
+                          showErrorToast(context, e.message);
+                        },
+                      );
 
-                        Navigator.of(context).pop();
-                      } on BulkDownloadOptionsError catch (e) {
-                        showErrorToast(context, e.message);
-                      }
+                      navigator.pop();
                     }
                   : null,
               child: const Text(
@@ -193,6 +202,10 @@ class _CreateDownloadOptionsRawSheetState
           onRemove: notifier.removeTag,
           onHistoryTap: notifier.addFromSearchHistory,
         ),
+        if (!widget.advancedToggle)
+          const Divider(
+            height: 16,
+          ),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -215,45 +228,70 @@ class _CreateDownloadOptionsRawSheetState
           ),
         ),
         if (widget.advancedToggle)
-          SwitchListTile(
-            title: const Text(
-              DownloadTranslations.showAdvancedOptions,
-            ).tr(),
-            value: advancedOptions,
-            onChanged: (value) {
-              setState(() {
-                advancedOptions = value;
-              });
-            },
+          Column(
+            children: [
+              SwitchListTile(
+                title: const Text(
+                  DownloadTranslations.showAdvancedOptions,
+                ).tr(),
+                value: advancedOptions,
+                onChanged: (value) {
+                  setState(() {
+                    advancedOptions = value;
+                  });
+                },
+              ),
+              if (showAll) const Divider(),
+            ],
           ),
         if (showAll || advancedOptions) ...[
-          SwitchListTile(
-            title: const Text(
-              DownloadTranslations.enableNotifications,
-            ).tr(),
-            value: options.notifications,
-            onChanged: (value) {
-              notifier.setNotifications(value);
-            },
+          _ExcludedTagsSection(
+            options: options,
+            notifier: notifier,
           ),
-          SwitchListTile(
-            title: const Text(d.DownloadTranslations.skipDownloadIfExists).tr(),
-            value: options.skipIfExists,
-            onChanged: (value) {
-              notifier.setSkipIfExists(value);
-            },
+          SettingsCard(
+            title: 'Other options',
+            child: Column(
+              children: [
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                  ),
+                  title: const Text(
+                    DownloadTranslations.enableNotifications,
+                  ).tr(),
+                  value: options.notifications,
+                  onChanged: (value) {
+                    notifier.setNotifications(value);
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                  ),
+                  title: const Text(d.DownloadTranslations.skipDownloadIfExists)
+                      .tr(),
+                  value: options.skipIfExists,
+                  onChanged: (value) {
+                    notifier.setSkipIfExists(value);
+                  },
+                ),
+                SettingsTile(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  title: const Text('settings.download.quality').tr(),
+                  selectedOption:
+                      options.quality ?? DownloadQuality.original.name,
+                  items: DownloadQuality.values.map((e) => e.name).toList(),
+                  onChanged: (value) {
+                    notifier.setQuality(value);
+                  },
+                  optionBuilder: (value) =>
+                      Text('settings.download.qualities.$value').tr(),
+                ),
+              ],
+            ),
           ),
-          SettingsTile(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            title: const Text('settings.download.quality').tr(),
-            selectedOption: options.quality ?? DownloadQuality.original.name,
-            items: DownloadQuality.values.map((e) => e.name).toList(),
-            onChanged: (value) {
-              notifier.setQuality(value);
-            },
-            optionBuilder: (value) =>
-                Text('settings.download.qualities.$value').tr(),
-          ),
+          const SizedBox(height: 8),
         ],
         Container(
           padding: const EdgeInsets.symmetric(
@@ -263,6 +301,207 @@ class _CreateDownloadOptionsRawSheetState
           child: widget.actions,
         ),
       ],
+    );
+  }
+}
+
+class _ExcludedTagsSection extends ConsumerWidget {
+  const _ExcludedTagsSection({
+    required this.options,
+    required this.notifier,
+  });
+
+  final DownloadOptions options;
+  final CreateDownloadOptionsNotifier notifier;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final extraTags = queryAsList(options.blacklistedTags);
+    final config = ref.watchConfigAuth;
+
+    return SettingsCard(
+      title: 'Excluded tags',
+      padding: const EdgeInsets.only(
+        top: 8,
+        left: 12,
+        right: 12,
+        bottom: 8,
+      ),
+      child: ref.watch(blacklistTagEntriesProvider(ref.watchConfigFilter)).when(
+            data: (tags) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _buildTitle(tags),
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: 8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Exclude additional tags from this batch',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: colorScheme.hintColor,
+                        ),
+                      ),
+                      Wrap(
+                        runAlignment: WrapAlignment.center,
+                        spacing: 5,
+                        runSpacing: 5,
+                        children: [
+                          ...extraTags.map(
+                            (e) => Chip(
+                              backgroundColor: colorScheme.surfaceContainer,
+                              label: Text(e.replaceAll('_', ' ')),
+                              deleteIcon: Icon(
+                                Symbols.close,
+                                size: 16,
+                                color: colorScheme.error,
+                              ),
+                              onDeleted: () {
+                                notifier.removeBlacklistedTag(e);
+                              },
+                            ),
+                          ),
+                          IconButton(
+                            iconSize: 28,
+                            splashRadius: 20,
+                            onPressed: () {
+                              goToQuickSearchPage(
+                                context,
+                                ref: ref,
+                                initialConfig: config,
+                                onSubmitted: (context, text, _) {
+                                  Navigator.of(context).pop();
+                                  notifier.addBlacklistedTag(text);
+                                },
+                                onSelected: (tag, _) {
+                                  notifier.addBlacklistedTag(tag);
+                                },
+                              );
+                            },
+                            icon: const Icon(Symbols.add),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            error: (error, _) => Text(
+              error.toString(),
+              style: TextStyle(
+                color: colorScheme.error,
+              ),
+            ),
+            loading: () => const CircularProgressIndicator(),
+          ),
+    );
+  }
+
+  String _buildTitle(Set<BlacklistedTagEntry> tags) {
+    if (tags.isEmpty) {
+      return 'No blacklisted tags';
+    }
+
+    final grouped = tags.groupBy((e) => e.source);
+    final sb = StringBuffer();
+
+    for (final entry in grouped.entries) {
+      sb.write(
+        '• ${entry.value.length} tags from ${entry.key.displayString}\n',
+      );
+    }
+
+    return sb.toString().trim();
+  }
+}
+
+class SettingsCard extends StatelessWidget {
+  const SettingsCard({
+    required this.child,
+    super.key,
+    this.onTap,
+    this.margin,
+    this.padding,
+    this.title,
+  });
+
+  final Widget child;
+  final void Function()? onTap;
+  final EdgeInsetsGeometry? margin;
+  final EdgeInsetsGeometry? padding;
+  final String? title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final title = this.title;
+
+    return Container(
+      margin: margin ??
+          const EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title != null)
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: 8,
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    title.toUpperCase(),
+                    style: textTheme.titleSmall?.copyWith(
+                      color: colorScheme.hintColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Material(
+            color: colorScheme.surfaceContainerHigh,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: InkWell(
+              customBorder: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onTap: onTap,
+              child: Container(
+                padding: padding ??
+                    const EdgeInsets.symmetric(
+                      horizontal: 8,
+                    ),
+                child: child,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
