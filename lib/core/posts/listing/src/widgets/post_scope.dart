@@ -31,6 +31,24 @@ class PostScope<T extends Post> extends ConsumerStatefulWidget {
 
   final DuplicateCheckMode duplicateCheckMode;
 
+  static PostGridController<T>? maybeOf<T extends Post>(BuildContext context) {
+    final inherited =
+        context.dependOnInheritedWidgetOfExactType<_PostScope<T>>();
+
+    return inherited?.controller;
+  }
+
+  static PostGridController<T> of<T extends Post>(BuildContext context) {
+    final inherited =
+        context.dependOnInheritedWidgetOfExactType<_PostScope<T>>();
+
+    if (inherited == null) {
+      throw Exception('No PostScope found in the widget tree');
+    }
+
+    return inherited.controller;
+  }
+
   @override
   ConsumerState<PostScope<T>> createState() => _PostScopeState();
 }
@@ -54,9 +72,9 @@ class _PostScopeState<T extends Post> extends ConsumerState<PostScope<T>> {
 
         final bookmarks = settings.shouldFilterBookmarks
             ? ref.read(bookmarkProvider).bookmarks
-            : const IMap<String, Bookmark>.empty();
+            : const ISet<BookmarkUniqueId>.empty();
 
-        return bookmarks.keys.toSet();
+        return bookmarks.map((e) => e.url).toSet();
       } catch (_) {
         return {};
       }
@@ -66,8 +84,9 @@ class _PostScopeState<T extends Post> extends ConsumerState<PostScope<T>> {
 
   @override
   void dispose() {
-    super.dispose();
     _controller.dispose();
+
+    super.dispose();
   }
 
   @override
@@ -100,9 +119,72 @@ class _PostScopeState<T extends Post> extends ConsumerState<PostScope<T>> {
         },
       );
 
-    return widget.builder(
-      context,
-      _controller,
+    return _PostScope<T>(
+      controller: _controller,
+      child: widget.builder(context, _controller),
     );
+  }
+}
+
+class RawPostScope<T extends Post> extends ConsumerStatefulWidget {
+  const RawPostScope({
+    required this.fetcher,
+    required this.builder,
+    super.key,
+    this.duplicateCheckMode = DuplicateCheckMode.id,
+  });
+
+  final PostGridFetcher<T> fetcher;
+  final Widget Function(
+    BuildContext context,
+    PostGridController<T> controller,
+  ) builder;
+
+  final DuplicateCheckMode duplicateCheckMode;
+
+  @override
+  ConsumerState<RawPostScope<T>> createState() => _RawPostScopeState();
+}
+
+class _RawPostScopeState<T extends Post>
+    extends ConsumerState<RawPostScope<T>> {
+  late final _controller = PostGridController<T>(
+    fetcher: widget.fetcher,
+    duplicateTracker: PostDuplicateTracker<T>(
+      mode: widget.duplicateCheckMode,
+    ),
+    blacklistedTagsFetcher: () async => {},
+    pageMode: ref
+        .read(imageListingSettingsProvider.select((value) => value.pageMode)),
+    mountedChecker: () => mounted,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PostScope<T>(
+      controller: _controller,
+      child: widget.builder(context, _controller),
+    );
+  }
+}
+
+class _PostScope<T extends Post> extends InheritedWidget {
+  const _PostScope({
+    required this.controller,
+    required super.child,
+    super.key,
+  });
+  final PostGridController<T> controller;
+
+  @override
+  bool updateShouldNotify(_PostScope oldWidget) {
+    return controller != oldWidget.controller;
   }
 }
