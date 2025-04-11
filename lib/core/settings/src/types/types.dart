@@ -125,3 +125,9 @@ enum SearchBarScrollBehavior {
   autoHide,
   persistent,
 }
+
+enum AvifRenderingSupport {
+  auto,
+  enabled,
+  disabled,
+}

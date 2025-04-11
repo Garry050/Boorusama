@@ -99,6 +99,24 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
                 ),
               ),
             ),
+            const Divider(thickness: 1),
+            const SettingsHeader(label: 'Advanced'),
+            SettingsTile(
+              title: const Text('Support AVIF Rendering for Legacy devices'),
+              subtitle: const Text(
+                'For Android 11 and below. Requires app restart to take effect.',
+              ),
+              selectedOption: settings.avifRenderingSupport,
+              items: AvifRenderingSupport.values,
+              onChanged: (value) => notifer.updateSettings(
+                settings.copyWith(avifRenderingSupport: value),
+              ),
+              optionBuilder: (value) => Text(switch (value) {
+                AvifRenderingSupport.auto => 'Auto',
+                AvifRenderingSupport.enabled => 'Enabled',
+                AvifRenderingSupport.disabled => 'Disabled',
+              }),
+            ),
           ],
         ),
         SettingsCard(

@@ -28,10 +28,21 @@ bool shouldUseAvif(
   String url, {
   TargetPlatform? platform,
   int? androidVersion,
+  int? avifRenderingSupport,
 }) {
   final fileExt = _extractExtension(url);
   final isAvif = fileExt == 'avif';
 
+  // avifRenderingSupport: 0 = auto, 1 = enabled, 2 = disabled
+  if (avifRenderingSupport == 2) {
+    // Disabled: never use AVIF rendering
+    return false;
+  } else if (avifRenderingSupport == 1) {
+    // Enabled: always use AVIF rendering for AVIF files
+    return isAvif;
+  }
+
+  // Auto: use default behavior
   return switch (platform) {
     TargetPlatform.android =>
       androidVersion == null || androidVersion > 30 ? false : isAvif,
@@ -114,18 +125,21 @@ class ExtendedImage extends StatefulWidget {
     TargetPlatform? platform,
     int? androidVersion,
     ImageCacheManager? cacheManager,
+    int? avifRenderingSupport,
   })  : assert(cacheWidth == null || cacheWidth > 0),
         assert(cacheHeight == null || cacheHeight > 0),
         _avif = shouldUseAvif(
           url,
           platform: platform,
           androidVersion: androidVersion,
+          avifRenderingSupport: avifRenderingSupport,
         ),
         image = ExtendedResizeImage.resizeIfNeeded(
           provider: shouldUseAvif(
             url,
             platform: platform,
             androidVersion: androidVersion,
+            avifRenderingSupport: avifRenderingSupport,
           )
               ? CustomCachedNetworkAvifImage(
                   url,

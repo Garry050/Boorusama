@@ -45,6 +45,7 @@ class Settings extends Equatable {
     required this.videoPlayerEngine,
     required this.volumeKeyViewerNavigation,
     required this.searchBarScrollBehavior,
+    required this.avifRenderingSupport,
   });
 
   Settings.fromJson(Map<String, dynamic> json)
@@ -126,7 +127,10 @@ class Settings extends Equatable {
         volumeKeyViewerNavigation = json['volumeKeyViewerNavigation'] ?? false,
         reduceAnimations = json['reduceAnimations'] ?? false,
         swipeAreaToOpenSidebarPercentage =
-            json['swipeAreaToOpenSidebarPercentage'] ?? 5;
+            json['swipeAreaToOpenSidebarPercentage'] ?? 5,
+        avifRenderingSupport = json['avifRenderingSupport'] != null
+            ? AvifRenderingSupport.values[json['avifRenderingSupport']]
+            : AvifRenderingSupport.auto;
 
   static const defaultSettings = Settings(
     listing: ImageListingSettings(
@@ -175,6 +179,7 @@ class Settings extends Equatable {
     videoPlayerEngine: VideoPlayerEngine.auto,
     volumeKeyViewerNavigation: false,
     searchBarScrollBehavior: SearchBarScrollBehavior.autoHide,
+    avifRenderingSupport: AvifRenderingSupport.auto,
   );
 
   final ImageListingSettings listing;
@@ -235,6 +240,7 @@ class Settings extends Equatable {
   final bool volumeKeyViewerNavigation;
 
   final SearchBarScrollBehavior searchBarScrollBehavior;
+  final AvifRenderingSupport avifRenderingSupport;
 
   Settings copyWith({
     String? blacklistedTags,
@@ -270,6 +276,7 @@ class Settings extends Equatable {
     VideoPlayerEngine? videoPlayerEngine,
     bool? volumeKeyViewerNavigation,
     SearchBarScrollBehavior? searchBarScrollBehavior,
+    AvifRenderingSupport? avifRenderingSupport,
   }) =>
       Settings(
         listing: listing ?? this.listing,
@@ -319,6 +326,7 @@ class Settings extends Equatable {
             volumeKeyViewerNavigation ?? this.volumeKeyViewerNavigation,
         searchBarScrollBehavior:
             searchBarScrollBehavior ?? this.searchBarScrollBehavior,
+        avifRenderingSupport: avifRenderingSupport ?? this.avifRenderingSupport,
       );
 
   Map<String, dynamic> toJson() {
@@ -358,6 +366,7 @@ class Settings extends Equatable {
       'videoPlayerEngine': videoPlayerEngine.index,
       'volumeKeyViewerNavigation': volumeKeyViewerNavigation,
       'searchBarScrollBehavior': searchBarScrollBehavior.index,
+      'avifRenderingSupport': avifRenderingSupport.index,
     };
   }
 
@@ -395,6 +404,7 @@ class Settings extends Equatable {
         videoPlayerEngine,
         volumeKeyViewerNavigation,
         searchBarScrollBehavior,
+        avifRenderingSupport,
       ];
 
   bool get appLockEnabled => appLockType == AppLockType.biometrics;

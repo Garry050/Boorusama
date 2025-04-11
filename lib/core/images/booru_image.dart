@@ -64,6 +64,9 @@ class BooruImage extends ConsumerWidget {
           .select((value) => value.imageGridAspectRatio),
     );
     final deviceInfo = ref.watch(deviceInfoProvider);
+    final avifRenderingSupport = ref.watch(
+      settingsProvider.select((value) => value.avifRenderingSupport),
+    );
 
     return BooruRawImage(
       dio: dio,
@@ -89,6 +92,7 @@ class BooruImage extends ConsumerWidget {
       controller: controller,
       androidVersion: deviceInfo.androidDeviceInfo?.version.sdkInt,
       imageCacheManager: imageCacheManager,
+      avifRenderingSupport: avifRenderingSupport.index,
     );
   }
 }
@@ -114,6 +118,7 @@ class BooruRawImage extends StatelessWidget {
     this.controller,
     this.androidVersion,
     this.imageCacheManager,
+    this.avifRenderingSupport,
   });
 
   final Dio dio;
@@ -134,6 +139,7 @@ class BooruRawImage extends StatelessWidget {
   final ExtendedImageController? controller;
   final int? androidVersion;
   final ImageCacheManager? imageCacheManager;
+  final int? avifRenderingSupport;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +183,7 @@ class BooruRawImage extends StatelessWidget {
                   platform: Theme.of(context).platform,
                   androidVersion: androidVersion,
                   cacheManager: imageCacheManager,
+                  avifRenderingSupport: avifRenderingSupport,
                   placeholderWidget: placeholderWidget ??
                       placeholderUrl.toOption().fold(
                             () => imagePlaceHolder,
@@ -204,6 +211,7 @@ class BooruRawImage extends StatelessWidget {
                                         platform: Theme.of(context).platform,
                                         androidVersion: androidVersion,
                                         cacheManager: imageCacheManager,
+                                        avifRenderingSupport: avifRenderingSupport,
                                       )
                                     : imagePlaceHolder;
                               },
