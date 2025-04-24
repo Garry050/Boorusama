@@ -30,6 +30,7 @@ class RawPostGrid<T extends Post> extends StatefulWidget {
     required this.gridHeader,
     required this.topPageIndicator,
     required this.bottomPageIndicator,
+    required this.scrollToTopButton,
     required this.body,
     required this.controller,
     required this.onNextPage,
@@ -65,10 +66,11 @@ class RawPostGrid<T extends Post> extends StatefulWidget {
   final Widget gridHeader;
   final Widget topPageIndicator;
   final Widget bottomPageIndicator;
+  final Widget scrollToTopButton;
 
   final String? blacklistedIdString;
 
-  final MultiSelectController<T>? multiSelectController;
+  final MultiSelectController? multiSelectController;
 
   final PostGridController<T> controller;
 
@@ -79,7 +81,7 @@ class RawPostGrid<T extends Post> extends StatefulWidget {
 class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
     with TickerProviderStateMixin, KeyboardListenerMixin {
   late final AutoScrollController _autoScrollController;
-  late final MultiSelectController<T> _multiSelectController;
+  late final MultiSelectController _multiSelectController;
 
   PostGridController<T> get controller => widget.controller;
 
@@ -94,7 +96,7 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
     super.initState();
     _autoScrollController = widget.scrollController ?? AutoScrollController();
     _multiSelectController =
-        widget.multiSelectController ?? MultiSelectController<T>();
+        widget.multiSelectController ?? MultiSelectController();
 
     controller.addListener(_onControllerChange);
     if (widget.refreshAtStart) {
@@ -160,10 +162,6 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
     });
   }
 
-  void _onScrollToTop() {
-    _autoScrollController.jumpTo(0);
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -177,9 +175,9 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
           left: false,
           child: child,
         ),
-        child: MultiSelectWidget<T>(
+        child: MultiSelectWidget(
           footer: widget.footer,
-          multiSelectController: _multiSelectController,
+          controller: _multiSelectController,
           header: widget.header != null
               ? widget.header!
               : AppBar(
@@ -190,7 +188,8 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
                   ),
                   actions: [
                     IconButton(
-                      onPressed: () => _multiSelectController.selectAll(items),
+                      onPressed: () => _multiSelectController
+                          .selectAll(items.map((e) => e.id).toList()),
                       icon: const Icon(Symbols.select_all),
                     ),
                     IconButton(
@@ -206,27 +205,7 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
                         : Text('${selected.length} Items selected'),
                   ),
                 ),
-          child: Scaffold(
-            floatingActionButton: ValueListenableBuilder(
-              valueListenable: _multiSelectController.multiSelectNotifier,
-              builder: (_, multiSelect, __) => Padding(
-                padding: multiSelect
-                    ? const EdgeInsets.only(bottom: 48)
-                    : EdgeInsets.zero,
-                child: ScrollToTop(
-                  scrollController: _autoScrollController,
-                  onBottomReached: () {
-                    if (controller.pageMode == PageMode.infinite && hasMore) {
-                      widget.onLoadMore?.call();
-                      controller.fetchMore();
-                    }
-                  },
-                  child: BooruScrollToTopButton(
-                    onPressed: _onScrollToTop,
-                  ),
-                ),
-              ),
-            ),
+          child: _Scaffold(
             body: ConditionalParentWidget(
               condition: kPreferredLayout.isMobile,
               conditionalBuilder: (child) => RefreshIndicator(
@@ -249,14 +228,10 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
                 // ignore: avoid_redundant_argument_values
                 enableKeyboardScrolling: false,
                 enableMMBScrolling: true,
-                child: ConditionalParentWidget(
-                  // Should remove this later
-                  condition: true,
-                  conditionalBuilder: (child) => ValueListenableBuilder(
-                    valueListenable: refreshing,
-                    builder: (_, refreshing, __) =>
-                        _buildPaginatedSwipe(child, refreshing),
-                  ),
+                child: ValueListenableBuilder(
+                  valueListenable: refreshing,
+                  builder: (_, refreshing, child) =>
+                      _buildPaginatedSwipe(child!, refreshing),
                   child: _CustomScrollView(
                     controller: _autoScrollController,
                     slivers: [
@@ -373,6 +348,7 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
                 ),
               ),
             ),
+            floatingActionButton: widget.scrollToTopButton,
           ),
         ),
       ),
@@ -434,6 +410,30 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
       onLeftSwipe: (_) => widget.onNextPage(),
       onRightSwipe: (_) => widget.onPreviousPage(),
       child: child,
+    );
+  }
+}
+
+class _Scaffold extends StatelessWidget {
+  const _Scaffold({
+    required this.body,
+    required this.floatingActionButton,
+  });
+
+  final Widget body;
+  final Widget floatingActionButton;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: body,
+          ),
+          floatingActionButton,
+        ],
+      ),
     );
   }
 }
@@ -520,7 +520,7 @@ class _SliverBottomGridPadding extends StatelessWidget {
     required this.pageMode,
   });
 
-  final MultiSelectController<Post> multiSelectController;
+  final MultiSelectController multiSelectController;
   final PageMode pageMode;
 
   @override

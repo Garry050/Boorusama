@@ -41,15 +41,14 @@ import 'selected_tag_list_with_data.dart';
 typedef IndexedSelectableSearchWidgetBuilder<T extends Post> = Widget Function(
   BuildContext context,
   int index,
-  MultiSelectController<T> multiSelectController,
+  MultiSelectController multiSelectController,
   AutoScrollController autoScrollController,
   PostGridController<T> controller,
   bool useHero,
 );
 
-const _kSearchBarHeight = kToolbarHeight * 1.2;
+const _kSearchBarHeight = kToolbarHeight;
 const _kSelectedTagHeight = 48.0;
-const _kViewTopPadding = 8.0;
 const _kMultiSelectTopHeight = kToolbarHeight;
 
 double _calcBaseSearchHeight(List<TagSearchItem> tags) {
@@ -119,7 +118,7 @@ class _SearchPageScaffoldState<T extends Post>
     duration: const Duration(milliseconds: 300),
   );
 
-  final _multiSelectController = MultiSelectController<T>();
+  final _multiSelectController = MultiSelectController();
 
   var _hasScrolledToInitialPosition = false;
 
@@ -144,7 +143,10 @@ class _SearchPageScaffoldState<T extends Post>
     if (widget.initialPage != null) {
       _controller.skipToResultWithTag('');
     } else if (widget.initialQuery != null) {
-      _controller.skipToResultWithTag(widget.initialQuery!);
+      _controller.skipToResultWithTag(
+        widget.initialQuery!,
+        queryType: widget.params.initialQueryType,
+      );
       ref
           .read(searchHistoryProvider.notifier)
           .addHistoryFromController(_tagsController);
@@ -268,16 +270,16 @@ class _SearchPageScaffoldState<T extends Post>
                         : _Landing(
                             metatags: widget.metatags,
                             trending: widget.trending,
-                            searchBarAnimController: _searchBarAnimController,
+                            multiSelectController: _multiSelectController,
                           );
                   },
                 ),
                 _SearchOptionsView(
                   metatags: widget.metatags,
-                  searchBarAnimController: _searchBarAnimController,
+                  multiSelectController: _multiSelectController,
                 ),
                 _SearchSuggestions(
-                  searchBarAnimController: _searchBarAnimController,
+                  multiSelectController: _multiSelectController,
                 ),
                 _SearchBarPositioned(
                   multiSelectController: _multiSelectController,
@@ -303,15 +305,16 @@ class _SearchPageScaffoldState<T extends Post>
     final persistentSearchBar = ref.watch(
       settingsProvider.select((value) => value.persistSearchBar),
     );
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (persistentSearchBar) return false;
         if (notification.depth != 0) return false;
 
-        final viewPadding = _kSearchBarPosition == SearchBarPosition.bottom
+        final viewPadding = searchBarPosition == SearchBarPosition.bottom
             ? MediaQuery.viewPaddingOf(context).bottom
-            : _kViewTopPadding;
+            : 0;
 
         final searchRegionHeight =
             _calcSearchRegionHeight(_tagsController.value) + viewPadding;
@@ -378,91 +381,171 @@ class _SearchPageScaffoldState<T extends Post>
     BuildContext context,
     PostGridController<T> controller,
   ) {
-    return _SearchRegionSafeArea(
-      searchBarAnimController: _searchBarAnimController,
-      child: ColoredBox(
-        color: Theme.of(context).colorScheme.surface,
-        child: SafeArea(
-          bottom: false,
-          child: PostGrid<T>(
-            multiSelectController: _multiSelectController,
-            scrollController: _scrollController,
-            controller: controller,
-            itemBuilder: widget.itemBuilder != null
-                ? (
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
+
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surface,
+      child: SafeArea(
+        bottom: false,
+        child: PostGrid<T>(
+          multiSelectController: _multiSelectController,
+          scrollController: _scrollController,
+          controller: controller,
+          itemBuilder: widget.itemBuilder != null
+              ? (
+                  context,
+                  index,
+                  multiSelectController,
+                  scrollController,
+                  useHero,
+                ) {
+                  return widget.itemBuilder!(
                     context,
                     index,
                     multiSelectController,
-                    scrollController,
+                    _scrollController,
+                    controller,
                     useHero,
-                  ) {
-                    return widget.itemBuilder!(
-                      context,
-                      index,
-                      multiSelectController,
-                      _scrollController,
-                      controller,
-                      useHero,
-                    );
-                  }
-                : null,
-            sliverHeaders: [
-              const SearchResultAnalyticsAnchor(),
-              if (widget.extraHeaders != null)
-                ...widget.extraHeaders!(
-                  context,
-                  controller,
-                ),
+                  );
+                }
+              : null,
+          scrollToTopButton: ValueListenableBuilder(
+            valueListenable: _tagsController,
+            builder: (_, tags, __) {
+              return _ScrollToTopButtonPadding(
+                multiSelectController: _multiSelectController,
+                searchBarAnimController: _searchBarAnimController,
+                builder: (context, value) {
+                  return PostGridScrollToTopButton(
+                    controller: controller,
+                    multiSelectController: _multiSelectController,
+                    autoScrollController: _scrollController,
+                    bottomPadding: (1 - value) * _calcSearchRegionHeight(tags),
+                  );
+                },
+              );
+            },
+          ),
+          sliverHeaders: [
+            if (searchBarPosition == SearchBarPosition.top)
               SliverToBoxAdapter(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ValueListenableBuilder(
-                      valueListenable: _controller.tagString,
-                      builder: (context, value, _) =>
-                          ResultHeaderFromController(
-                        controller: controller,
-                        onRefresh: null,
-                        hasCount:
-                            ref.watchConfigAuth.booruType.postCountMethod ==
-                                PostCountMethod.search,
-                      ),
-                    ),
-                    const Spacer(),
-                  ],
+                child: _Displacement(
+                  multiSelectController: _multiSelectController,
                 ),
               ),
-            ],
-          ),
+            const SearchResultAnalyticsAnchor(),
+            if (widget.extraHeaders != null)
+              ...widget.extraHeaders!(
+                context,
+                controller,
+              ),
+            SliverToBoxAdapter(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ValueListenableBuilder(
+                    valueListenable: _controller.tagString,
+                    builder: (context, value, _) => ResultHeaderFromController(
+                      controller: controller,
+                      onRefresh: null,
+                      hasCount: ref.watchConfigAuth.booruType.postCountMethod ==
+                          PostCountMethod.search,
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _SearchRegionSafeArea extends StatelessWidget {
+class _SearchRegionSafeArea extends ConsumerWidget {
   const _SearchRegionSafeArea({
     required this.child,
-    required this.searchBarAnimController,
+    required this.multiSelectController,
   });
 
   final Widget child;
-  final AnimationController searchBarAnimController;
+  final MultiSelectController multiSelectController;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final displacement = _Displacement(
-      searchBarAnimController: searchBarAnimController,
+      multiSelectController: multiSelectController,
     );
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
 
     return Column(
       children: [
-        if (_kSearchBarPosition == SearchBarPosition.top) displacement,
+        if (searchBarPosition == SearchBarPosition.top) displacement,
         Expanded(
           child: child,
         ),
-        if (_kSearchBarPosition == SearchBarPosition.bottom) displacement,
+        if (searchBarPosition == SearchBarPosition.bottom) displacement,
       ],
+    );
+  }
+}
+
+class _ScrollToTopButtonPadding extends ConsumerStatefulWidget {
+  const _ScrollToTopButtonPadding({
+    required this.builder,
+    required this.searchBarAnimController,
+    required this.multiSelectController,
+  });
+
+  final Widget Function(
+    BuildContext context,
+    double value,
+  ) builder;
+
+  final AnimationController searchBarAnimController;
+  final MultiSelectController multiSelectController;
+
+  @override
+  ConsumerState<_ScrollToTopButtonPadding> createState() =>
+      __ScrollToTopButtonPaddingState();
+}
+
+class __ScrollToTopButtonPaddingState
+    extends ConsumerState<_ScrollToTopButtonPadding> {
+  late final CurvedAnimation _animation = CurvedAnimation(
+    parent: widget.searchBarAnimController,
+    curve: Curves.easeInOut,
+  );
+
+  @override
+  void dispose() {
+    _animation.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
+
+    return ValueListenableBuilder(
+      valueListenable: widget.multiSelectController.multiSelectNotifier,
+      builder: (_, multiSelect, __) {
+        if (multiSelect || searchBarPosition == SearchBarPosition.top) {
+          return widget.builder(context, 1);
+        }
+
+        return AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            return widget.builder(
+              context,
+              _animation.value,
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -482,9 +565,10 @@ class _SearchRegion extends ConsumerWidget {
     final tagsController = controller.tagsController;
     final theme = Theme.of(context);
     final parentRoute = ModalRoute.of(context);
-    final autoFocusSearchBar = ref.read(
+    final autoFocusSearchBar = ref.watch(
       settingsProvider.select((value) => value.autoFocusSearchBar),
     );
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
 
     final children = [
       SizedBox(
@@ -494,12 +578,12 @@ class _SearchRegion extends ConsumerWidget {
           second: controller.didSearchOnce,
           builder: (_, state, searchOnce) {
             return SearchAppBar(
-              onTapOutside: _kSearchBarPosition == SearchBarPosition.bottom &&
-                      searchOnce &&
-                      state == SearchState.initial
-                  ? null
-                  // When search bar is at the bottom, keyboard will be kept open for better UX unless the app switches to results
-                  : () {},
+              onTapOutside: switch (searchBarPosition) {
+                SearchBarPosition.top => null,
+                // When search bar is at the bottom, keyboard will be kept open for better UX unless the app switches to results
+                SearchBarPosition.bottom =>
+                  searchOnce && state == SearchState.initial ? null : () {},
+              },
               onSubmitted: (value) => controller.submit(value),
               trailingSearchButton: _buildTrailingButton(context),
               innerSearchButton: _buildSearchButton(context),
@@ -519,14 +603,14 @@ class _SearchRegion extends ConsumerWidget {
     final region = ColoredBox(
       color: theme.colorScheme.surface,
       child: Column(
-        children: switch (_kSearchBarPosition) {
+        children: switch (searchBarPosition) {
           SearchBarPosition.top => children,
           SearchBarPosition.bottom => children.reversed.toList(),
         },
       ),
     );
 
-    return _kSearchBarPosition == SearchBarPosition.top
+    return searchBarPosition == SearchBarPosition.top
         ? region
         : Column(
             mainAxisSize: MainAxisSize.min,
@@ -609,21 +693,16 @@ class _SearchRegionBottomDisplacement extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
     final viewPadding = MediaQuery.viewPaddingOf(context).bottom;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return SizedBox(
+    return Container(
+      color: colorScheme.surface,
       height: max(viewInsets, viewPadding),
     );
   }
 }
 
-enum SearchBarPosition {
-  top,
-  bottom,
-}
-
-const _kSearchBarPosition = SearchBarPosition.top;
-
-class _SearchBarPositioned extends StatefulWidget {
+class _SearchBarPositioned extends ConsumerStatefulWidget {
   const _SearchBarPositioned({
     required this.searchBarAnimController,
     required this.multiSelectController,
@@ -635,10 +714,11 @@ class _SearchBarPositioned extends StatefulWidget {
   final MultiSelectController multiSelectController;
 
   @override
-  State<_SearchBarPositioned> createState() => _SearchBarPositionedState();
+  ConsumerState<_SearchBarPositioned> createState() =>
+      __SearchBarPositionedState();
 }
 
-class _SearchBarPositionedState extends State<_SearchBarPositioned> {
+class __SearchBarPositionedState extends ConsumerState<_SearchBarPositioned> {
   late final _searchBarCurve = CurvedAnimation(
     parent: widget.searchBarAnimController,
     curve: Curves.easeInOut,
@@ -654,6 +734,7 @@ class _SearchBarPositionedState extends State<_SearchBarPositioned> {
   @override
   Widget build(BuildContext context) {
     final controller = InheritedSearchPageController.of(context);
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
 
     return MultiValueListenableBuilder4(
       first: controller.didSearchOnce,
@@ -661,32 +742,31 @@ class _SearchBarPositionedState extends State<_SearchBarPositioned> {
       third: controller.tagsController,
       fourth: widget.multiSelectController.multiSelectNotifier,
       builder: (_, searchOnce, state, selectedTags, multiSelect) {
-        final searchRegionHeight = _calcSearchRegionHeight(selectedTags);
-        final viewPadding = _kSearchBarPosition == SearchBarPosition.bottom
+        final baseSearchRegionHeight = _calcSearchRegionHeight(selectedTags);
+        final viewPadding = searchBarPosition == SearchBarPosition.bottom
             ? MediaQuery.viewPaddingOf(context).bottom
             : 0;
+        final searchRegionHeight = baseSearchRegionHeight + viewPadding;
 
         return NotificationListener<ScrollNotification>(
           onNotification: (notification) => true,
           child: AnimatedBuilder(
             animation: _searchBarCurve,
-            builder: (context, child) {
+            builder: (context, _) {
               final padding = multiSelect
                   ? -searchRegionHeight
                   : searchOnce
                       ? state == SearchState.suggestions
                           ? 0.0
-                          : -(_searchBarCurve.value *
-                              (searchRegionHeight + viewPadding))
+                          : -(_searchBarCurve.value * searchRegionHeight)
                       : 0.0;
 
               return Positioned(
-                bottom: _kSearchBarPosition == SearchBarPosition.bottom
+                bottom: searchBarPosition == SearchBarPosition.bottom
                     ? padding
                     : null,
-                top: _kSearchBarPosition == SearchBarPosition.top
-                    ? padding
-                    : null,
+                top:
+                    searchBarPosition == SearchBarPosition.top ? padding : null,
                 left: 0,
                 right: 0,
                 child: widget.child,
@@ -699,39 +779,28 @@ class _SearchBarPositionedState extends State<_SearchBarPositioned> {
   }
 }
 
-class _Displacement extends StatefulWidget {
+class _Displacement extends ConsumerWidget {
   const _Displacement({
-    required this.searchBarAnimController,
+    required this.multiSelectController,
   });
 
-  final AnimationController searchBarAnimController;
+  final MultiSelectController multiSelectController;
 
   @override
-  State<_Displacement> createState() => __DisplacementState();
-}
-
-class __DisplacementState extends State<_Displacement> {
-  late final _searchBarCurve = CurvedAnimation(
-    parent: widget.searchBarAnimController,
-    curve: Curves.easeInOut,
-  );
-
-  @override
-  void dispose() {
-    _searchBarCurve.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final controller = InheritedSearchPageController.of(context);
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
 
-    return MultiValueListenableBuilder3(
+    return MultiValueListenableBuilder4(
       first: controller.tagsController,
       second: controller.state,
       third: controller.didSearchOnce,
-      builder: (_, value, state, searchOnce) {
+      fourth: multiSelectController.multiSelectNotifier,
+      builder: (_, value, state, searchOnce, multiSelect) {
+        if (multiSelect) {
+          return const SizedBox.shrink();
+        }
+
         final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
         final viewPadding = MediaQuery.viewPaddingOf(context).bottom;
         final padding = max(viewInsets, viewPadding);
@@ -742,30 +811,23 @@ class __DisplacementState extends State<_Displacement> {
                 : padding
             : padding;
 
-        final baseHeight = _kSearchBarPosition == SearchBarPosition.bottom
+        final baseHeight = searchBarPosition == SearchBarPosition.bottom
             ? effectivePadding + _calcBaseSearchHeight(value)
-            : _kViewTopPadding + _calcBaseSearchHeight(value);
+            : _calcBaseSearchHeight(value);
 
-        return RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _searchBarCurve,
-            builder: (context, _) {
-              return SizedBox(
-                height: baseHeight * (1 - _searchBarCurve.value),
-              );
-            },
-          ),
+        return SizedBox(
+          height: baseHeight,
         );
       },
     );
   }
 }
 
-class _Landing extends StatelessWidget {
+class _Landing extends ConsumerWidget {
   const _Landing({
     required this.metatags,
     required this.trending,
-    required this.searchBarAnimController,
+    required this.multiSelectController,
   });
 
   final Widget? Function(
@@ -778,16 +840,17 @@ class _Landing extends StatelessWidget {
     SearchPageController controller,
   )? trending;
 
-  final AnimationController searchBarAnimController;
+  final MultiSelectController multiSelectController;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final controller = InheritedSearchPageController.of(context);
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
 
     return _SearchRegionSafeArea(
-      searchBarAnimController: searchBarAnimController,
+      multiSelectController: multiSelectController,
       child: SearchLandingView(
-        reverse: _kSearchBarPosition == SearchBarPosition.bottom,
+        reverse: searchBarPosition == SearchBarPosition.bottom,
         onHistoryTap: (value) {
           controller.tapHistoryTag(value);
         },
@@ -807,18 +870,19 @@ class _Landing extends StatelessWidget {
 
 class _SearchSuggestions extends ConsumerWidget {
   const _SearchSuggestions({
-    required this.searchBarAnimController,
+    required this.multiSelectController,
   });
 
-  final AnimationController searchBarAnimController;
+  final MultiSelectController multiSelectController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = InheritedSearchPageController.of(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
 
     return _SearchRegionSafeArea(
-      searchBarAnimController: searchBarAnimController,
+      multiSelectController: multiSelectController,
       child: MultiValueListenableBuilder2(
         first: controller.state,
         second: controller.didSearchOnce,
@@ -845,8 +909,14 @@ class _SearchSuggestions extends ConsumerWidget {
                               ref.watch(suggestionProvider(query.text));
 
                           return TagSuggestionItems(
+                            padding: const EdgeInsets.only(
+                              left: 12,
+                              right: 12,
+                              top: 8,
+                              bottom: 16,
+                            ),
                             reverse:
-                                _kSearchBarPosition == SearchBarPosition.bottom,
+                                searchBarPosition == SearchBarPosition.bottom,
                             config: ref.watchConfigAuth,
                             tags: suggestionTags,
                             currentQuery: query.text,
@@ -874,20 +944,21 @@ class _SearchSuggestions extends ConsumerWidget {
 class _SearchOptionsView extends ConsumerWidget {
   const _SearchOptionsView({
     required this.metatags,
-    required this.searchBarAnimController,
+    required this.multiSelectController,
   });
 
   final Widget? Function(BuildContext context, SearchPageController controller)?
       metatags;
-  final AnimationController searchBarAnimController;
+  final MultiSelectController multiSelectController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = InheritedSearchPageController.of(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final searchBarPosition = ref.watch(searchBarPositionProvider);
 
     return _SearchRegionSafeArea(
-      searchBarAnimController: searchBarAnimController,
+      multiSelectController: multiSelectController,
       child: ValueListenableBuilder(
         valueListenable: controller.state,
         builder: (context, state, child) => state == SearchState.options
@@ -913,7 +984,7 @@ class _SearchOptionsView extends ConsumerWidget {
               )
             : const SizedBox.shrink(),
         child: SearchLandingView(
-          reverse: _kSearchBarPosition == SearchBarPosition.bottom,
+          reverse: searchBarPosition == SearchBarPosition.bottom,
           scrollController: ModalScrollController.of(
             context,
           ),
