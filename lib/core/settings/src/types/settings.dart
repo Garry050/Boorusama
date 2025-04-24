@@ -45,6 +45,7 @@ class Settings extends Equatable {
     required this.videoPlayerEngine,
     required this.volumeKeyViewerNavigation,
     required this.searchBarScrollBehavior,
+    required this.searchBarPosition,
     required this.avifRenderingSupport,
   });
 
@@ -124,6 +125,9 @@ class Settings extends Equatable {
         searchBarScrollBehavior = json['searchBarScrollBehavior'] != null
             ? SearchBarScrollBehavior.values[json['searchBarScrollBehavior']]
             : SearchBarScrollBehavior.autoHide,
+        searchBarPosition = json['searchBarPosition'] != null
+            ? SearchBarPosition.values[json['searchBarPosition']]
+            : SearchBarPosition.top,
         volumeKeyViewerNavigation = json['volumeKeyViewerNavigation'] ?? false,
         reduceAnimations = json['reduceAnimations'] ?? false,
         swipeAreaToOpenSidebarPercentage =
@@ -179,6 +183,7 @@ class Settings extends Equatable {
     videoPlayerEngine: VideoPlayerEngine.auto,
     volumeKeyViewerNavigation: false,
     searchBarScrollBehavior: SearchBarScrollBehavior.autoHide,
+    searchBarPosition: SearchBarPosition.top,
     avifRenderingSupport: AvifRenderingSupport.auto,
   );
 
@@ -242,6 +247,8 @@ class Settings extends Equatable {
   final SearchBarScrollBehavior searchBarScrollBehavior;
   final AvifRenderingSupport avifRenderingSupport;
 
+  final SearchBarPosition searchBarPosition;
+
   Settings copyWith({
     String? blacklistedTags,
     String? language,
@@ -276,6 +283,7 @@ class Settings extends Equatable {
     VideoPlayerEngine? videoPlayerEngine,
     bool? volumeKeyViewerNavigation,
     SearchBarScrollBehavior? searchBarScrollBehavior,
+    SearchBarPosition? searchBarPosition,
     AvifRenderingSupport? avifRenderingSupport,
   }) =>
       Settings(
@@ -326,6 +334,7 @@ class Settings extends Equatable {
             volumeKeyViewerNavigation ?? this.volumeKeyViewerNavigation,
         searchBarScrollBehavior:
             searchBarScrollBehavior ?? this.searchBarScrollBehavior,
+        searchBarPosition: searchBarPosition ?? this.searchBarPosition,
         avifRenderingSupport: avifRenderingSupport ?? this.avifRenderingSupport,
       );
 
@@ -366,6 +375,7 @@ class Settings extends Equatable {
       'videoPlayerEngine': videoPlayerEngine.index,
       'volumeKeyViewerNavigation': volumeKeyViewerNavigation,
       'searchBarScrollBehavior': searchBarScrollBehavior.index,
+      'searchBarPosition': searchBarPosition.index,
       'avifRenderingSupport': avifRenderingSupport.index,
     };
   }
@@ -404,6 +414,7 @@ class Settings extends Equatable {
         videoPlayerEngine,
         volumeKeyViewerNavigation,
         searchBarScrollBehavior,
+        searchBarPosition,
         avifRenderingSupport,
       ];
 

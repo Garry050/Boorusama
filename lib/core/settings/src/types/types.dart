@@ -126,6 +126,11 @@ enum SearchBarScrollBehavior {
   persistent,
 }
 
+enum SearchBarPosition {
+  top,
+  bottom,
+}
+
 enum AvifRenderingSupport {
   auto,
   enabled,
