@@ -7,7 +7,6 @@ import '../../../../posts/post/post.dart';
 import '../../../../posts/sources/source.dart';
 import '../../types/bookmark.dart';
 import '../../types/bookmark_repository.dart';
-import '../../types/image_url_resolver.dart';
 import '../bookmark_convert.dart';
 import 'object.dart';
 
@@ -27,6 +26,7 @@ class BookmarkHiveRepository implements BookmarkRepository {
 
     final favoriteHiveObject = BookmarkHiveObject(
       booruId: booruId,
+      postId: post.id,
       createdAt: now,
       updatedAt: now,
       thumbnailUrl: post.thumbnailImageUrl,
@@ -39,6 +39,7 @@ class BookmarkHiveRepository implements BookmarkRepository {
       tags: post.tags.toList(),
       realSourceUrl: post.source.url,
       format: post.format,
+      metadata: Bookmark.toMetadata(post.metadata),
     );
     final id = await _box.add(favoriteHiveObject);
 
