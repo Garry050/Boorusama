@@ -7,7 +7,6 @@ import '../../../posts/post/post.dart';
 import '../../../posts/rating/rating.dart';
 import '../../../posts/sources/source.dart';
 import '../types/bookmark.dart';
-import '../types/image_url_resolver.dart';
 import 'hive/object.dart';
 
 // map BoxError to BookmarkGetError
@@ -40,6 +39,8 @@ Either<BookmarkGetError, List<Bookmark>> tryMapBookmarkHiveObjectsToBookmarks(
               realSourceUrl: hiveObject.realSourceUrl,
               format: hiveObject.format,
               imageUrlResolver: imageUrlResolver(hiveObject.booruId),
+              postId: hiveObject.postId,
+              metadata: hiveObject.metadata ?? {},
             ),
           )
           .toList(),
@@ -70,6 +71,8 @@ Either<BookmarkGetError, Bookmark> tryMapBookmarkHiveObjectToBookmark(
         realSourceUrl: hiveObject.realSourceUrl,
         format: hiveObject.format,
         imageUrlResolver: imageUrlResolver(hiveObject.booruId),
+        postId: hiveObject.postId,
+        metadata: hiveObject.metadata ?? {},
       ),
       (o, s) => BookmarkGetError.nullField,
     );
@@ -89,6 +92,8 @@ BookmarkHiveObject favoriteToHiveObject(Bookmark bookmark) {
     tags: bookmark.tags.toList(),
     realSourceUrl: bookmark.realSourceUrl,
     format: bookmark.format,
+    postId: bookmark.postId,
+    metadata: bookmark.metadata,
   );
 }
 
@@ -118,10 +123,12 @@ class BookmarkPost extends SimplePost {
     required this.realSourceUrl,
     required super.metadata,
     required this.bookmark,
+    required this.originalPostId,
   });
 
   final PostSource realSourceUrl;
   final Bookmark bookmark;
+  final int? originalPostId;
 }
 
 extension BookmarkToPost on Bookmark {
@@ -150,10 +157,11 @@ extension BookmarkToPost on Bookmark {
         realSourceUrl: PostSource.from(realSourceUrl),
         metadata: null,
         bookmark: this,
+        originalPostId: postId,
       );
 }
 
-extension PostToBookmark on Post {
+extension PostToBookmark on BookmarkPost {
   Bookmark toBookmark({
     required ImageUrlResolver Function(int? booruId) imageUrlResolver,
   }) =>
@@ -173,5 +181,7 @@ extension PostToBookmark on Post {
         realSourceUrl: source.url,
         format: format,
         imageUrlResolver: imageUrlResolver(-1),
+        postId: originalPostId,
+        metadata: Bookmark.toMetadata(metadata),
       );
 }
