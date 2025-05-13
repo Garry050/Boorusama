@@ -174,6 +174,18 @@ class _ImageListingSettingsSectionState
             ),
           ),
         ),
+        SwitchListTile(
+          title: const Text('Autoplay GIFs').tr(),
+          value: settings.animatedPostsDefaultState ==
+              AnimatedPostsDefaultState.autoplay,
+          onChanged: (value) => _onUpdate(
+            settings.copyWith(
+              animatedPostsDefaultState: value
+                  ? AnimatedPostsDefaultState.autoplay
+                  : AnimatedPostsDefaultState.static,
+            ),
+          ),
+        ),
         const SizedBox(height: 4),
         _buildSpacingSlider(settings),
         const SizedBox(height: 10),
@@ -183,8 +195,6 @@ class _ImageListingSettingsSectionState
         const SizedBox(height: 10),
         _buildAspectRatioSlider(settings),
         const SizedBox(height: 10),
-        const Divider(thickness: 1),
-        const LayoutSection(),
         ...widget.extraChildren,
       ],
     );

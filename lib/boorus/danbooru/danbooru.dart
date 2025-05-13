@@ -17,7 +17,6 @@ import '../../core/configs/create.dart';
 import '../../core/configs/manage.dart';
 import '../../core/downloads/downloader.dart';
 import '../../core/downloads/filename.dart';
-import '../../core/downloads/urls.dart';
 import '../../core/foundation/url_launcher.dart';
 import '../../core/home/custom_home.dart';
 import '../../core/home/user_custom_home_builder.dart';
@@ -29,6 +28,7 @@ import '../../core/posts/details/widgets.dart';
 import '../../core/posts/details_manager/types.dart';
 import '../../core/posts/details_parts/widgets.dart';
 import '../../core/posts/favorites/providers.dart';
+import '../../core/posts/listing/list.dart';
 import '../../core/posts/listing/providers.dart';
 import '../../core/posts/listing/widgets.dart';
 import '../../core/posts/post/post.dart';
@@ -42,6 +42,7 @@ import '../../core/posts/sources/source.dart';
 import '../../core/posts/statistics/stats.dart';
 import '../../core/posts/statistics/widgets.dart';
 import '../../core/search/queries/query.dart';
+import '../../core/settings/providers.dart';
 import '../../core/settings/settings.dart';
 import '../../core/tags/metatag/providers.dart';
 import '../../core/tags/tag/routes.dart';
@@ -195,13 +196,6 @@ class DanbooruBuilder
   @override
   CharacterPageBuilder? get characterPageBuilder => (context, characterName) =>
       DanbooruCharacterPage(characterName: characterName);
-
-  @override
-  GridThumbnailUrlBuilder get gridThumbnailUrlBuilder =>
-      (imageQuality, post) => castOrNull<DanbooruPost>(post).toOption().fold(
-            () => post.thumbnailImageUrl,
-            (post) => post.thumbnailFromImageQuality(imageQuality),
-          );
 
   @override
   CommentPageBuilder? get commentPageBuilder =>
@@ -471,7 +465,7 @@ bool handleDanbooruGestureAction(
   return true;
 }
 
-class DanbooruRepository implements BooruRepository {
+class DanbooruRepository extends BooruRepositoryDefault {
   const DanbooruRepository({
     required this.ref,
   });
@@ -502,11 +496,6 @@ class DanbooruRepository implements BooruRepository {
   @override
   TagRepository tag(BooruConfigAuth config) {
     return ref.read(danbooruTagRepoProvider(config));
-  }
-
-  @override
-  DownloadFileUrlExtractor downloadFileUrlExtractor(BooruConfigAuth config) {
-    return const UrlInsidePostExtractor();
   }
 
   @override
@@ -545,8 +534,18 @@ class DanbooruRepository implements BooruRepository {
   }
 
   @override
-  ImageUrlResolver imageUrlResolver() {
-    return const DefaultImageUrlResolver();
+  GridThumbnailUrlGenerator gridThumbnailUrlGenerator() {
+    final imageQuality = ref.watch(
+      imageListingSettingsProvider.select((v) => v.imageQuality),
+    );
+    final animatedPostsDefaultState = ref.watch(
+      imageListingSettingsProvider.select((v) => v.animatedPostsDefaultState),
+    );
+
+    return DanbooruGridThumbnailUrlGenerator(
+      imageQuality: imageQuality,
+      animatedPostsDefaultState: animatedPostsDefaultState,
+    );
   }
 }
 
@@ -617,5 +616,38 @@ class DanbooruParser extends BooruParser {
       protocol: parseProtocol(data['protocol']),
       sites: sites,
     );
+  }
+}
+
+class DanbooruGridThumbnailUrlGenerator implements GridThumbnailUrlGenerator {
+  DanbooruGridThumbnailUrlGenerator({
+    required this.imageQuality,
+    required this.animatedPostsDefaultState,
+  });
+
+  final ImageQuality imageQuality;
+  final AnimatedPostsDefaultState animatedPostsDefaultState;
+
+  @override
+  String generateThumbnailUrl(Post post) {
+    return castOrNull<DanbooruPost>(post).toOption().fold(
+          () => DefaultGridThumbnailUrlGenerator(
+            imageQuality: imageQuality,
+            animatedPostsDefaultState: animatedPostsDefaultState,
+          ).generateThumbnailUrl(post),
+          (post) => DefaultGridThumbnailUrlGenerator(
+            imageQuality: imageQuality,
+            animatedPostsDefaultState: animatedPostsDefaultState,
+            gifImageQualityMapper: (_, __) => post.sampleImageUrl,
+            imageQualityMapper: (_, imageQuality) => switch (imageQuality) {
+              ImageQuality.automatic => post.url720x720,
+              ImageQuality.low => post.url360x360,
+              ImageQuality.high => post.url720x720,
+              ImageQuality.highest =>
+                post.isVideo ? post.url720x720 : post.urlSample,
+              ImageQuality.original => post.urlOriginal,
+            },
+          ).generateThumbnailUrl(post),
+        );
   }
 }
