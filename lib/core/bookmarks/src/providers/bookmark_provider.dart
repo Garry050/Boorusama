@@ -17,6 +17,7 @@ import '../../../boorus/booru/booru.dart';
 import '../../../boorus/engine/providers.dart';
 import '../../../configs/config.dart';
 import '../../../downloads/downloader.dart';
+import '../../../downloads/filename.dart';
 import '../../../foundation/animations.dart';
 import '../../../foundation/path.dart';
 import '../../../foundation/permissions.dart';
@@ -27,6 +28,7 @@ import '../../../images/providers.dart';
 import '../../../info/device_info.dart';
 import '../../../posts/post/post.dart';
 import '../../../settings/providers.dart';
+import '../data/bookmark_convert.dart';
 import '../data/providers.dart';
 import '../types/bookmark.dart';
 import '../types/bookmark_repository.dart';
@@ -96,12 +98,14 @@ class BookmarkNotifier extends Notifier<BookmarkState> {
   }
 
   Future<void> addBookmarks(
-    int booruId,
+    BooruConfigAuth config,
     Iterable<Post> posts, {
     void Function(int count)? onSuccess,
     void Function()? onError,
   }) async {
     try {
+      final booruId = config.booruIdHint;
+
       // filter out already bookmarked posts
       final filtered = posts.where(
         (post) => !state.isBookmarked(post, booruId),
@@ -113,7 +117,7 @@ class BookmarkNotifier extends Notifier<BookmarkState> {
         imageUrlResolver: (booruId) =>
             ref.read(bookmarkUrlResolverProvider(booruId)),
         postLinkGenerator: (booruId) =>
-            ref.read(postLinkGeneratorProvider(booruId)),
+            ref.read(postLinkGeneratorProvider(config)),
       );
       onSuccess?.call(filtered.length);
 
@@ -127,12 +131,14 @@ class BookmarkNotifier extends Notifier<BookmarkState> {
   }
 
   Future<void> addBookmark(
-    int booruId,
+    BooruConfigAuth config,
     Post post, {
     void Function()? onSuccess,
     void Function()? onError,
   }) async {
     try {
+      final booruId = config.booruIdHint;
+
       // check if post is already bookmarked
       if (state.isBookmarked(post, booruId)) {
         return;
@@ -144,7 +150,7 @@ class BookmarkNotifier extends Notifier<BookmarkState> {
         imageUrlResolver: (booruId) =>
             ref.read(bookmarkUrlResolverProvider(booruId)),
         postLinkGenerator: (booruId) =>
-            ref.read(postLinkGeneratorProvider(booruId)),
+            ref.read(postLinkGeneratorProvider(config)),
       );
       onSuccess?.call();
       state = state.copyWith(
@@ -342,25 +348,34 @@ class BookmarkNotifier extends Notifier<BookmarkState> {
       ...ref.read(cachedBypassDdosHeadersProvider(config.url)),
     };
 
-    final tasks = bookmarks
-        .map(
-          (bookmark) => downloader
-              .downloadWithSettings(
-                settings,
-                config: config,
-                url: bookmark.originalUrl,
-                metadata: DownloaderMetadata(
-                  thumbnailUrl: bookmark.thumbnailUrl,
-                  fileSize: null,
-                  siteUrl: bookmark.sourceUrl,
-                  group: null,
-                ),
-                filename: bookmark.md5 + extension(bookmark.originalUrl),
-                headers: headers,
-              )
-              .run(),
-        )
-        .toList();
+    final fileNameBuilder = fallbackFileNameBuilder;
+
+    final tasks = bookmarks.map(
+      (bookmark) async {
+        final fileName = await fileNameBuilder.generate(
+          settings,
+          config,
+          bookmark.toPost(),
+          downloadUrl: bookmark.originalUrl,
+        );
+
+        return downloader
+            .downloadWithSettings(
+              settings,
+              config: config,
+              url: bookmark.originalUrl,
+              metadata: DownloaderMetadata(
+                thumbnailUrl: bookmark.thumbnailUrl,
+                fileSize: null,
+                siteUrl: bookmark.sourceUrl,
+                group: null,
+              ),
+              filename: fileName,
+              headers: headers,
+            )
+            .run();
+      },
+    ).toList();
 
     await Future.wait(tasks);
   }
@@ -369,11 +384,11 @@ class BookmarkNotifier extends Notifier<BookmarkState> {
 extension BookmarkCubitToastX on BookmarkNotifier {
   Future<void> addBookmarkWithToast(
     BuildContext context,
-    int booruId,
+    BooruConfigAuth config,
     Post post,
   ) async {
     await addBookmark(
-      booruId,
+      config,
       post,
       onSuccess: () => showSuccessToast(context, 'bookmark.added'.tr()),
       onError: () => showErrorToast(context, 'bookmark.failed_to_add'.tr()),
@@ -382,12 +397,12 @@ extension BookmarkCubitToastX on BookmarkNotifier {
 
   Future<void> addBookmarksWithToast(
     BuildContext context,
-    int booruId,
+    BooruConfigAuth config,
     String booruUrl,
     Iterable<Post> posts,
   ) async {
     await addBookmarks(
-      booruId,
+      config,
       posts,
       onSuccess: (count) => showSuccessToast(
         context,

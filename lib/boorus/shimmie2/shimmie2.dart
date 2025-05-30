@@ -36,8 +36,6 @@ class Shimmie2Builder
         DefaultTagSuggestionsItemBuilderMixin,
         DefaultMultiSelectionActionsBuilderMixin,
         DefaultHomeMixin,
-        DefaultTagColorMixin,
-        DefaultTagColorsMixin,
         DefaultPostGesturesHandlerMixin,
         DefaultPostImageDetailsUrlMixin,
         DefaultGranularRatingFiltererMixin,
@@ -88,6 +86,7 @@ class Shimmie2Builder
           initialThumbnailUrl: payload.initialThumbnailUrl,
           posts: posts,
           scrollController: payload.scrollController,
+          dislclaimer: payload.dislclaimer,
           child: const DefaultPostDetailsPage<Shimmie2Post>(),
         );
       };
@@ -137,7 +136,7 @@ class Shimmie2Repository extends BooruRepositoryDefault {
 
   @override
   AutocompleteRepository autocomplete(BooruConfigAuth config) {
-    return ref.read(emptyAutocompleteRepoProvider);
+    return ref.read(shimmie2AutocompleteRepoProvider(config));
   }
 
   @override

@@ -13,6 +13,7 @@ import '../bookmarks/routes.dart';
 import '../boorus/engine/providers.dart';
 import '../bulk_downloads/routes.dart';
 import '../configs/redirect.dart';
+import '../configs/ref.dart';
 import '../configs/routes.dart';
 import '../downloads/downloader.dart';
 import '../downloads/routes/routes.dart';
@@ -70,6 +71,7 @@ class Routes {
           updateBooruConfigRoutes(ref),
           searchRoutes(ref),
           postDetailsRoutes(ref),
+          singlePostDetailsRoutes(ref),
           postFavoritesRoutes(ref),
           artists(ref),
           characters(ref),
@@ -118,7 +120,7 @@ class ArtistPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final booruBuilder = ref.watch(currentBooruBuilderProvider);
+    final booruBuilder = ref.watch(booruBuilderProvider(ref.watchConfigAuth));
     final builder = booruBuilder?.artistPageBuilder;
     final artistName = InheritedArtistName.of(context)?.artistName;
 
@@ -154,7 +156,7 @@ class CharacterPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final booruBuilder = ref.watch(currentBooruBuilderProvider);
+    final booruBuilder = ref.watch(booruBuilderProvider(ref.watchConfigAuth));
     final builder = booruBuilder?.characterPageBuilder;
     final characterName = InheritedCharacterName.of(context)?.characterName;
 

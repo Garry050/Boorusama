@@ -1,5 +1,4 @@
 // Package imports:
-import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 
 // Project imports:
@@ -82,7 +81,7 @@ class DanbooruPost extends Equatable
         hasLarge: false,
         parentId: null,
         duration: 0,
-        variants: const [],
+        variants: const PostVariants.none(),
         pixelHash: '',
         metadata: null,
       );
@@ -137,7 +136,7 @@ class DanbooruPost extends Equatable
   final bool hasLarge;
   @override
   final double duration;
-  final List<PostVariant> variants;
+  final PostVariants variants;
 
   @override
   bool get hasComment => lastCommentAt != null;
@@ -316,20 +315,15 @@ extension PostX on DanbooruPost {
 }
 
 extension PostQualityVariantX on DanbooruPost {
-  String get url180x180 =>
-      variants.firstWhereOrNull((e) => e.is180x180)?.url ?? thumbnailImageUrl;
+  String get url180x180 => variants.getUrl(PostQualityType.v180x180);
 
-  String get url360x360 =>
-      variants.firstWhereOrNull((e) => e.is360x360)?.url ?? thumbnailImageUrl;
+  String get url360x360 => variants.getUrl(PostQualityType.v360x360);
 
-  String get url720x720 =>
-      variants.firstWhereOrNull((e) => e.is720x720)?.url ?? thumbnailImageUrl;
+  String get url720x720 => variants.getUrl(PostQualityType.v720x720);
 
-  String get urlSample =>
-      variants.firstWhereOrNull((e) => e.isSample)?.url ?? sampleImageUrl;
+  String get urlSample => variants.getUrl(PostQualityType.sample);
 
-  String get urlOriginal =>
-      variants.firstWhereOrNull((e) => e.isOriginal)?.url ?? originalImageUrl;
+  String get urlOriginal => variants.getUrl(PostQualityType.original);
 }
 
 abstract interface class DanbooruTagDetails implements TagDetails {

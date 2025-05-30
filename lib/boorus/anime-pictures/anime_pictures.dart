@@ -46,8 +46,6 @@ class AnimePicturesBuilder
         DefaultTagSuggestionsItemBuilderMixin,
         DefaultMultiSelectionActionsBuilderMixin,
         DefaultHomeMixin,
-        DefaultTagColorMixin,
-        DefaultTagColorsMixin,
         DefaultPostGesturesHandlerMixin,
         DefaultPostImageDetailsUrlMixin,
         DefaultGranularRatingFiltererMixin,
@@ -113,6 +111,7 @@ class AnimePicturesBuilder
           initialThumbnailUrl: payload.initialThumbnailUrl,
           posts: posts,
           scrollController: payload.scrollController,
+          dislclaimer: payload.dislclaimer,
           child: const DefaultPostDetailsPage<AnimePicturesPost>(),
         );
       };
@@ -388,19 +387,24 @@ class AnimePicturesRelatedPostsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final posts = PostDetails.of<AnimePicturesPost>(context).posts;
     final post = InheritedPost.of<AnimePicturesPost>(context);
+    final configAuth = ref.watchConfigAuth;
+    final configViewer = ref.watchConfigViewer;
 
     return ref.watch(postDetailsProvider(post.id)).when(
           data: (details) => details.tied != null && details.tied!.isNotEmpty
               ? SliverRelatedPostsSection(
                   posts: details.tied!.map(dtoToAnimePicturesPost).toList(),
-                  imageUrl: defaultPostImageUrlBuilder(ref),
+                  imageUrl:
+                      defaultPostImageUrlBuilder(ref, configAuth, configViewer),
                   onTap: (index) => goToPostDetailsPageFromPosts(
                     context: context,
                     posts: posts,
                     initialIndex: index,
-                    initialThumbnailUrl: defaultPostImageUrlBuilder(ref)(
-                      posts[index],
-                    ),
+                    initialThumbnailUrl: defaultPostImageUrlBuilder(
+                      ref,
+                      configAuth,
+                      configViewer,
+                    )(posts[index]),
                   ),
                 )
               : const SliverSizedBox.shrink(),

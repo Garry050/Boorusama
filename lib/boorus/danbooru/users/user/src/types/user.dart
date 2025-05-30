@@ -1,5 +1,6 @@
 // Package imports:
 import 'package:equatable/equatable.dart';
+import 'package:foundation/foundation.dart';
 
 // Project imports:
 import '../../../../../../core/users/user.dart';
@@ -54,6 +55,19 @@ class DanbooruUser extends Equatable {
   final int positiveFeedbackCount;
   final int neutralFeedbackCount;
   final int negativeFeedbackCount;
+
+  bool get hasFeedbacks =>
+      sumInt(
+        [
+          positiveFeedbackCount,
+          neutralFeedbackCount,
+          negativeFeedbackCount,
+        ],
+      ) >
+      0;
+
+  bool get hasEdits => tagEditCount > 0;
+  bool get hasUploads => uploadCount > 0;
 
   @override
   List<Object?> get props => [

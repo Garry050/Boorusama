@@ -50,7 +50,19 @@ final animePicturesPostRepoProvider =
     final client = ref.watch(animePicturesClientProvider(config.auth));
 
     return PostRepositoryBuilder(
-      getComposer: () => ref.read(currentTagQueryComposerProvider),
+      getComposer: () => ref.read(tagQueryComposerProvider(config)),
+      fetchSingle: (id, {options}) {
+        final numericId = id as NumericPostId?;
+
+        if (numericId == null) return Future.value(null);
+
+        return client.getPostDetails(id: numericId.value).then(
+          (e) {
+            final post = e.post;
+            return post != null ? dtoToAnimePicturesPost(post) : null;
+          },
+        );
+      },
       fetch: (tags, page, {limit, options}) async {
         final posts = await client.getPosts(
           tags: tags,

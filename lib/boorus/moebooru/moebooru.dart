@@ -75,8 +75,6 @@ class MoebooruBuilder
         DefaultMultiSelectionActionsBuilderMixin,
         DefaultHomeMixin,
         DefaultBooruUIMixin,
-        DefaultTagColorMixin,
-        DefaultTagColorsMixin,
         DefaultPostGesturesHandlerMixin,
         DefaultPostImageDetailsUrlMixin,
         DefaultGranularRatingFiltererMixin,
@@ -146,6 +144,7 @@ class MoebooruBuilder
           initialThumbnailUrl: payload.initialThumbnailUrl,
           posts: posts,
           scrollController: payload.scrollController,
+          dislclaimer: payload.dislclaimer,
           child: const MoebooruPostDetailsPage(),
         );
       };

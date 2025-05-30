@@ -38,7 +38,6 @@ import '../../../search/suggestions/widgets.dart';
 import '../../../settings/providers.dart';
 import '../../../settings/settings.dart';
 import '../../../tags/categories/tag_category.dart';
-import '../../../tags/tag/colors.dart';
 import '../../../tags/tag/routes.dart';
 import '../../../tags/tag/tag.dart';
 import '../../../tags/tag/widgets.dart';
@@ -75,29 +74,6 @@ mixin CharacterNotSupportedMixin implements BooruBuilder {
 mixin CommentNotSupportedMixin implements BooruBuilder {
   @override
   CommentPageBuilder? get commentPageBuilder => null;
-}
-
-mixin DefaultTagColorMixin implements BooruBuilder {
-  @override
-  TagColorBuilder get tagColorBuilder => (options) {
-        final colors = options.colors;
-
-        return switch (options.tagType) {
-          '0' || 'general' || 'tag' => colors.general,
-          '1' || 'artist' || 'creator' || 'studio' => colors.artist,
-          '3' || 'copyright' || 'series' => colors.copyright,
-          '4' || 'character' => colors.character,
-          '5' || 'meta' || 'metadata' => colors.meta,
-          _ => colors.general,
-        };
-      };
-}
-
-mixin DefaultTagColorsMixin implements BooruBuilder {
-  @override
-  TagColorsBuilder get tagColorsBuilder => (options) {
-        return TagColors.fromBrightness(options.brightness);
-      };
 }
 
 mixin DefaultTagSuggestionsItemBuilderMixin implements BooruBuilder {
@@ -158,25 +134,74 @@ mixin DefaultGranularRatingFiltererMixin on BooruBuilder {
 }
 
 mixin DefaultPostGesturesHandlerMixin on BooruBuilder {
+  final PostGestureHandler _postGestureHandler = const PostGestureHandler();
+
   @override
   PostGestureHandlerBuilder get postGestureHandlerBuilder =>
-      (ref, action, post) => handleDefaultGestureAction(
-            action,
-            onDownload: () => ref.download(post),
-            onShare: () => ref.sharePost(
-              post,
-              context: ref.context,
-              state: ref.read(postShareProvider(post)),
-            ),
-            onToggleBookmark: () => ref.toggleBookmark(post),
-            onViewTags: () =>
-                goToShowTaglistPage(ref.context, post.extractTags()),
-            onViewOriginal: () => goToOriginalImagePage(ref.context, post),
-            onOpenSource: () => post.source.whenWeb(
-              (source) => launchExternalUrlString(source.url),
-              () => false,
-            ),
-          );
+      (ref, action, post) => _postGestureHandler.handle(ref, action, post);
+}
+
+class PostGestureHandler {
+  const PostGestureHandler({
+    this.customActions = const {},
+  });
+  final Map<String, bool Function(WidgetRef, String?, Post)> customActions;
+
+  bool handle(WidgetRef ref, String? action, Post post) {
+    final handled = handleDefaultGestureAction(
+      action,
+      onDownload: () => handleDownload(ref, post),
+      onShare: () => handleShare(ref, post),
+      onToggleBookmark: () => handleBookmark(ref, post),
+      onViewTags: () => handleViewTags(ref, post),
+      onViewOriginal: () => handleViewOriginal(ref, post),
+      onOpenSource: () => handleOpenSource(ref, post),
+    );
+
+    if (handled) return true;
+
+    for (final entry in customActions.entries) {
+      if (entry.key == action) {
+        final customAction = entry.value;
+        if (customAction(ref, action, post)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  void handleDownload(WidgetRef ref, Post post) {
+    ref.download(post);
+  }
+
+  void handleShare(WidgetRef ref, Post post) {
+    ref.sharePost(
+      post,
+      context: ref.context,
+      state: ref.read(postShareProvider(post)),
+    );
+  }
+
+  void handleBookmark(WidgetRef ref, Post post) {
+    ref.toggleBookmark(post);
+  }
+
+  void handleViewTags(WidgetRef ref, Post post) {
+    goToShowTaglistPage(ref.context, post.extractTags());
+  }
+
+  void handleViewOriginal(WidgetRef ref, Post post) {
+    goToOriginalImagePage(ref.context, post);
+  }
+
+  void handleOpenSource(WidgetRef ref, Post post) {
+    post.source.whenWeb(
+      (source) => launchExternalUrlString(source.url),
+      () => false,
+    );
+  }
 }
 
 mixin DefaultMultiSelectionActionsBuilderMixin on BooruBuilder {
@@ -197,16 +222,6 @@ mixin LegacyGranularRatingOptionsBuilderMixin on BooruBuilder {
       };
 }
 
-mixin NewGranularRatingOptionsBuilderMixin on BooruBuilder {
-  @override
-  GranularRatingOptionsBuilder? get granularRatingOptionsBuilder => () => {
-        Rating.explicit,
-        Rating.questionable,
-        Rating.sensitive,
-        Rating.general,
-      };
-}
-
 mixin DefaultBooruUIMixin implements BooruBuilder {
   @override
   HomePageBuilder get homePageBuilder => (context) => const HomePageScaffold();
@@ -224,6 +239,7 @@ mixin DefaultBooruUIMixin implements BooruBuilder {
           initialThumbnailUrl: payload.initialThumbnailUrl,
           posts: payload.posts,
           scrollController: payload.scrollController,
+          dislclaimer: payload.dislclaimer,
           child: const DefaultPostDetailsPage(),
         );
       };
@@ -243,6 +259,9 @@ class DefaultPostDetailsPage<T extends Post> extends ConsumerWidget {
     return PostDetailsPageScaffold(
       controller: controller,
       posts: posts,
+      viewerConfig: ref.watchConfigViewer,
+      authConfig: ref.watchConfigAuth,
+      gestureConfig: ref.watchPostGestures,
     );
   }
 }
@@ -285,13 +304,17 @@ String Function(
   Post post,
 ) defaultPostImageUrlBuilder(
   WidgetRef ref,
+  BooruConfigAuth authConfig,
+  BooruConfigViewer viewerConfig,
 ) =>
     (post) => kPreferredLayout.isDesktop
         ? post.sampleImageUrl
-        : ref.watch(currentBooruBuilderProvider)?.postImageDetailsUrlBuilder(
+        : ref
+                .watch(booruBuilderProvider(authConfig))
+                ?.postImageDetailsUrlBuilder(
                   ref.watch(imageListingQualityProvider),
                   post,
-                  ref.watchConfig,
+                  viewerConfig,
                 ) ??
             post.sampleImageUrl;
 
@@ -306,7 +329,7 @@ class DefaultImagePreviewQuickActionButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watchConfig;
-    final booruBuilder = ref.watch(currentBooruBuilderProvider);
+    final booruBuilder = ref.watch(booruBuilderProvider(config.auth));
 
     return switch (config.defaultPreviewImageButtonActionType) {
       ImageQuickActionType.bookmark => Container(
@@ -347,6 +370,7 @@ class DefaultImagePreviewQuickActionButton extends ConsumerWidget {
                 name: artist,
                 category: TagCategory.artist(),
               ),
+              auth: config.auth,
               onTap: () => goToArtistPage(
                 context,
                 artist,

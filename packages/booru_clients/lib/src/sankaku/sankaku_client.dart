@@ -147,6 +147,35 @@ class SankakuClient {
     return (data as List).map((e) => PostDto.fromJson(e)).toList();
   }
 
+  Future<PostDto?> getPost({
+    required String id,
+  }) async {
+    final token = await _authStore.getToken();
+
+    if (token == null && username != null && password != null) {
+      await login(
+        username: username!,
+        password: password!,
+      );
+    }
+
+    final response = await _dio.get(
+      '/posts/$id',
+      options: Options(
+        headers: {
+          if (token != null &&
+              token.accessToken != null &&
+              token.tokenType != null)
+            'Authorization': '${token.tokenType} ${token.accessToken}',
+        },
+      ),
+    );
+
+    final data = response.data;
+
+    return PostDto.fromJson(data);
+  }
+
   // Only a single global autocomplete request per client is allowed for now
   CancelToken? _autocompleteCancelToken;
 
