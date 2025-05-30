@@ -160,6 +160,18 @@ class DummyPostRepository implements PostRepository {
       getPosts('', page);
 
   @override
+  PostOrError<Post> getPost(PostId id, {PostFetchOptions? options}) {
+    final numericId = id as NumericPostId?;
+
+    if (numericId == null) return TaskEither.right(null);
+
+    final post = DownloadTestConstants.posts
+        .firstWhere((element) => element.id == numericId.value);
+
+    return TaskEither.right(post);
+  }
+
+  @override
   TagQueryComposer get tagComposer =>
       DefaultTagQueryComposer(config: booruConfigSearch);
 }
@@ -378,8 +390,8 @@ List<Override> getTestOverrides({
         .overrideWith((__, _) => const UrlInsidePostExtractor()),
     cachedBypassDdosHeadersProvider.overrideWith((_, __) => {}),
     analyticsProvider.overrideWith((_) => NoAnalyticsInterface()),
-    currentBooruBuilderProvider
-        .overrideWith((_) => booruBuilder ?? MockBooruBuilder()),
+    booruBuilderProvider
+        .overrideWith((_, __) => booruBuilder ?? MockBooruBuilder()),
     blacklistTagsProvider.overrideWith((_, __) => {}),
     hasPremiumProvider.overrideWithValue(hasPremium),
     downloadTaskStreamProvider

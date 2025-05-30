@@ -431,6 +431,33 @@ class BooruConfigSearchFilter extends Equatable
           }()
       };
 
+  bool canView(String rating) {
+    final parsedRating = mapStringToRating(rating);
+
+    if (ratingFilter == BooruConfigRatingFilter.none) return true;
+
+    if (ratingFilter == BooruConfigRatingFilter.custom) {
+      final granularRatingFilters = granularRatingFiltersWithoutUnknown;
+
+      if (granularRatingFilters == null) return false;
+
+      return granularRatingFilters.contains(parsedRating);
+    }
+
+    if (ratingFilter == BooruConfigRatingFilter.hideExplicit &&
+        parsedRating == Rating.explicit) {
+      return false;
+    }
+
+    if (ratingFilter == BooruConfigRatingFilter.hideNSFW &&
+        (parsedRating == Rating.explicit ||
+            parsedRating == Rating.questionable)) {
+      return false;
+    }
+
+    return true;
+  }
+
   @override
   List<Object?> get props => [
         ratingFilter,
@@ -482,6 +509,32 @@ class BooruConfigFilter extends Equatable {
 
   @override
   List<Object?> get props => [auth, blacklistConfigs];
+}
+
+class BooruConfigViewer extends Equatable {
+  const BooruConfigViewer({
+    required this.imageDetaisQuality,
+    required this.viewerNotesFetchBehavior,
+  });
+
+  factory BooruConfigViewer.fromConfig(BooruConfig config) {
+    return BooruConfigViewer(
+      imageDetaisQuality: config.imageDetaisQuality,
+      viewerNotesFetchBehavior: config.viewerNotesFetchBehavior,
+    );
+  }
+
+  final String? imageDetaisQuality;
+  final BooruConfigViewerNotesFetchBehavior? viewerNotesFetchBehavior;
+
+  bool get autoFetchNotes =>
+      viewerNotesFetchBehavior == BooruConfigViewerNotesFetchBehavior.auto;
+
+  @override
+  List<Object?> get props => [
+        imageDetaisQuality,
+        viewerNotesFetchBehavior,
+      ];
 }
 
 mixin BooruConfigAuthMixin {
@@ -538,9 +591,7 @@ extension BooruConfigX on BooruConfig {
   BooruConfigAuth get auth => BooruConfigAuth.fromConfig(this);
   BooruConfigSearch get search => BooruConfigSearch.fromConfig(this);
   BooruConfigFilter get filter => BooruConfigFilter.fromConfig(this);
-
-  bool get autoFetchNotes =>
-      viewerNotesFetchBehavior == BooruConfigViewerNotesFetchBehavior.auto;
+  BooruConfigViewer get viewer => BooruConfigViewer.fromConfig(this);
 }
 
 enum ImageQuickActionType {

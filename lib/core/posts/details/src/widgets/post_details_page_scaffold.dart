@@ -20,7 +20,6 @@ import '../../../../boorus/engine/providers.dart';
 import '../../../../cache/providers.dart';
 import '../../../../configs/config.dart';
 import '../../../../configs/current.dart';
-import '../../../../configs/ref.dart';
 import '../../../../foundation/display.dart';
 import '../../../../foundation/platform.dart';
 import '../../../../notes/notes.dart';
@@ -52,6 +51,9 @@ class PostDetailsPageScaffold<T extends Post> extends ConsumerStatefulWidget {
   const PostDetailsPageScaffold({
     required this.posts,
     required this.controller,
+    required this.viewerConfig,
+    required this.authConfig,
+    required this.gestureConfig,
     super.key,
     this.onExpanded,
     this.imageUrlBuilder,
@@ -72,6 +74,9 @@ class PostDetailsPageScaffold<T extends Post> extends ConsumerStatefulWidget {
   final PostDetailsUIBuilder? uiBuilder;
   final Set<DetailsPart>? preferredParts;
   final Set<DetailsPart>? preferredPreviewParts;
+  final BooruConfigViewer viewerConfig;
+  final BooruConfigAuth authConfig;
+  final PostGestureConfig? gestureConfig;
 
   @override
   ConsumerState<PostDetailsPageScaffold<T>> createState() =>
@@ -124,8 +129,8 @@ class _PostDetailPageScaffoldState<T extends Post>
         useDefaultEngine: _isDefaultEngine(videoPlayerEngine),
       );
 
-      if (ref.readConfig.autoFetchNotes) {
-        ref.read(notesProvider(ref.readConfigAuth).notifier).load(
+      if (widget.viewerConfig.autoFetchNotes) {
+        ref.read(notesProvider(widget.authConfig).notifier).load(
               posts[widget.controller.initialPage],
             );
       }
@@ -275,12 +280,12 @@ class _PostDetailPageScaffoldState<T extends Post>
   }
 
   Widget _build() {
-    final booruBuilder = ref.watch(currentBooruBuilderProvider);
+    final booruBuilder = ref.watch(booruBuilderProvider(widget.authConfig));
     final postGesturesHandler = booruBuilder?.postGestureHandlerBuilder;
-    final gestures = ref.watchPostGestures?.fullview;
+    final gestures = widget.gestureConfig?.fullview;
 
-    final imageUrlBuilder =
-        widget.imageUrlBuilder ?? defaultPostImageUrlBuilder(ref);
+    final imageUrlBuilder = widget.imageUrlBuilder ??
+        defaultPostImageUrlBuilder(ref, widget.authConfig, widget.viewerConfig);
 
     final uiBuilder = widget.uiBuilder ?? booruBuilder?.postDetailsUIBuilder;
 
@@ -288,8 +293,6 @@ class _PostDetailPageScaffoldState<T extends Post>
         ref.watch(settingsProvider.select((value) => value.videoPlayerEngine));
     final reduceAnimations =
         ref.watch(settingsProvider.select((value) => value.reduceAnimations));
-
-    final auth = ref.watchConfigAuth;
 
     void onItemTap() {
       final controller = widget.controller;
@@ -346,10 +349,8 @@ class _PostDetailPageScaffoldState<T extends Post>
 
           ref.read(postShareProvider(post).notifier).updateInformation(post);
 
-          final config = ref.readConfig;
-
-          if (config.autoFetchNotes) {
-            ref.read(notesProvider(config.auth).notifier).load(post);
+          if (widget.viewerConfig.autoFetchNotes) {
+            ref.read(notesProvider(widget.authConfig).notifier).load(post);
           }
         },
         sheetStateStorage: SheetStateStorageBuilder(
@@ -362,7 +363,7 @@ class _PostDetailPageScaffoldState<T extends Post>
         checkIfLargeScreen: () => context.isLargeScreen,
         controller: _controller,
         onExit: () {
-          ref.invalidate(notesProvider(auth));
+          ref.invalidate(notesProvider(widget.authConfig));
 
           widget.controller.onExit();
         },
@@ -375,6 +376,20 @@ class _PostDetailPageScaffoldState<T extends Post>
             ),
             onPressed: () => goToHomePage(context),
           ),
+          const SizedBox(width: 8),
+          if (widget.controller.dislclaimer != null)
+            CircularIconButton(
+              icon: const Icon(
+                Symbols.warning,
+                fill: 1,
+              ),
+              onPressed: () => showAppModalBarBottomSheet(
+                context: context,
+                builder: (_) => DisclaimerDialog(
+                  disclaimer: widget.controller.dislclaimer!,
+                ),
+              ),
+            ),
         ],
         onSwipeDownThresholdReached:
             gestures.canSwipeDown && postGesturesHandler != null
@@ -562,6 +577,7 @@ class _PostDetailPageScaffoldState<T extends Post>
               valueListenable: widget.controller.currentPost,
               builder: (context, post, _) => NoteActionButtonWithProvider(
                 post: post,
+                config: widget.authConfig,
               ),
             ),
             const SizedBox(width: 8),
@@ -569,6 +585,7 @@ class _PostDetailPageScaffoldState<T extends Post>
               valueListenable: widget.controller.currentPost,
               builder: (context, post, _) => GeneralMoreActionButton(
                 post: post,
+                config: widget.authConfig,
                 onStartSlideshow: () => _controller.startSlideshow(),
               ),
             ),
@@ -678,6 +695,37 @@ class _PostDetailPageScaffoldState<T extends Post>
               controller: widget.controller,
             )
           : const SizedBox.shrink(),
+    );
+  }
+}
+
+class DisclaimerDialog extends StatelessWidget {
+  const DisclaimerDialog({
+    required this.disclaimer,
+    super.key,
+  });
+
+  final String disclaimer;
+
+  @override
+  Widget build(BuildContext context) {
+    final viewPadding = MediaQuery.paddingOf(context);
+
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          Text(
+            disclaimer,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          SizedBox(
+            height: viewPadding.bottom + 8,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -7,7 +7,7 @@ import 'package:foundation/foundation.dart';
 
 // Project imports:
 import '../boorus/engine/providers.dart';
-import '../configs/ref.dart';
+import '../configs/config.dart';
 import '../downloads/downloader.dart';
 import '../foundation/url_launcher.dart';
 import '../posts/post/post.dart';
@@ -21,19 +21,20 @@ import 'booru_popup_menu_button.dart';
 class GeneralMoreActionButton extends ConsumerWidget {
   const GeneralMoreActionButton({
     required this.post,
+    required this.config,
     super.key,
     this.onDownload,
     this.onStartSlideshow,
   });
 
   final Post post;
+  final BooruConfigAuth config;
   final void Function(Post post)? onDownload;
   final void Function()? onStartSlideshow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final booru = ref.watchConfigAuth;
-    final postLinkGenerator = ref.watch(currentPostLinkGeneratorProvider);
+    final postLinkGenerator = ref.watch(postLinkGeneratorProvider(config));
 
     return SizedBox(
       width: 40,
@@ -51,8 +52,6 @@ class GeneralMoreActionButton extends ConsumerWidget {
                   ref.download(post);
                 }
               case 'view_in_browser':
-                if (postLinkGenerator == null) return;
-
                 launchExternalUrlString(
                   postLinkGenerator.getLink(post),
                 );
@@ -75,7 +74,7 @@ class GeneralMoreActionButton extends ConsumerWidget {
           },
           itemBuilder: {
             'download': const Text('download.download').tr(),
-            if (!booru.hasStrictSFW && postLinkGenerator != null)
+            if (!config.hasStrictSFW)
               'view_in_browser': const Text('post.detail.view_in_browser').tr(),
             if (post.tags.isNotEmpty) 'show_tag_list': const Text('View tags'),
             if (post.hasFullView)

@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../boorus/engine/engine.dart';
 import '../../../boorus/engine/providers.dart';
 import '../../../configs/config.dart';
-import '../../../configs/ref.dart';
 import '../../../theme.dart';
 import '../../../theme/providers.dart';
 import '../../../theme/theme_configs.dart';
@@ -20,24 +19,24 @@ import 'tag_repository_impl.dart';
 final emptyTagRepoProvider =
     Provider<TagRepository>((ref) => EmptyTagRepository());
 
-final tagColorProvider = Provider.family<Color?, String>(
-  (ref, tag) {
-    final config = ref.watchConfigAuth;
+final tagColorProvider = Provider.family<Color?, (BooruConfigAuth, String)>(
+  (ref, params) {
+    final (config, tag) = params;
 
     final colorBuilder = ref
         .watch(booruEngineRegistryProvider)
-        .getBuilder(config.booruType)
-        ?.tagColorBuilder;
+        .getRepository(config.booruType)
+        ?.tagColorGenerator();
 
     // In case the color builder is null, which means there is no config selected
     if (colorBuilder == null) return null;
 
     final colorScheme = ref.watch(colorSchemeProvider);
 
-    final colors = ref.watch(tagColorsProvider) ??
+    final colors = ref.watch(tagColorsProvider(config)) ??
         TagColors.fromBrightness(colorScheme.brightness);
 
-    final color = colorBuilder(
+    final color = colorBuilder.generateColor(
       TagColorOptions(
         tagType: tag,
         colors: colors,
@@ -58,14 +57,12 @@ final tagColorProvider = Provider.family<Color?, String>(
   ],
 );
 
-final tagColorsProvider = Provider<TagColors?>(
-  (ref) {
-    final config = ref.watchConfigAuth;
-
+final tagColorsProvider = Provider.family<TagColors?, BooruConfigAuth>(
+  (ref, config) {
     final colorsBuilder = ref
         .watch(booruEngineRegistryProvider)
-        .getBuilder(config.booruType)
-        ?.tagColorsBuilder;
+        .getRepository(config.booruType)
+        ?.tagColorGenerator();
 
     // In case the color builder is null, which means there is no config selected
     if (colorsBuilder == null) return null;
@@ -75,7 +72,7 @@ final tagColorsProvider = Provider<TagColors?>(
 
     final colors = customColors != null
         ? getTagColorsFromColorSettings(customColors)
-        : colorsBuilder.call(
+        : colorsBuilder.generateColors(
             TagColorsOptions(
               brightness: colorScheme.brightness,
             ),

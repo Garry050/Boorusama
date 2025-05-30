@@ -140,9 +140,7 @@ class GelbooruV2Builder
         DefaultPostImageDetailsUrlMixin,
         DefaultGranularRatingFiltererMixin,
         DefaultPostGesturesHandlerMixin,
-        DefaultPostStatisticsPageBuilderMixin,
-        DefaultTagColorsMixin,
-        DefaultTagColorMixin
+        DefaultPostStatisticsPageBuilderMixin
     implements BooruBuilder {
   GelbooruV2Builder();
 
@@ -199,6 +197,7 @@ class GelbooruV2Builder
           initialThumbnailUrl: payload.initialThumbnailUrl,
           posts: posts,
           scrollController: payload.scrollController,
+          dislclaimer: payload.dislclaimer,
           child: const DefaultPostDetailsPage<GelbooruV2Post>(),
         );
       };

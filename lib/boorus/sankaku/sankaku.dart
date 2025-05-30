@@ -53,8 +53,6 @@ class SankakuBuilder
         DefaultMultiSelectionActionsBuilderMixin,
         DefaultQuickFavoriteButtonBuilderMixin,
         DefaultHomeMixin,
-        DefaultTagColorMixin,
-        DefaultTagColorsMixin,
         DefaultPostImageDetailsUrlMixin,
         DefaultPostGesturesHandlerMixin,
         DefaultGranularRatingFiltererMixin,
@@ -109,6 +107,7 @@ class SankakuBuilder
           initialThumbnailUrl: payload.initialThumbnailUrl,
           posts: posts,
           scrollController: payload.scrollController,
+          dislclaimer: payload.dislclaimer,
           child: const DefaultPostDetailsPage<SankakuPost>(),
         );
       };
@@ -233,7 +232,11 @@ class SankakuArtistPostsSection extends ConsumerWidget {
                   child: ref
                       .watch(
                         sankakuArtistPostsProvider(
-                          post.artistTags.firstOrNull,
+                          (
+                            ref.watchConfigFilter,
+                            ref.watchConfigSearch,
+                            post.artistTags.firstOrNull
+                          ),
                         ),
                       )
                       .maybeWhen(

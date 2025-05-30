@@ -17,12 +17,22 @@ final gelbooruPostRepoProvider =
     final client = ref.watch(gelbooruClientProvider(config.auth));
 
     return PostRepositoryBuilder(
-      getComposer: () => ref.read(currentTagQueryComposerProvider),
+      getComposer: () => ref.read(tagQueryComposerProvider(config)),
       fetch: client.getPostResults,
+      fetchSingle: (id, {options}) async {
+        final numericId = id as NumericPostId?;
+
+        if (numericId == null) return Future.value(null);
+
+        final post = await client.getPost(numericId.value);
+
+        return post != null ? gelbooruPostDtoToGelbooruPost(post, null) : null;
+      },
       fetchFromController: (controller, page, {limit, options}) {
         final tags = controller.tags.map((e) => e.originalTag).toList();
 
-        final newTags = ref.read(currentTagQueryComposerProvider).compose(tags);
+        final newTags =
+            ref.read(tagQueryComposerProvider(config)).compose(tags);
 
         return client.getPostResults(newTags, page, limit: limit);
       },

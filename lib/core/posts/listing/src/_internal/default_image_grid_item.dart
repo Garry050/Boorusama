@@ -9,7 +9,6 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 
 // Project imports:
 import '../../../../boorus/engine/engine.dart';
-import '../../../../boorus/engine/providers.dart';
 import '../../../../configs/ref.dart';
 import '../../../../images/booru_image.dart';
 import '../../../../settings/providers.dart';
@@ -18,6 +17,7 @@ import '../../../../widgets/widgets.dart';
 import '../../../details/routes.dart';
 import '../../../post/post.dart';
 import '../../../post/widgets.dart';
+import '../providers/providers.dart';
 import '../widgets/default_post_list_context_menu_region.dart';
 import '../widgets/default_selectable_item.dart';
 import '../widgets/general_post_context_menu.dart';
@@ -35,7 +35,6 @@ class DefaultImageGridItem<T extends Post> extends StatelessWidget {
     super.key,
     this.contextMenu,
     this.leadingIcons,
-    this.gaplessPlayback,
     this.imageUrl,
     this.imageCacheManager,
   });
@@ -48,7 +47,6 @@ class DefaultImageGridItem<T extends Post> extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget? contextMenu;
   final List<Widget>? leadingIcons;
-  final bool? gaplessPlayback;
   final String? imageUrl;
   final ImageCacheManager? imageCacheManager;
 
@@ -85,15 +83,18 @@ class DefaultImageGridItem<T extends Post> extends StatelessWidget {
                     builder: (context) {
                       final item = Consumer(
                         builder: (_, ref, __) {
-                          final booruRepo = ref.watch(currentBooruRepoProvider);
-                          final gridThumbnailUrlBuilder =
-                              booruRepo?.gridThumbnailUrlGenerator();
+                          final config = ref.watchConfigAuth;
+
+                          final gridThumbnailUrlBuilder = ref
+                              .watch(gridThumbnailUrlGeneratorProvider(config));
 
                           final imgUrl = imageUrl ??
-                              (gridThumbnailUrlBuilder != null
-                                  ? gridThumbnailUrlBuilder
-                                      .generateThumbnailUrl(post)
-                                  : post.thumbnailImageUrl);
+                              gridThumbnailUrlBuilder.generateUrl(
+                                post,
+                                settings: ref.watch(
+                                  gridThumbnailSettingsProvider(config),
+                                ),
+                              );
 
                           return SliverPostGridImageGridItem(
                             post: post,
@@ -121,7 +122,6 @@ class DefaultImageGridItem<T extends Post> extends StatelessWidget {
                             image: _Image(
                               post: post,
                               imageUrl: imgUrl,
-                              gaplessPlayback: gaplessPlayback,
                               imageCacheManager: imageCacheManager,
                             ),
                             leadingIcons: leadingIcons,
@@ -154,13 +154,11 @@ class _Image<T extends Post> extends ConsumerWidget {
     required this.post,
     required this.imageUrl,
     super.key,
-    this.gaplessPlayback,
     this.imageCacheManager,
   });
 
   final T post;
   final String imageUrl;
-  final bool? gaplessPlayback;
   final ImageCacheManager? imageCacheManager;
 
   @override
@@ -181,7 +179,6 @@ class _Image<T extends Post> extends ConsumerWidget {
       forceCover: imageListType == ImageListType.standard,
       fit: imageListType == ImageListType.classic ? BoxFit.contain : null,
       placeholderUrl: post.thumbnailImageUrl,
-      gaplessPlayback: gaplessPlayback ?? true,
       imageCacheManager: imageCacheManager,
     );
   }

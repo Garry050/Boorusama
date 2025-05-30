@@ -14,6 +14,7 @@ import '../../../../blacklists/providers.dart';
 import '../../../../blacklists/routes.dart';
 import '../../../../boorus/booru/booru.dart';
 import '../../../../boorus/engine/providers.dart';
+import '../../../../config_widgets/booru_logo.dart';
 import '../../../../configs/ref.dart';
 import '../../../../configs/routes.dart';
 import '../../../../settings/providers.dart';
@@ -58,13 +59,15 @@ class PostGridConfigIconButton<T> extends ConsumerWidget {
   }
 
   Widget _buildMenuButton(BuildContext context, WidgetRef ref) {
-    final settingsNotifier = ref.watch(settingsNotifierProvider.notifier);
-    final postStatsPageBuilder =
-        ref.watch(currentBooruBuilderProvider)?.postStatisticsPageBuilder;
-
     return Consumer(
       builder: (_, ref, __) {
         final config = ref.watchConfigFilter;
+
+        final settingsNotifier = ref.watch(settingsNotifierProvider.notifier);
+        final postStatsPageBuilder = ref
+            .watch(booruBuilderProvider(config.auth))
+            ?.postStatisticsPageBuilder;
+
         final blacklistEntries =
             ref.watch(blacklistTagEntriesProvider(config)).valueOrNull;
 

@@ -16,6 +16,14 @@ DanbooruPost postDtoToPost(
   PostMetadata? metadata,
 ) {
   try {
+    final variants = PostVariants.fromMap(
+      {
+        for (final variant in dto.mediaAsset?.variants ?? <VariantDto>[])
+          variant.type: variant.url,
+      },
+      fallback: () => _fallbackVariants(dto),
+    );
+
     return DanbooruPost(
       id: dto.id!,
       thumbnailImageUrl: dto.previewFileUrl ?? '',
@@ -54,8 +62,7 @@ DanbooruPost postDtoToPost(
       parentId: dto.parentId,
       hasLarge: dto.hasLarge ?? false,
       duration: dto.mediaAsset?.duration ?? 0,
-      variants:
-          dto.mediaAsset?.variants?.map(variantDtoToVariant).toList() ?? [],
+      variants: variants,
       pixelHash: dto.mediaAsset?.pixelHash ?? '',
       metadata: metadata,
     );
@@ -64,10 +71,10 @@ DanbooruPost postDtoToPost(
   }
 }
 
-PostVariant variantDtoToVariant(VariantDto dto) => PostVariant(
-      url: dto.url ?? '',
-      width: dto.width ?? 0,
-      height: dto.height ?? 0,
-      type: mapStringToPostQualityType(dto.type) ?? PostQualityType.sample,
-      fileExt: dto.fileExt ?? 'jpg',
-    );
+List<PostVariant> _fallbackVariants(PostDto dto) {
+  return [
+    PostVariant.thumbnail(dto.previewFileUrl),
+    PostVariant.sample(dto.largeFileUrl),
+    PostVariant.original(dto.fileUrl),
+  ];
+}

@@ -12,6 +12,7 @@ import '../../core/boorus/engine/engine.dart';
 import '../../core/configs/config.dart';
 import '../../core/configs/create.dart';
 import '../../core/configs/manage.dart';
+import '../../core/configs/ref.dart';
 import '../../core/downloads/filename.dart';
 import '../../core/http/providers.dart';
 import '../../core/posts/details/details.dart';
@@ -22,6 +23,7 @@ import '../../core/posts/post/post.dart';
 import '../../core/posts/post/providers.dart';
 import '../../core/posts/sources/source.dart';
 import '../../core/search/search/routes.dart';
+import '../../core/tags/tag/colors.dart';
 import '../../core/tags/tag/tag.dart';
 import '../danbooru/danbooru.dart';
 import 'providers.dart';
@@ -40,7 +42,6 @@ class ZerochanBuilder
         DefaultMultiSelectionActionsBuilderMixin,
         DefaultHomeMixin,
         UnknownMetatagsMixin,
-        DefaultTagColorsMixin,
         DefaultTagSuggestionsItemBuilderMixin,
         DefaultPostImageDetailsUrlMixin,
         DefaultPostGesturesHandlerMixin,
@@ -92,31 +93,9 @@ class ZerochanBuilder
           initialThumbnailUrl: payload.initialThumbnailUrl,
           posts: posts,
           scrollController: payload.scrollController,
+          dislclaimer: payload.dislclaimer,
           child: const DefaultPostDetailsPage<ZerochanPost>(),
         );
-      };
-
-  @override
-  TagColorBuilder get tagColorBuilder => (options) {
-        final colors = options.colors;
-
-        return switch (options.tagType) {
-          'mangaka' ||
-          'studio' ||
-          // This is from a fallback in case the tag is already searched in other boorus
-          'artist' =>
-            colors.artist,
-          'source' ||
-          'game' ||
-          'visual_novel' ||
-          'series' ||
-          // This is from a fallback in case the tag is already searched in other boorus
-          'copyright' =>
-            colors.copyright,
-          'character' => colors.character,
-          'meta' => colors.meta,
-          _ => colors.general,
-        };
       };
 
   @override
@@ -152,6 +131,38 @@ class ZerochanBuilder
   );
 }
 
+class ZerochanTagColorGenerator implements TagColorGenerator {
+  const ZerochanTagColorGenerator();
+
+  @override
+  Color? generateColor(TagColorOptions options) {
+    final colors = options.colors;
+
+    return switch (options.tagType) {
+      'mangaka' ||
+      'studio' ||
+      // This is from a fallback in case the tag is already searched in other boorus
+      'artist' =>
+        colors.artist,
+      'source' ||
+      'game' ||
+      'visual_novel' ||
+      'series' ||
+      // This is from a fallback in case the tag is already searched in other boorus
+      'copyright' =>
+        colors.copyright,
+      'character' => colors.character,
+      'meta' => colors.meta,
+      _ => colors.general,
+    };
+  }
+
+  @override
+  TagColors generateColors(TagColorsOptions options) {
+    return TagColors.fromBrightness(options.brightness);
+  }
+}
+
 class ZerochanRepository extends BooruRepositoryDefault {
   const ZerochanRepository({required this.ref});
 
@@ -165,7 +176,7 @@ class ZerochanRepository extends BooruRepositoryDefault {
 
   @override
   AutocompleteRepository autocomplete(BooruConfigAuth config) {
-    return ref.read(emptyAutocompleteRepoProvider);
+    return ref.read(zerochanAutoCompleteRepoProvider(config));
   }
 
   @override
@@ -180,6 +191,11 @@ class ZerochanRepository extends BooruRepositoryDefault {
   @override
   PostLinkGenerator<Post> postLinkGenerator(BooruConfigAuth config) {
     return DirectIdPathPostLinkGenerator(baseUrl: config.url);
+  }
+
+  @override
+  TagColorGenerator tagColorGenerator() {
+    return const ZerochanTagColorGenerator();
   }
 }
 
@@ -246,6 +262,7 @@ class _ZerochanTagsTileState extends ConsumerState<ZerochanTagsTile> {
           : BasicTagList(
               tags: post.tags.toList(),
               onTap: (tag) => goToSearchPage(context, tag: tag),
+              auth: ref.watchConfigAuth,
             ),
     );
   }

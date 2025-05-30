@@ -8,7 +8,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 
 // Project imports:
 import '../../../../../core/boorus/engine/engine.dart';
-import '../../../../../core/boorus/engine/providers.dart';
+import '../../../../../core/config_widgets/website_logo.dart';
 import '../../../../../core/configs/ref.dart';
 import '../../../../../core/foundation/clipboard.dart';
 import '../../../../../core/foundation/url_launcher.dart';
@@ -78,30 +78,28 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
                     builder: (context) {
                       final item = Consumer(
                         builder: (_, ref, __) {
-                          final booruRepo = ref.watch(currentBooruRepoProvider);
-                          final gridThumbnailUrlBuilder =
-                              booruRepo?.gridThumbnailUrlGenerator();
+                          final config = ref.watchConfigAuth;
 
-                          final imgUrl = gridThumbnailUrlBuilder != null
-                              ? gridThumbnailUrlBuilder
-                                  .generateThumbnailUrl(post)
-                              : post.thumbnailImageUrl;
+                          final gridThumbnailUrlBuilder = ref
+                              .watch(gridThumbnailUrlGeneratorProvider(config));
+
+                          final gridThumbnailSettings =
+                              ref.watch(gridThumbnailSettingsProvider(config));
+
+                          final imgUrl = gridThumbnailUrlBuilder.generateUrl(
+                            post,
+                            settings: gridThumbnailSettings,
+                          );
                           return SliverPostGridImageGridItem(
                             post: post,
                             multiSelectEnabled: multiSelect,
-                            quickActionButton: Consumer(
-                              builder: (_, ref, __) {
-                                final config = ref.watchConfigAuth;
-
-                                return !post.isBanned &&
-                                        !multiSelect &&
-                                        config.hasLoginDetails()
-                                    ? DefaultImagePreviewQuickActionButton(
-                                        post: post,
-                                      )
-                                    : const SizedBox.shrink();
-                              },
-                            ),
+                            quickActionButton: !post.isBanned &&
+                                    !multiSelect &&
+                                    config.hasLoginDetails()
+                                ? DefaultImagePreviewQuickActionButton(
+                                    post: post,
+                                  )
+                                : const SizedBox.shrink(),
                             autoScrollOptions: AutoScrollOptions(
                               controller: autoScrollController,
                               index: index,
@@ -168,7 +166,7 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 switch (post.source) {
-                  final WebSource source => WebsiteLogo(
+                  final WebSource source => ConfigAwareWebsiteLogo(
                       size: 18,
                       url: source.faviconUrl,
                     ),
@@ -254,7 +252,6 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
           forceCover: imageListType == ImageListType.standard,
           fit: imageListType == ImageListType.classic ? BoxFit.contain : null,
           placeholderUrl: post.thumbnailImageUrl,
-          gaplessPlayback: true,
         );
       },
     );
