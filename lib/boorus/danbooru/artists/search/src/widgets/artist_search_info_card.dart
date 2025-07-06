@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/configs/ref.dart';
 import '../../../../../../core/router.dart';
 import '../../../../../../core/tags/tag/providers.dart';
-import '../../../../../../core/utils/flutter_utils.dart';
+import '../../../../../../foundation/utils/flutter_utils.dart';
 import '../../../artist/artist.dart';
 import '../../../urls/widgets.dart';
 
@@ -45,7 +45,7 @@ class _ArtistCardState extends ConsumerState<ArtistSearchInfoCard> {
       child: InkWell(
         onTap: () {
           widget.focusScopeNode.unfocus();
-          goToArtistPage(context, artist.name);
+          goToArtistPage(ref, artist.name);
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(

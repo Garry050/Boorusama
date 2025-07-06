@@ -4,15 +4,17 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:share_plus/share_plus.dart';
 
 // Project imports:
+import '../../../../foundation/path.dart';
 import '../../../config_widgets/booru_logo.dart';
 import '../../../config_widgets/website_logo.dart';
-import '../../../foundation/path.dart';
+import '../../post/post.dart';
 import '../../sources/source.dart';
+import 'download_and_share.dart';
 
 final _cachedImageFileProvider =
     FutureProvider.autoDispose.family<XFile?, ModalShareImageData>(
@@ -24,7 +26,10 @@ final _cachedImageFileProvider =
 
     final ext = extension(imageUrl);
     final effectiveExt = ext.isNotEmpty ? ext : imageExt;
-    final file = await getCachedImageFile(imageUrl);
+
+    final cacheManager = DefaultImageCacheManager();
+    final cacheKey = cacheManager.generateCacheKey(imageUrl);
+    final file = await cacheManager.getCachedFile(cacheKey);
 
     if (file == null || effectiveExt == null) return null;
 
@@ -47,12 +52,14 @@ class PostModalShare extends ConsumerWidget {
     required this.booruLink,
     required this.sourceLink,
     required this.imageData,
+    required this.post,
     super.key,
   });
 
   final String booruLink;
   final PostSource sourceLink;
   final ModalShareImageData Function() imageData;
+  final Post post;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -69,23 +76,26 @@ class PostModalShare extends ConsumerWidget {
                   leading: ConfigAwareWebsiteLogo(url: s.faviconUrl),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Share.share(s.uri.toString());
+                    SharePlus.instance.share(ShareParams(uri: s.uri));
                   },
                 ),
               _ => const SizedBox.shrink(),
             },
-            ListTile(
-              title: const Text('post.detail.share.booru').tr(),
-              subtitle: Text(booruLink),
-              leading: BooruLogo(source: booruLink),
-              onTap: () {
-                Navigator.of(context).pop();
-                Share.share(
-                  booruLink,
-                  subject: booruLink,
-                );
-              },
-            ),
+            if (Uri.tryParse(booruLink) case final Uri uri)
+              ListTile(
+                title: const Text('post.detail.share.booru').tr(),
+                subtitle: Text(booruLink),
+                leading: BooruLogo(source: booruLink),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  SharePlus.instance.share(
+                    ShareParams(
+                      uri: uri,
+                      subject: booruLink,
+                    ),
+                  );
+                },
+              ),
             ref.watch(_cachedImageFileProvider(imageData())).when(
                   data: (file) {
                     return file != null
@@ -100,9 +110,12 @@ class PostModalShare extends ConsumerWidget {
                             ),
                             onTap: () {
                               Navigator.of(context).pop();
-                              Share.shareXFiles(
-                                [file],
-                                subject: file.name,
+
+                              SharePlus.instance.share(
+                                ShareParams(
+                                  files: [file],
+                                  subject: file.name,
+                                ),
                               );
                             },
                           )
@@ -115,6 +128,24 @@ class PostModalShare extends ConsumerWidget {
                     title: Text('Failed to load image'),
                   ),
                 ),
+            ListTile(
+              title: const Text('Download and share image'),
+              leading: const Icon(
+                Symbols.download,
+                fill: 1,
+              ),
+              subtitle: const Text(
+                'Download the original image and share it directly.',
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+
+                showDialog(
+                  context: context,
+                  builder: (context) => DownloadAndShareDialog(post: post),
+                );
+              },
+            ),
           ],
         ),
       ),

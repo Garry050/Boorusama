@@ -11,13 +11,14 @@ import 'package:rxdart/rxdart.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 // Project imports:
-import '../../../../analytics.dart';
+import '../../../../../foundation/utils/stream/text_editing_controller_utils.dart';
+import '../../../../analytics/analytics_interface.dart';
+import '../../../../analytics/providers.dart';
 import '../../../../posts/listing/providers.dart';
 import '../../../../posts/listing/widgets.dart';
 import '../../../../posts/post/post.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/settings.dart';
-import '../../../../utils/stream/text_editing_controller_utils.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../histories/providers.dart';
 import '../../../selected_tags/selected_tag_controller.dart';
@@ -61,7 +62,6 @@ class RawSearchPageScaffold<T extends Post> extends ConsumerStatefulWidget {
     required this.landingView,
     super.key,
     this.noticeBuilder,
-    this.queryPattern,
     this.extraHeaders,
     this.itemBuilder,
   });
@@ -83,8 +83,6 @@ class RawSearchPageScaffold<T extends Post> extends ConsumerStatefulWidget {
     int page,
     SelectedTagController selectedTagController,
   ) fetcher;
-
-  final Map<RegExp, TextStyle>? queryPattern;
 
   final IndexedSelectableSearchWidgetBuilder<T>? itemBuilder;
 
@@ -715,7 +713,7 @@ class _SearchResultAnalyticsAnchorState
   void initState() {
     super.initState();
     ref.read(analyticsProvider).whenData(
-          (analytics) => analytics.logScreenView('/search_result'),
+          (analytics) => analytics?.logScreenView('/search_result'),
         );
   }
 
@@ -736,7 +734,7 @@ class SearchViewAnalyticsAnchor extends ConsumerStatefulWidget {
   final String routeName;
 
   final RouteSettings? previousRoute;
-  final AnalyticsInterface analytics;
+  final AnalyticsInterface? analytics;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -748,7 +746,7 @@ class _SuggestionViewAnalyticsAnchoreState
   @override
   void initState() {
     super.initState();
-    widget.analytics.logScreenView(widget.routeName);
+    widget.analytics?.logScreenView(widget.routeName);
   }
 
   @override
@@ -756,7 +754,7 @@ class _SuggestionViewAnalyticsAnchoreState
     final name = widget.previousRoute?.name;
 
     if (name != null) {
-      widget.analytics.logScreenView(name);
+      widget.analytics?.logScreenView(name);
     }
 
     super.dispose();

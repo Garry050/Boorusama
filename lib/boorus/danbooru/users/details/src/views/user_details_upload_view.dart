@@ -8,15 +8,14 @@ import 'package:sliver_tools/sliver_tools.dart';
 
 // Project imports:
 import '../../../../../../core/configs/ref.dart';
-import '../../../../../../core/foundation/platform.dart';
-import '../../../../../../core/posts/details/routes.dart';
 import '../../../../../../core/posts/details_parts/widgets.dart';
 import '../../../../../../core/search/search/routes.dart';
 import '../../../../../../core/tags/categories/tag_category.dart';
 import '../../../../../../core/tags/tag/providers.dart';
 import '../../../../../../core/theme.dart';
-import '../../../../../../core/utils/flutter_utils.dart';
 import '../../../../../../core/widgets/widgets.dart';
+import '../../../../../../foundation/platform.dart';
+import '../../../../../../foundation/utils/flutter_utils.dart';
 import '../../../../posts/post/post.dart';
 import '../../../../tags/related/related.dart';
 import '../../../user/user.dart';
@@ -200,7 +199,7 @@ class _UserUploadViewState extends ConsumerState<UserDetailsUploadView>
                 ),
               ),
               onPressed: () => goToSearchPage(
-                context,
+                ref,
                 tag: e.tag,
               ),
               label: ConstrainedBox(
@@ -279,8 +278,7 @@ class SliverUploadPostList extends ConsumerWidget {
               ),
               visualDensity: const ShrinkVisualDensity(),
               trailing: TextButton(
-                onPressed: () =>
-                    goToSearchPage(context, tag: 'user:${user.name}'),
+                onPressed: () => goToSearchPage(ref, tag: 'user:${user.name}'),
                 child: const Text('View all'),
               ),
             ),
@@ -291,12 +289,6 @@ class SliverUploadPostList extends ConsumerWidget {
           sliver: ref.watch(danbooruUserUploadsProvider(params)).maybeWhen(
                 data: (data) => SliverPreviewPostGrid(
                   posts: data,
-                  onTap: (postIdx) => goToPostDetailsPageFromPosts(
-                    context: context,
-                    posts: data,
-                    initialIndex: postIdx,
-                    initialThumbnailUrl: data[postIdx].url360x360,
-                  ),
                   imageUrl: (item) => item.url360x360,
                 ),
                 orElse: () => const SliverPreviewPostGridPlaceholder(),

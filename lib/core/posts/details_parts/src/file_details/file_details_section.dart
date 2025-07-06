@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../foundation/clipboard.dart';
-import '../../../../foundation/display/media_query_utils.dart';
+import '../../../../../foundation/clipboard.dart';
+import '../../../../../foundation/display/media_query_utils.dart';
 import '../../../../theme.dart';
 import '../../../post/post.dart';
 import '../../../rating/rating.dart';

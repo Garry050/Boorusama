@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../../core/configs/ref.dart';
-import '../../../../../../core/router.dart';
-import '../../../../../../core/utils/duration_utils.dart';
+import '../../../../../../foundation/utils/duration_utils.dart';
 import '../../../comment/comment.dart';
 import '../../../comment/providers.dart';
 import '../../../votes/providers.dart';
@@ -69,7 +69,7 @@ class _CommentPageState extends ConsumerState<CommentPage> {
     if (isEditing.value) {
       isEditing.value = false;
     } else {
-      context.pop();
+      Navigator.of(context).pop();
     }
   }
 
@@ -111,7 +111,7 @@ class _CommentPageState extends ConsumerState<CommentPage> {
                           authenticated: config.hasLoginDetails(),
                           onEdit: (comment) {
                             goToCommentUpdatePage(
-                              context,
+                              ref,
                               postId: widget.postId,
                               commentId: comment.id,
                               commentBody: comment.body,

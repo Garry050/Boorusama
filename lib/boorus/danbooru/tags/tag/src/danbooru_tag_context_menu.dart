@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../core/configs/ref.dart';
-import '../../../../../core/foundation/clipboard.dart';
 import '../../../../../core/tags/tag/widgets.dart';
 import '../../../../../core/wikis/launcher.dart';
+import '../../../../../foundation/clipboard.dart';
 import '../../../blacklist/providers.dart';
 import '../../../saved_searches/saved_search/routes.dart';
 
@@ -43,7 +43,7 @@ class DanbooruTagContextMenu extends ConsumerWidget {
             await AppClipboard.copy(tag);
 
             if (context.mounted) {
-              goToSavedSearchEditPage(context);
+              goToSavedSearchEditPage(ref);
             }
           },
       },

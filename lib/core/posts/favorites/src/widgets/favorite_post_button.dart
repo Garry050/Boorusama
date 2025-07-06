@@ -5,12 +5,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
-import '../../../../foundation/animations.dart';
-import '../../../../foundation/toast.dart';
+import '../../../../../foundation/animations/constants.dart';
+import '../../../../../foundation/toast.dart';
 import '../../../../theme.dart';
 
 class FavoritePostButton extends StatelessWidget {

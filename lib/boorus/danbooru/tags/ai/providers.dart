@@ -6,7 +6,8 @@ import '../../../../core/configs/ref.dart';
 import '../../../../core/tags/categories/providers.dart';
 import '../../../../core/tags/categories/tag_category.dart';
 import '../../../../core/tags/tag/tag.dart';
-import '../../danbooru_provider.dart';
+import '../../client_provider.dart';
+import '../../danbooru.dart';
 import 'ai.dart';
 
 final danbooruAITagsProvider = FutureProvider.family<List<AITag>, int>(
@@ -36,10 +37,12 @@ final danbooruAITagsProvider = FutureProvider.family<List<AITag>, int>(
               .toList(),
         );
 
-    await ref.read(booruTagTypeStoreProvider).saveTagIfNotExist(
-          config.booruType,
-          tags.map((e) => e.tag).toList(),
-        );
+    final tagTypeStore = await ref.watch(booruTagTypeStoreProvider.future);
+
+    await tagTypeStore.saveTagIfNotExist(
+      config.url,
+      tags.map((e) => e.tag).toList(),
+    );
 
     return tags;
   },

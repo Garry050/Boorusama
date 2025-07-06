@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../../core/posts/explores/widgets.dart';
@@ -38,17 +38,17 @@ class DanbooruExplorePageInternal extends ConsumerWidget {
       sliverOverviews: [
         SliverToBoxAdapter(
           child: PopularExplore(
-            onPressed: () => goToExplorePopularPage(context),
+            onPressed: () => goToExplorePopularPage(ref),
           ),
         ),
         SliverToBoxAdapter(
           child: HotExplore(
-            onPressed: () => goToExploreHotPage(context),
+            onPressed: () => goToExploreHotPage(ref),
           ),
         ),
         SliverToBoxAdapter(
           child: MostViewedExplore(
-            onPressed: () => goToExploreMostViewedPage(context),
+            onPressed: () => goToExploreMostViewedPage(ref),
           ),
         ),
       ],

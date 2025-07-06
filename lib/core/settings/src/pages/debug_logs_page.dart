@@ -7,16 +7,17 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:readmore/readmore.dart';
 
 // Project imports:
-import '../../../downloads/path.dart';
-import '../../../foundation/animations.dart';
-import '../../../foundation/clipboard.dart';
-import '../../../foundation/loggers.dart';
-import '../../../foundation/scrolling.dart';
-import '../../../foundation/toast.dart';
+import '../../../../foundation/animations/constants.dart';
+import '../../../../foundation/clipboard.dart';
+import '../../../../foundation/loggers.dart';
+import '../../../../foundation/scrolling.dart';
+import '../../../../foundation/toast.dart';
+import '../../../downloads/path/directory.dart';
 import '../../../theme.dart';
 import '../../../widgets/widgets.dart';
 import '../providers/settings_provider.dart';

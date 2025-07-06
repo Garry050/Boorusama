@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
 import '../../../../../../core/widgets/widgets.dart';
-import '../../../../foundation/display/media_query_utils.dart';
-import '../../../../foundation/platform.dart';
+import '../../../../../foundation/display/media_query_utils.dart';
+import '../../../../../foundation/platform.dart';
 import '../../../selected_tags/tag.dart';
 import '../search_history.dart';
 

@@ -7,8 +7,8 @@ import 'package:foundation/foundation.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
-import '../../configs/src/create/appearance_theme.dart';
-import '../../foundation/display.dart';
+import '../../../foundation/display.dart';
+import '../../configs/appearance/types.dart';
 import '../../premiums/providers.dart';
 import '../../premiums/routes.dart';
 import '../../widgets/widgets.dart';
@@ -157,7 +157,7 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
                         )
                       : TextButton(
                           onPressed: () {
-                            goToPremiumPage(context);
+                            goToPremiumPage(ref);
                           },
                           child: const Text('Upgrade'),
                         ),

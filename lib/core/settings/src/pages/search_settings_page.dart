@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../configs/redirect.dart';
+import '../../../configs/config/widgets.dart';
 import '../providers/settings_notifier.dart';
 import '../providers/settings_provider.dart';
 import '../types/types.dart';

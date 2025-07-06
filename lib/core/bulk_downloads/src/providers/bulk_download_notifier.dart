@@ -8,17 +8,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart';
 
 // Project imports:
-import '../../../analytics.dart';
+import '../../../../foundation/loggers.dart';
+import '../../../../foundation/permissions.dart';
+import '../../../../foundation/platform.dart';
+import '../../../../foundation/utils/duration_utils.dart';
+import '../../../analytics/providers.dart';
 import '../../../blacklists/providers.dart';
 import '../../../boorus/engine/providers.dart';
 import '../../../configs/config.dart';
 import '../../../configs/ref.dart';
-import '../../../downloads/downloader.dart';
-import '../../../downloads/filename/generator_impl.dart';
-import '../../../downloads/manager.dart';
-import '../../../foundation/loggers.dart';
-import '../../../foundation/permissions.dart';
-import '../../../foundation/platform.dart';
+import '../../../download_manager/providers.dart';
+import '../../../downloads/downloader/providers.dart';
+import '../../../downloads/downloader/types.dart';
+import '../../../downloads/filename/types/generator_impl.dart';
+import '../../../downloads/urls/providers.dart';
 import '../../../http/http.dart';
 import '../../../http/providers.dart';
 import '../../../posts/filter/filter.dart';
@@ -28,7 +31,6 @@ import '../../../posts/sources/source.dart';
 import '../../../premiums/providers.dart';
 import '../../../search/selected_tags/tag.dart';
 import '../../../settings/providers.dart';
-import '../../../utils/duration_utils.dart';
 import '../notifications/providers.dart';
 import '../types/bulk_download_error.dart';
 import '../types/bulk_download_session.dart';
@@ -476,7 +478,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     final headers = downloadConfigs?.headers ?? fallbackHeaders;
 
     final fileNameBuilder = downloadConfigs?.fileNameBuilder ??
-        ref.read(booruBuilderProvider(config.auth))?.downloadFilenameBuilder ??
+        ref.read(downloadFilenameBuilderProvider(config.auth)) ??
         fallbackFileNameBuilder;
 
     final fallbackBlacklistedTags =
@@ -546,7 +548,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     }
 
     ref.read(analyticsProvider).whenData((analytics) {
-      analytics.logEvent(
+      analytics?.logEvent(
         'bulk_download_start',
         parameters: {
           'quality': task.quality,

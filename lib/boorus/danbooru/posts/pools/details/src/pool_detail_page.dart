@@ -5,18 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 import 'package:foundation/widgets.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // Project imports:
 import '../../../../../../core/bulk_downloads/routes.dart';
 import '../../../../../../core/configs/ref.dart';
-import '../../../../../../core/foundation/html.dart';
-import '../../../../../../core/foundation/url_launcher.dart';
 import '../../../../../../core/posts/listing/widgets.dart';
 import '../../../../../../core/search/search/routes.dart';
-import '../../../../../../core/utils/html_utils.dart';
 import '../../../../../../core/widgets/widgets.dart';
+import '../../../../../../foundation/html.dart';
+import '../../../../../../foundation/url_launcher.dart';
+import '../../../../../../foundation/utils/html_utils.dart';
 import '../../../post/post.dart';
 import '../../pool/pool.dart';
 import 'providers/providers.dart';
@@ -49,7 +50,7 @@ class PoolDetailPage extends ConsumerWidget {
                 icon: const Icon(Symbols.search),
                 onPressed: () {
                   goToSearchPage(
-                    context,
+                    ref,
                     tag: pool.toSearchQuery(),
                   );
                 },

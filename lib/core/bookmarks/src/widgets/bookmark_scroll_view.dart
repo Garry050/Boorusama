@@ -6,14 +6,15 @@ import 'package:context_menus/context_menus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 import 'package:foundation/widgets.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 // Project imports:
+import '../../../../foundation/url_launcher.dart';
 import '../../../config_widgets/booru_logo.dart';
 import '../../../configs/ref.dart';
-import '../../../foundation/url_launcher.dart';
 import '../../../posts/listing/providers.dart';
 import '../../../posts/listing/src/_internal/default_image_grid_item.dart';
 import '../../../posts/listing/src/_internal/post_grid_config_icon_button.dart';
@@ -223,7 +224,6 @@ class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
   ) {
     final edit = ref.watch(bookmarkEditProvider);
 
-    final context = ref.context;
     final config = ref.watchConfigAuth;
 
     return ValueListenableBuilder(
@@ -277,7 +277,7 @@ class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
               ),
               onTap: () {
                 goToBookmarkDetailsPage(
-                  context,
+                  ref,
                   index,
                   initialThumbnailUrl: post.isVideo
                       ? post.bookmark.thumbnailUrl

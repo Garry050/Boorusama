@@ -4,19 +4,18 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:context_menus/context_menus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
+import '../../../../../foundation/url_launcher.dart';
 import '../../../../bookmarks/bookmark.dart';
 import '../../../../bookmarks/providers.dart';
 import '../../../../boorus/engine/providers.dart';
 import '../../../../configs/ref.dart';
-import '../../../../downloads/downloader.dart';
-import '../../../../foundation/url_launcher.dart';
+import '../../../../downloads/downloader/providers.dart';
 import '../../../../router.dart';
 import '../../../../tags/tag/routes.dart';
 import '../../../post/post.dart';
-import '../../../post/tags.dart';
 
 class GeneralPostContextMenu extends ConsumerWidget {
   const GeneralPostContextMenu({
@@ -72,13 +71,12 @@ class GeneralPostContextMenu extends ConsumerWidget {
                 BookmarkUniqueId.fromPost(post, booruConfig.booruIdHint),
               ),
           ),
-        if (post.tags.isNotEmpty)
-          ContextMenuButtonConfig(
-            'View tags',
-            onPressed: () {
-              goToShowTaglistPage(context, post.extractTags());
-            },
-          ),
+        ContextMenuButtonConfig(
+          'View tags',
+          onPressed: () {
+            goToShowTaglistPage(ref, post);
+          },
+        ),
         if (!booruConfig.hasStrictSFW)
           ContextMenuButtonConfig(
             'post.detail.view_in_browser'.tr(),

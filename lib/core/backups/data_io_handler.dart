@@ -3,11 +3,12 @@ import 'dart:io';
 
 // Package imports:
 import 'package:foundation/foundation.dart';
+import 'package:intl/intl.dart';
 
 // Project imports:
-import '../foundation/path.dart';
-import '../foundation/permissions.dart';
-import '../info/device_info.dart';
+import '../../foundation/info/device_info.dart';
+import '../../foundation/path.dart';
+import '../../foundation/permissions.dart';
 import 'data_converter.dart';
 import 'types.dart';
 

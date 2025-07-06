@@ -7,14 +7,15 @@ import 'package:context_menus/context_menus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:readmore/readmore.dart';
 
 // Project imports:
+import '../../../../foundation/clipboard.dart';
+import '../../../../foundation/toast.dart';
 import '../../../config_widgets/booru_logo.dart';
 import '../../../configs/ref.dart';
-import '../../../foundation/clipboard.dart';
-import '../../../foundation/toast.dart';
 import '../../../images/booru_image.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/widgets.dart';
@@ -170,7 +171,7 @@ class _CreateSavedTaskButton extends ConsumerWidget {
                 label: 'generic.view'.tr(),
                 textColor: colorScheme.surface,
                 onPressed: () {
-                  goToBulkDownloadSavedTasksPage(context);
+                  goToBulkDownloadSavedTasksPage(ref);
                 },
               ),
             );

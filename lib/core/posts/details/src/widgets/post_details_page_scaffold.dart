@@ -14,14 +14,15 @@ import 'package:sliver_tools/sliver_tools.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 // Project imports:
-import '../../../../analytics.dart';
+import '../../../../../foundation/display.dart';
+import '../../../../../foundation/platform.dart';
+import '../../../../analytics/providers.dart';
 import '../../../../boorus/engine/engine.dart';
 import '../../../../boorus/engine/providers.dart';
 import '../../../../cache/providers.dart';
 import '../../../../configs/config.dart';
-import '../../../../configs/current.dart';
-import '../../../../foundation/display.dart';
-import '../../../../foundation/platform.dart';
+import '../../../../configs/gesture/gesture.dart';
+import '../../../../configs/manage/providers.dart';
 import '../../../../notes/notes.dart';
 import '../../../../premiums/providers.dart';
 import '../../../../router.dart';
@@ -38,6 +39,7 @@ import '../../../details_pageview/widgets.dart';
 import '../../../post/post.dart';
 import '../../../post/routes.dart';
 import '../../../shares/providers.dart';
+import '../types/post_details.dart';
 import 'post_details_controller.dart';
 import 'post_details_full_info_sheet.dart';
 import 'post_details_preload_image.dart';
@@ -51,13 +53,14 @@ class PostDetailsPageScaffold<T extends Post> extends ConsumerStatefulWidget {
   const PostDetailsPageScaffold({
     required this.posts,
     required this.controller,
+    required this.pageViewController,
     required this.viewerConfig,
     required this.authConfig,
     required this.gestureConfig,
     super.key,
     this.onExpanded,
     this.imageUrlBuilder,
-    this.topRightButtonsBuilder,
+    this.topRightButtons,
     this.uiBuilder,
     this.preferredParts,
     this.preferredPreviewParts,
@@ -68,9 +71,9 @@ class PostDetailsPageScaffold<T extends Post> extends ConsumerStatefulWidget {
   final void Function()? onExpanded;
   final String Function(T post)? imageUrlBuilder;
   final ImageCacheManager Function(Post post)? imageCacheManager;
-  final List<Widget> Function(PostDetailsPageViewController controller)?
-      topRightButtonsBuilder;
+  final List<Widget>? topRightButtons;
   final PostDetailsController<T> controller;
+  final PostDetailsPageViewController pageViewController;
   final PostDetailsUIBuilder? uiBuilder;
   final Set<DetailsPart>? preferredParts;
   final Set<DetailsPart>? preferredPreviewParts;
@@ -86,16 +89,7 @@ class PostDetailsPageScaffold<T extends Post> extends ConsumerStatefulWidget {
 class _PostDetailPageScaffoldState<T extends Post>
     extends ConsumerState<PostDetailsPageScaffold<T>> {
   late final _posts = widget.posts;
-  late final _controller = PostDetailsPageViewController(
-    initialPage: widget.controller.initialPage,
-    initialHideOverlay: ref.read(settingsProvider).hidePostDetailsOverlay,
-    slideshowOptions: toSlideShowOptions(ref.read(settingsProvider)),
-    hoverToControlOverlay: widget.posts[widget.controller.initialPage].isVideo,
-    checkIfLargeScreen: () => context.isLargeScreen,
-    totalPage: _posts.length,
-    disableAnimation:
-        ref.read(settingsProvider.select((value) => value.reduceAnimations)),
-  );
+  late final _controller = widget.pageViewController;
   late final _volumeKeyPageNavigator = VolumeKeyPageNavigator(
     pageViewController: _controller,
     totalPosts: _posts.length,
@@ -153,7 +147,6 @@ class _PostDetailPageScaffoldState<T extends Post>
 
   @override
   void dispose() {
-    _controller.dispose();
     _transformController.dispose();
     _volumeKeyPageNavigator.dispose();
     widget.controller.isVideoPlaying.removeListener(_isVideoPlayingChanged);
@@ -171,15 +164,17 @@ class _PostDetailPageScaffoldState<T extends Post>
   }
 
   void _startAutoHideVideoControlsTimer() {
-    final hideOverlay = ref.read(settingsProvider).hidePostDetailsOverlay;
+    final settings = ref.read(settingsProvider);
 
-    if (hideOverlay) return;
+    if (settings.hidePostDetailsOverlay) return;
 
     _clearAutoHideVideoControlsTimer();
 
     _autoHideVideoControlsTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) {
-        _controller.hideAllUI();
+        if (!settings.reduceAnimations) {
+          _controller.hideAllUI();
+        }
 
         _videoControlsHiddenByTimer = true;
       }
@@ -196,14 +191,6 @@ class _PostDetailPageScaffoldState<T extends Post>
     }
 
     _videoControlsHiddenByTimer = false;
-  }
-
-  SlideshowOptions toSlideShowOptions(Settings settings) {
-    return SlideshowOptions(
-      duration: settings.slideshowDuration,
-      direction: settings.slideshowDirection,
-      skipTransition: settings.skipSlideshowTransition,
-    );
   }
 
   void _isVideoPlayingChanged() {
@@ -245,7 +232,7 @@ class _PostDetailPageScaffoldState<T extends Post>
           LogicalKeyboardKey.keyF,
           control: true,
         ): () => goToOriginalImagePage(
-              context,
+              ref,
               widget.posts[_controller.page],
             ),
       },
@@ -374,7 +361,7 @@ class _PostDetailPageScaffoldState<T extends Post>
               Symbols.home,
               fill: 1,
             ),
-            onPressed: () => goToHomePage(context),
+            onPressed: () => goToHomePage(ref),
           ),
           const SizedBox(width: 8),
           if (widget.controller.dislclaimer != null)
@@ -424,7 +411,8 @@ class _PostDetailPageScaffoldState<T extends Post>
                   sheetState: state,
                   uiBuilder: uiBuilder,
                   preferredParts: preferredParts,
-                  canCustomize: kPremiumEnabled && widget.uiBuilder == null,
+                  canCustomize: ref.watch(showPremiumFeatsProvider) &&
+                      widget.uiBuilder == null,
                 ),
               );
             },
@@ -568,10 +556,8 @@ class _PostDetailPageScaffoldState<T extends Post>
           },
         ),
         actions: [
-          if (widget.topRightButtonsBuilder != null)
-            ...widget.topRightButtonsBuilder!(
-              _controller,
-            )
+          if (widget.topRightButtons case final List<Widget> buttons)
+            ...buttons
           else ...[
             ValueListenableBuilder(
               valueListenable: widget.controller.currentPost,
@@ -586,6 +572,7 @@ class _PostDetailPageScaffoldState<T extends Post>
               builder: (context, post, _) => GeneralMoreActionButton(
                 post: post,
                 config: widget.authConfig,
+                configViewer: widget.viewerConfig,
                 onStartSlideshow: () => _controller.startSlideshow(),
               ),
             ),
@@ -596,14 +583,14 @@ class _PostDetailPageScaffoldState<T extends Post>
           // Reset zoom when expanded
           _transformController.value = Matrix4.identity();
           ref.read(analyticsProvider).whenData(
-                (analytics) => analytics.logScreenView('/details/info'),
+                (analytics) => analytics?.logScreenView('/details/info'),
               );
         },
         onShrink: () {
           final routeName = ModalRoute.of(context)?.settings.name;
           if (routeName != null) {
             ref.read(analyticsProvider).whenData(
-                  (analytics) => analytics.logScreenView(routeName),
+                  (analytics) => analytics?.logScreenView(routeName),
                 );
           }
         },

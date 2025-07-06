@@ -11,7 +11,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 
 // Project imports:
 import '../../../../../../core/config_widgets/website_logo.dart';
-import '../../../../../../core/configs/failsafe.dart';
+import '../../../../../../core/configs/auth/widgets.dart';
 import '../../../../../../core/configs/ref.dart';
 import '../../../../../../core/posts/listing/providers.dart';
 import '../../../../../../core/posts/listing/widgets.dart';
@@ -256,7 +256,7 @@ class _DanbooruUploadGridState extends ConsumerState<DanbooruUploadGrid> {
                 onTap: () {
                   if (widget.type == UploadTabType.unposted) {
                     goToTagEditUploadPage(
-                      context,
+                      ref,
                       post: post,
                       uploadId: post.uploadId,
                       //TODO: Refresh later

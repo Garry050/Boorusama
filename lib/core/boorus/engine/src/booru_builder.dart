@@ -1,5 +1,4 @@
 // Project imports:
-import '../../../downloads/filename.dart';
 import '../../../home/custom_home.dart';
 import 'booru_builder_types.dart';
 
@@ -19,8 +18,6 @@ abstract class BooruBuilder {
 
   HomeViewBuilder get homeViewBuilder;
 
-  DownloadFilenameGenerator get downloadFilenameBuilder;
-
   PostImageDetailsUrlBuilder get postImageDetailsUrlBuilder;
 
   PostStatisticsPageBuilder get postStatisticsPageBuilder;
@@ -39,6 +36,8 @@ abstract class BooruBuilder {
   Map<CustomHomeViewKey, CustomHomeDataBuilder> get customHomeViewBuilders;
 
   PostDetailsUIBuilder get postDetailsUIBuilder;
+
+  ViewTagListBuilder get viewTagListBuilder;
 }
 
 extension BooruBuilderFeatureCheck on BooruBuilder {

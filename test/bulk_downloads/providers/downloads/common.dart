@@ -9,7 +9,7 @@ import 'package:foundation/foundation.dart';
 import 'package:mocktail/mocktail.dart';
 
 // Project imports:
-import 'package:boorusama/core/analytics.dart';
+import 'package:boorusama/core/analytics/providers.dart';
 import 'package:boorusama/core/blacklists/providers.dart';
 import 'package:boorusama/core/boorus/booru/booru.dart';
 import 'package:boorusama/core/boorus/engine/engine.dart';
@@ -21,15 +21,13 @@ import 'package:boorusama/core/bulk_downloads/src/types/download_configs.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_options.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_repository.dart';
 import 'package:boorusama/core/configs/config.dart';
-import 'package:boorusama/core/configs/current.dart';
-import 'package:boorusama/core/downloads/downloader.dart';
-import 'package:boorusama/core/downloads/filename.dart';
-import 'package:boorusama/core/downloads/manager.dart';
-import 'package:boorusama/core/downloads/urls.dart';
-import 'package:boorusama/core/foundation/loggers.dart';
-import 'package:boorusama/core/foundation/permissions.dart';
+import 'package:boorusama/core/configs/manage/providers.dart';
+import 'package:boorusama/core/download_manager/providers.dart';
+import 'package:boorusama/core/downloads/downloader/providers.dart';
+import 'package:boorusama/core/downloads/downloader/types.dart';
+import 'package:boorusama/core/downloads/filename/types.dart';
+import 'package:boorusama/core/downloads/urls/providers.dart';
 import 'package:boorusama/core/http/providers.dart';
-import 'package:boorusama/core/info/device_info.dart';
 import 'package:boorusama/core/posts/post/post.dart';
 import 'package:boorusama/core/posts/post/providers.dart';
 import 'package:boorusama/core/premiums/providers.dart';
@@ -37,6 +35,9 @@ import 'package:boorusama/core/search/queries/query.dart';
 import 'package:boorusama/core/search/selected_tags/tag.dart';
 import 'package:boorusama/core/settings/providers.dart';
 import 'package:boorusama/core/settings/settings.dart';
+import 'package:boorusama/foundation/info/device_info.dart';
+import 'package:boorusama/foundation/loggers.dart';
+import 'package:boorusama/foundation/permissions.dart';
 import '../../common.dart';
 
 class MockMediaPermissionManager extends Mock
@@ -275,8 +276,8 @@ class DummyDownloadService implements DownloadService {
 }
 
 final dummyDownloadFileNameBuilder = DownloadFileNameBuilder<DummyPost>(
-  tokenHandlers: {},
-  sampleData: [],
+  tokenHandlers: const [],
+  sampleData: const [],
   defaultFileNameFormat: 'test-default-format',
   defaultBulkDownloadFileNameFormat: 'test-default-bulk-format',
 );
@@ -334,10 +335,6 @@ ProviderContainer createBulkDownloadContainer({
   Stream<TaskUpdate>? taskUpdateStream,
   BooruConfigAuth? overrideConfig,
 }) {
-  when(() => booruBuilder.downloadFilenameBuilder).thenReturn(
-    dummyDownloadFileNameBuilder,
-  );
-
   final container = ProviderContainer(
     overrides: getTestOverrides(
       downloadRepository: downloadRepository,
@@ -378,6 +375,9 @@ List<Override> getTestOverrides({
     currentReadOnlyBooruConfigProvider.overrideWithValue(booruConfig),
     postRepoProvider.overrideWith((__, _) => DummyPostRepository()),
     downloadServiceProvider.overrideWith((_) => DummyDownloadService()),
+    downloadFilenameBuilderProvider.overrideWith(
+      (__, _) => dummyDownloadFileNameBuilder,
+    ),
     loggerProvider.overrideWithValue(DummyLogger()),
     mediaPermissionManagerProvider.overrideWithValue(
       mediaPermissionManager ?? MockMediaPermissionManager(),

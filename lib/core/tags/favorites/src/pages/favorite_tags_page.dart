@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
 import '../../../../../core/widgets/widgets.dart';
-import '../../../../foundation/toast.dart';
+import '../../../../../foundation/toast.dart';
 import '../../../../search/search/routes.dart';
 import '../../../../search/search/widgets.dart';
 import '../providers/favorite_tags_notifier.dart';
@@ -176,7 +176,7 @@ class FavoriteTagsPage extends ConsumerWidget {
           ),
           onTap: () {
             goToSearchPage(
-              context,
+              ref,
               tag: tag.name,
               queryType: tag.queryType,
             );

@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../../../core/foundation/clipboard.dart';
-import '../../../../../../core/info/package_info.dart';
 import '../../../../../../core/users/widgets.dart';
 import '../../../../../../core/widgets/widgets.dart';
+import '../../../../../../foundation/clipboard.dart';
+import '../../../../../../foundation/info/package_info.dart';
 import '../../../../dmails/routes.dart';
 import '../../../../posts/uploads/routes.dart';
 import '../../../user/providers.dart';
@@ -108,7 +108,7 @@ class UserDetailsActionButtons extends ConsumerWidget {
                     Theme.of(context).colorScheme.onSecondaryContainer,
               ),
               child: const Text('My Uploads'),
-              onPressed: () => goToMyUploadsPage(context),
+              onPressed: () => goToMyUploadsPage(ref),
             ),
           const SizedBox(width: 8),
           FilledButton(
@@ -118,7 +118,7 @@ class UserDetailsActionButtons extends ConsumerWidget {
                   Theme.of(context).colorScheme.onSecondaryContainer,
             ),
             child: const Text('profile.messages').tr(),
-            onPressed: () => goToDmailPage(context),
+            onPressed: () => goToDmailPage(ref),
           ),
         ],
       ),

@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../../core/configs/ref.dart';
-import '../../../../../../core/foundation/url_launcher.dart';
 import '../../../../../../core/widgets/generic_no_data_box.dart';
+import '../../../../../../foundation/url_launcher.dart';
 import '../../../saved_search/routes.dart';
 import '../../../saved_search/saved_search.dart';
 

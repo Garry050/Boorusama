@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../configs/redirect.dart';
-import '../../../../configs/src/create/appearance_theme.dart';
-import '../../../../foundation/platform.dart';
+import '../../../../../foundation/platform.dart';
+import '../../../../configs/appearance/types.dart';
+import '../../../../configs/appearance/widgets.dart';
+import '../../../../configs/config/widgets.dart';
 import '../../../../premiums/premiums.dart';
 import '../../../../premiums/providers.dart';
 import '../../../../theme/theme.dart';
@@ -76,7 +77,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
         ),
         const Divider(thickness: 1),
         const LayoutSection(),
-        if (kPremiumEnabled)
+        if (ref.watch(showPremiumFeatsProvider))
           const BooruConfigMoreSettingsRedirectCard.appearance(),
       ],
     );
@@ -122,7 +123,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
             );
           },
         ),
-        if (kPremiumEnabled)
+        if (ref.watch(showPremiumFeatsProvider))
           Container(
             margin: const EdgeInsets.symmetric(
               vertical: 4,

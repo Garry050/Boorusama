@@ -5,28 +5,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
+import '../../foundation/display.dart';
 import '../boorus/engine/providers.dart';
-import '../comments/utils.dart';
+import '../comments/routes.dart';
 import '../configs/ref.dart';
-import '../foundation/display.dart';
 import '../router.dart';
 import '../tags/favorites/providers.dart';
 import '../widgets/widgets.dart';
 
-void goToHomePage(
-  BuildContext context, {
-  bool replace = false,
-}) {
-  Navigator.of(context).popUntil((route) => route.isFirst);
+void goToHomePage(WidgetRef ref) {
+  ref.router.go('/');
 }
 
 void goToArtistPage(
-  BuildContext context,
+  WidgetRef ref,
   String? artistName,
 ) {
   if (artistName == null) return;
 
-  context.push(
+  ref.router.push(
     Uri(
       path: '/artists',
       queryParameters: {
@@ -36,10 +33,10 @@ void goToArtistPage(
   );
 }
 
-void goToCharacterPage(BuildContext context, String character) {
+void goToCharacterPage(WidgetRef ref, String character) {
   if (character.isEmpty) return;
 
-  context.push(
+  ref.router.push(
     Uri(
       path: '/characters',
       queryParameters: {

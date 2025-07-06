@@ -72,6 +72,21 @@ class GelbooruClient
   @override
   Dio get dio => _dio;
 
+  Uri? getTestPostUri({
+    required String userId,
+    required String apiKey,
+  }) =>
+      Uri.tryParse(_dio.options.baseUrl)?.replace(
+        queryParameters: {
+          'page': 'dapi',
+          's': 'post',
+          'q': 'index',
+          'json': '1',
+          if (userId.isNotEmpty) 'user_id': userId,
+          if (apiKey.isNotEmpty) 'api_key': apiKey,
+        },
+      );
+
   Future<GelbooruPosts> getPosts({
     int? page,
     int? limit,
@@ -351,7 +366,7 @@ class GelbooruClient
   }
 }
 
-List<TagDto> _parseTags(value) {
+List<TagDto> _parseTags(Response value) {
   final dtos = <TagDto>[];
   final contentType = (value.headers['content-type'] as List?)?.firstOrNull;
 
@@ -376,7 +391,7 @@ List<TagDto> _parseTags(value) {
   return dtos;
 }
 
-FutureOr<List<CommentDto>> _parseCommentDtos(value) {
+FutureOr<List<CommentDto>> _parseCommentDtos(Response value) {
   final dtos = <CommentDto>[];
   final xmlDocument = XmlDocument.parse(value.data);
   final comments = xmlDocument.findAllElements('comment');

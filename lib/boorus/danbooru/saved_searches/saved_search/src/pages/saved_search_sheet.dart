@@ -7,14 +7,17 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:rich_text_controller/rich_text_controller.dart';
 import 'package:rxdart/rxdart.dart';
 
 // Project imports:
 import '../../../../../../core/search/search/routes.dart';
 import '../../../../../../core/theme.dart';
-import '../../../../../../core/utils/stream/text_editing_controller_utils.dart';
 import '../../../../../../core/widgets/widgets.dart';
+import '../../../../../../foundation/utils/stream/text_editing_controller_utils.dart';
+import '../../../../syntax/providers.dart';
 import '../types/saved_search.dart';
 
 class SavedSearchSheet extends ConsumerStatefulWidget {
@@ -34,7 +37,7 @@ class SavedSearchSheet extends ConsumerStatefulWidget {
 }
 
 class _SavedSearchSheetState extends ConsumerState<SavedSearchSheet> {
-  final queryTextController = TextEditingController();
+  late final RichTextController queryTextController;
   final labelTextController = TextEditingController();
 
   final queryHasText = ValueNotifier(false);
@@ -45,6 +48,14 @@ class _SavedSearchSheetState extends ConsumerState<SavedSearchSheet> {
   @override
   void initState() {
     super.initState();
+
+    queryTextController = RichTextController(
+      text: widget.initialValue?.query,
+      matchers: [
+        ref.read(danbooruQueryMatcherProvider),
+      ],
+    );
+
     queryTextController
         .textAsStream()
         .distinct()

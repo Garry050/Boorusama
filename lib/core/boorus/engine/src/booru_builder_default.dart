@@ -6,13 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
+import '../../../../foundation/display.dart';
+import '../../../../foundation/url_launcher.dart';
 import '../../../configs/config.dart';
+import '../../../configs/gesture/gesture.dart';
 import '../../../configs/ref.dart';
-import '../../../downloads/downloader.dart';
-import '../../../foundation/display.dart';
-import '../../../foundation/url_launcher.dart';
+import '../../../downloads/downloader/providers.dart';
 import '../../../home/custom_home.dart';
 import '../../../home/home_page_scaffold.dart';
+import '../../../home/mobile_home_page_scaffold.dart';
 import '../../../home/user_custom_home_builder.dart';
 import '../../../posts/details/details.dart';
 import '../../../posts/details/widgets.dart';
@@ -23,7 +25,6 @@ import '../../../posts/listing/widgets.dart';
 import '../../../posts/post/post.dart';
 import '../../../posts/post/providers.dart';
 import '../../../posts/post/routes.dart';
-import '../../../posts/post/tags.dart';
 import '../../../posts/rating/rating.dart';
 import '../../../posts/shares/providers.dart';
 import '../../../posts/shares/widgets.dart';
@@ -31,8 +32,6 @@ import '../../../posts/sources/source.dart';
 import '../../../posts/statistics/stats.dart';
 import '../../../posts/statistics/widgets.dart';
 import '../../../router.dart';
-import '../../../scaffolds/scaffolds.dart';
-import '../../../search/search/src/pages/search_page.dart';
 import '../../../search/search/widgets.dart';
 import '../../../search/suggestions/widgets.dart';
 import '../../../settings/providers.dart';
@@ -189,11 +188,11 @@ class PostGestureHandler {
   }
 
   void handleViewTags(WidgetRef ref, Post post) {
-    goToShowTaglistPage(ref.context, post.extractTags());
+    goToShowTaglistPage(ref, post);
   }
 
   void handleViewOriginal(WidgetRef ref, Post post) {
-    goToOriginalImagePage(ref.context, post);
+    goToOriginalImagePage(ref, post);
   }
 
   void handleOpenSource(WidgetRef ref, Post post) {
@@ -257,6 +256,7 @@ class DefaultPostDetailsPage<T extends Post> extends ConsumerWidget {
     final controller = data.controller;
 
     return PostDetailsPageScaffold(
+      pageViewController: data.pageViewController,
       controller: controller,
       posts: posts,
       viewerConfig: ref.watchConfigViewer,
@@ -298,6 +298,34 @@ mixin DefaultHomeMixin implements BooruBuilder {
   @override
   final Map<CustomHomeViewKey, CustomHomeDataBuilder> customHomeViewBuilders =
       kDefaultAltHomeView;
+}
+
+mixin DefaultViewTagListBuilderMixin implements BooruBuilder {
+  @override
+  ViewTagListBuilder get viewTagListBuilder =>
+      (context, post, initiallyMultiSelectEnabled) => _DefaultShowTagListPage(
+            post: post,
+            initiallyMultiSelectEnabled: initiallyMultiSelectEnabled,
+          );
+}
+
+class _DefaultShowTagListPage extends ConsumerWidget {
+  const _DefaultShowTagListPage({
+    required this.post,
+    required this.initiallyMultiSelectEnabled,
+  });
+
+  final Post post;
+  final bool initiallyMultiSelectEnabled;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ShowTagListPage(
+      post: post,
+      initiallyMultiSelectEnabled: initiallyMultiSelectEnabled,
+      auth: ref.watchConfigAuth,
+    );
+  }
 }
 
 String Function(
@@ -372,7 +400,7 @@ class DefaultImagePreviewQuickActionButton extends ConsumerWidget {
               ),
               auth: config.auth,
               onTap: () => goToArtistPage(
-                context,
+                ref,
                 artist,
               ),
             );
@@ -401,7 +429,7 @@ final PostDetailsUIBuilder kFallbackPostDetailsUIBuilder = PostDetailsUIBuilder(
   },
   full: {
     DetailsPart.toolbar: (context) => const DefaultInheritedPostActionToolbar(),
-    DetailsPart.tags: (context) => const DefaultInheritedTagList(),
+    DetailsPart.tags: (context) => const DefaultInheritedBasicTagsTile(),
     DetailsPart.fileDetails: (context) =>
         const DefaultInheritedFileDetailsSection(),
   },

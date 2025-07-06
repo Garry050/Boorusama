@@ -4,17 +4,17 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../configs/current.dart';
-import '../../../configs/redirect.dart';
+import '../../../../foundation/info/device_info.dart';
+import '../../../configs/config/widgets.dart';
+import '../../../configs/create/routes.dart';
+import '../../../configs/manage/providers.dart';
 import '../../../configs/ref.dart';
-import '../../../configs/routes.dart';
-import '../../../downloads/downloader.dart';
+import '../../../downloads/configs/widgets.dart';
+import '../../../downloads/downloader/types.dart';
 import '../../../downloads/l10n.dart';
-import '../../../downloads/widgets.dart';
-import '../../../info/device_info.dart';
 import '../../widgets.dart';
 import '../providers/settings_notifier.dart';
 import '../providers/settings_provider.dart';
@@ -122,7 +122,7 @@ class DownloadSettingsInteractionBlocker extends ConsumerWidget {
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
                   goToUpdateBooruConfigPage(
-                    context,
+                    ref,
                     config: config,
                     initialTab: 'download',
                   );

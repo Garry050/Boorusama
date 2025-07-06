@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../../../core/configs/ref.dart';
-import '../../../../../../../core/foundation/toast.dart';
 import '../../../../../../../core/widgets/widgets.dart';
+import '../../../../../../../foundation/toast.dart';
 import '../providers/favorite_groups_notifier.dart';
 import '../types/danbooru_favorite_group.dart';
 import '../wigdets/privacy_toggle.dart';

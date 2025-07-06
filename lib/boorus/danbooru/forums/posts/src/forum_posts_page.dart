@@ -10,9 +10,9 @@ import 'package:foundation/widgets.dart';
 import '../../../../../core/configs/ref.dart';
 import '../../../../../core/dtext/dtext.dart';
 import '../../../../../core/forums/forum_post.dart';
-import '../../../../../core/foundation/html.dart';
-import '../../../../../core/foundation/url_launcher.dart';
 import '../../../../../core/theme.dart';
+import '../../../../../foundation/html.dart';
+import '../../../../../foundation/url_launcher.dart';
 import '../../../users/creator/providers.dart';
 import '../../../users/details/routes.dart';
 import '../../../users/user/user.dart';
@@ -143,7 +143,7 @@ class _DanbooruForumPostsPageState
                 createdAt: post.createdAt,
                 authorLevel: creatorLevel,
                 onTap: () => goToUserDetailsPage(
-                  context,
+                  ref,
                   uid: post.creatorId,
                 ),
               );

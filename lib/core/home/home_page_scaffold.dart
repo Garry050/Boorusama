@@ -3,20 +3,22 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
 import 'package:foundation/widgets.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
+import '../../foundation/boot/providers.dart';
+import '../../foundation/display.dart';
 import '../blacklists/widgets.dart';
 import '../bookmarks/widgets.dart';
 import '../boorus/engine/providers.dart';
 import '../bulk_downloads/widgets.dart';
 import '../cache/providers.dart';
+import '../configs/manage/widgets.dart';
 import '../configs/ref.dart';
-import '../configs/widgets.dart';
-import '../downloads/manager.dart';
-import '../foundation/display.dart';
+import '../donate/routes.dart';
+import '../download_manager/widgets.dart';
 import '../premiums/premiums.dart';
 import '../premiums/providers.dart';
 import '../premiums/routes.dart';
@@ -26,6 +28,7 @@ import '../tags/favorites/widgets.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import 'booru_scope.dart';
+import 'constants.dart';
 import 'custom_home.dart';
 import 'home_navigation_tile.dart';
 import 'home_page_controller.dart';
@@ -177,7 +180,7 @@ class HomeSideMenu extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  const CurrentBooruTile(),
+                  const CurrentBooruTile(minWidth: kMinSideBarWidth),
                   Expanded(
                     child: LayoutBuilder(
                       builder: (_, constraints) => SingleChildScrollView(
@@ -202,10 +205,12 @@ class HomeSideMenu extends ConsumerWidget {
                                   constraints,
                                 ),
                               ...coreDesktopTabBuilder(
-                                context,
+                                ref,
                                 constraints,
                                 viewKey,
                                 ref.watch(hasPremiumProvider),
+                                ref.watch(showPremiumFeatsProvider),
+                                ref.watch(isFossBuildProvider),
                               ),
                             ],
                           ),
@@ -264,10 +269,12 @@ List<Widget> coreDesktopViewBuilder({
 }
 
 List<Widget> coreDesktopTabBuilder(
-  BuildContext context,
+  WidgetRef ref,
   BoxConstraints constraints,
   CustomHomeViewKey? viewKey,
   bool hasPremium,
+  bool showPremium,
+  bool isFossBuild,
 ) {
   return [
     const Divider(),
@@ -315,14 +322,25 @@ List<Widget> coreDesktopTabBuilder(
       title: 'Download manager',
     ),
     const Divider(),
-    if (kPremiumEnabled && !kForcePremium && !hasPremium)
+    if (isFossBuild)
+      HomeNavigationTile(
+        value: 99998,
+        constraints: constraints,
+        selectedIcon: Symbols.favorite,
+        icon: Symbols.favorite,
+        title: 'Donate',
+        onTap: () => goToDonationPage(ref),
+        forceFillIcon: true,
+        forceIconColor: Colors.red,
+      )
+    else if (showPremium && !kForcePremium && !hasPremium)
       HomeNavigationTile(
         value: 99998,
         constraints: constraints,
         selectedIcon: Symbols.favorite,
         icon: Symbols.favorite,
         title: 'Get $kPremiumBrandName',
-        onTap: () => goToPremiumPage(context),
+        onTap: () => goToPremiumPage(ref),
         forceFillIcon: true,
         forceIconColor: Colors.red,
       ),
@@ -332,7 +350,7 @@ List<Widget> coreDesktopTabBuilder(
       selectedIcon: Symbols.settings,
       icon: Symbols.settings,
       title: 'sideMenu.settings'.tr(),
-      onTap: () => goToSettingsPage(context),
+      onTap: () => goToSettingsPage(ref),
     ),
     const SizedBox(height: 8),
   ];

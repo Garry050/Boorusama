@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:context_menus/context_menus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
+import '../../../../../foundation/clipboard.dart';
 import '../../../../blacklists/providers.dart';
-import '../../../../foundation/clipboard.dart';
 import '../../../../search/search/routes.dart';
 import '../../../favorites/providers.dart';
 
@@ -33,7 +33,7 @@ class GeneralTagContextMenu extends ConsumerWidget
       contextMenu: GenericContextMenu(
         buttonConfigs: [
           copyButton(context, tag),
-          searchButton(context, tag),
+          searchButton(ref, tag),
           ContextMenuButtonConfig(
             'post.detail.add_to_favorites'.tr(),
             onPressed: () {
@@ -71,11 +71,11 @@ mixin TagContextMenuButtonConfigMixin {
         },
       );
 
-  ContextMenuButtonConfig searchButton(BuildContext context, String tag) =>
+  ContextMenuButtonConfig searchButton(WidgetRef ref, String tag) =>
       ContextMenuButtonConfig(
         'Search',
         onPressed: () {
-          goToSearchPage(context, tag: tag);
+          goToSearchPage(ref, tag: tag);
         },
       );
 }

@@ -7,8 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/widgets.dart';
 
 // Project imports:
-import '../../../autocompletes/autocompletes.dart';
 import '../../../configs/config.dart';
+import '../../../configs/create/create.dart';
 import '../../../posts/details/routes.dart';
 import '../../../posts/details_manager/types.dart';
 import '../../../posts/listing/providers.dart';
@@ -16,6 +16,7 @@ import '../../../posts/post/post.dart';
 import '../../../posts/rating/rating.dart';
 import '../../../search/search/src/pages/search_page.dart';
 import '../../../settings/settings.dart';
+import '../../../tags/autocompletes/types.dart';
 import '../../../tags/configs/configs.dart';
 import '../../../tags/metatag/metatag.dart';
 import '../../../tags/tag/colors.dart';
@@ -128,6 +129,12 @@ typedef MetatagExtractorBuilder = MetatagExtractor Function(
 
 typedef HomeViewBuilder = Widget Function(
   BuildContext context,
+);
+
+typedef ViewTagListBuilder = Widget Function(
+  BuildContext context,
+  Post post,
+  bool initiallyMultiSelectEnabled,
 );
 
 const kDefaultPostDetailsPreviewPart = {

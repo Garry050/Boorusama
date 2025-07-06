@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
@@ -30,7 +31,8 @@ class ChangelogDialog extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final significantUpdate =
         isSignificantUpdate(data.previousVersion, data.version);
-    final hasPrem = kPremiumEnabled && ref.watch(hasPremiumProvider);
+    final hasPrem =
+        ref.watch(showPremiumFeatsProvider) && ref.watch(hasPremiumProvider);
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(
@@ -153,11 +155,11 @@ class ChangelogDialog extends ConsumerWidget {
   }
 }
 
-class _ThanksBanner extends StatelessWidget {
+class _ThanksBanner extends ConsumerWidget {
   const _ThanksBanner();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.symmetric(
         vertical: 12,
@@ -171,7 +173,7 @@ class _ThanksBanner extends StatelessWidget {
           children: [
             IconButton(
               onPressed: () {
-                goToPremiumPage(context);
+                goToPremiumPage(ref);
               },
               icon: const Icon(
                 color: Colors.red,
@@ -198,11 +200,11 @@ class _ThanksBanner extends StatelessWidget {
   }
 }
 
-class _SupportBanner extends StatelessWidget {
+class _SupportBanner extends ConsumerWidget {
   const _SupportBanner();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Material(
       color: Colors.transparent,
       child: Container(
@@ -215,7 +217,7 @@ class _SupportBanner extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(8)),
           ),
           onTap: () {
-            goToPremiumPage(context);
+            goToPremiumPage(ref);
           },
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -225,7 +227,7 @@ class _SupportBanner extends StatelessWidget {
               children: [
                 IconButton(
                   onPressed: () {
-                    goToPremiumPage(context);
+                    goToPremiumPage(ref);
                   },
                   icon: const Icon(
                     color: Colors.red,

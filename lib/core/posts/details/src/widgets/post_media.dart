@@ -7,10 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../../../core/widgets/widgets.dart';
+import '../../../../../foundation/display.dart';
+import '../../../../../foundation/path.dart';
+import '../../../../../foundation/platform.dart';
 import '../../../../configs/ref.dart';
-import '../../../../foundation/display.dart';
-import '../../../../foundation/path.dart';
-import '../../../../foundation/platform.dart';
 import '../../../../http/providers.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/routes.dart';
@@ -39,8 +39,8 @@ class PostMedia<T extends Post> extends ConsumerWidget {
   final String Function(T post)? thumbnailUrlBuilder;
   final ImageCacheManager Function(Post post)? imageCacheManager;
 
-  void _openSettings(BuildContext context) {
-    openImageViewerSettingsPage(context);
+  void _openSettings(WidgetRef ref) {
+    openImageViewerSettingsPage(ref);
   }
 
   @override
@@ -85,7 +85,7 @@ class PostMedia<T extends Post> extends ConsumerWidget {
                         sound: ref.isGlobalVideoSoundOn,
                         speed: ref.watchPlaybackSpeed(post.videoUrl),
                         thumbnailUrl: post.videoThumbnailUrl,
-                        onOpenSettings: () => _openSettings(context),
+                        onOpenSettings: () => _openSettings(ref),
                         headers: headers,
                         onInitializing: details.controller.onInitializing,
                       ),

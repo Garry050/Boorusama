@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../foundation/toast.dart';
+import '../../../../foundation/toast.dart';
 import '../../../premiums/routes.dart';
 import '../../../widgets/widgets.dart';
 import '../pages/bulk_download_edit_saved_task_page.dart';
@@ -52,7 +52,7 @@ class SavedTaskListTile extends ConsumerWidget {
       opacity: 0.2,
       grayedOut: isLocked,
       onTap: () {
-        goToPremiumPage(context);
+        goToPremiumPage(ref);
       },
       stackOverlay: const [
         Positioned.fill(

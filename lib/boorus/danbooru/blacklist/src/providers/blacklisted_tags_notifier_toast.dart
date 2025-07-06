@@ -2,11 +2,11 @@
 import 'package:flutter/widgets.dart';
 
 // Package imports:
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../core/blacklists/blacklist.dart';
-import '../../../../../core/foundation/toast.dart';
+import '../../../../../foundation/toast.dart';
 import 'blacklisted_tags_notifier.dart';
 
 extension BlacklistedTagsNotifierX on BlacklistedTagsNotifier {

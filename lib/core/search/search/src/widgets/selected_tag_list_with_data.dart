@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Project imports:
 import '../../../../bulk_downloads/routes.dart';
 import '../../../../configs/config.dart';
-import '../../../../configs/routes.dart';
+import '../../../../configs/create/routes.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/settings.dart';
 import '../../../queries/providers.dart';
@@ -60,7 +60,7 @@ class SelectedTagListWithData extends ConsumerWidget {
                   extraTagsCount: tagComposer.compose([]).length,
                   onOtherTagsCountTap: () {
                     goToUpdateBooruConfigPage(
-                      context,
+                      ref,
                       config: config,
                       initialTab: 'search',
                     );

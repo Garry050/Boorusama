@@ -7,19 +7,19 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:share_handler/share_handler.dart';
 
 // Project imports:
 import '../../../../core/configs/ref.dart';
-import '../../../../core/foundation/platform.dart';
-import '../../../../core/foundation/url_launcher.dart';
 import '../../../../core/home/home_navigation_tile.dart';
 import '../../../../core/home/home_page_scaffold.dart';
 import '../../../../core/home/side_menu_tile.dart';
 import '../../../../core/posts/favorites/routes.dart';
 import '../../../../core/theme.dart';
+import '../../../../foundation/platform.dart';
+import '../../../../foundation/url_launcher.dart';
 import '../../artists/search/routes.dart';
 import '../../artists/search/widgets.dart';
 import '../../blacklist/routes.dart';
@@ -144,7 +144,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
             ),
             title: const Text('profile.profile').tr(),
             onTap: () {
-              goToProfilePage(context);
+              goToProfilePage(ref);
             },
           ),
         SideMenuTile(
@@ -152,7 +152,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
             Symbols.explore,
           ),
           title: const Text('explore.explore').tr(),
-          onTap: () => goToExplorePage(context),
+          onTap: () => goToExplorePage(ref),
         ),
         SideMenuTile(
           icon: const _Icon(
@@ -160,7 +160,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
           ),
           title: const Text('Pools'),
           onTap: () {
-            goToPoolPage(context);
+            goToPoolPage(ref);
           },
         ),
         SideMenuTile(
@@ -169,7 +169,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
           ),
           title: const Text('forum.forum').tr(),
           onTap: () {
-            goToForumPage(context);
+            goToForumPage(ref);
           },
         ),
         SideMenuTile(
@@ -178,7 +178,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
           ),
           title: const Text('Artists'),
           onTap: () {
-            goToArtistSearchPage(context);
+            goToArtistSearchPage(ref);
           },
         ),
         if (config.hasLoginDetails()) ...[
@@ -188,7 +188,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
             ),
             title: Text('profile.favorites'.tr()),
             onTap: () {
-              goToFavoritesPage(context);
+              goToFavoritesPage(ref);
             },
           ),
           SideMenuTile(
@@ -197,7 +197,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
             ),
             title: const Text('favorite_groups.favorite_groups').tr(),
             onTap: () {
-              goToFavoriteGroupPage(context);
+              goToFavoriteGroupPage(ref);
             },
           ),
           SideMenuTile(
@@ -206,7 +206,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
             ),
             title: const Text('saved_search.saved_search').tr(),
             onTap: () {
-              goToSavedSearchPage(context);
+              goToSavedSearchPage(ref);
             },
           ),
           SideMenuTile(
@@ -217,7 +217,7 @@ class _DanbooruHomePageState extends ConsumerState<DanbooruHomePage> {
               'blacklisted_tags.blacklisted_tags',
             ).tr(),
             onTap: () {
-              goToBlacklistedTagPage(context);
+              goToBlacklistedTagPage(ref);
             },
           ),
         ],

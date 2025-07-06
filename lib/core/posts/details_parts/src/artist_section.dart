@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_html/flutter_html.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
-import '../../../artists/artists.dart';
-import '../../../comments/comment_parser.dart';
-import '../../../foundation/html.dart';
-import '../../../foundation/url_launcher.dart';
+import '../../../../foundation/html.dart';
+import '../../../../foundation/url_launcher.dart';
+import '../../../artists/types.dart';
+import '../../../comments/types.dart';
 import '../../../widgets/widgets.dart';
 import '../../sources/source.dart';
 import 'source_link.dart';

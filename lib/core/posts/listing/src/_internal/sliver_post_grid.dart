@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:sliver_masonry_grid/sliver_masonry_grid.dart';
 
 // Project imports:
 import '../../../../../boorus/danbooru/errors.dart';
-import '../../../../foundation/error.dart';
+import '../../../../../foundation/error.dart';
 import '../../../../settings/settings.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../post/post.dart';
@@ -29,6 +29,7 @@ class SliverPostGrid<T extends Post> extends StatelessWidget {
     this.aspectRatio,
     this.borderRadius,
     this.postsPerPage,
+    this.httpErrorActionBuilder,
   });
 
   final PostGridController<T> postController;
@@ -41,6 +42,9 @@ class SliverPostGrid<T extends Post> extends StatelessWidget {
   final int? postsPerPage;
 
   final IndexedWidgetBuilder itemBuilder;
+
+  final Widget Function(BuildContext context, int httpStatusCode)?
+      httpErrorActionBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +85,9 @@ class SliverPostGrid<T extends Post> extends StatelessWidget {
                               : const SizedBox.shrink();
                         },
                       ),
+                      if (httpErrorActionBuilder != null &&
+                          e.httpStatusCode != null)
+                        httpErrorActionBuilder!(context, e.httpStatusCode!),
                       Container(
                         padding: EdgeInsets.symmetric(
                           vertical: e.isServerError ? 4 : 24,

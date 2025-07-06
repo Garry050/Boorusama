@@ -4,18 +4,18 @@ import 'package:flutter/cupertino.dart';
 // Package imports:
 import 'package:context_menus/context_menus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../core/bookmarks/bookmark.dart';
 import '../../../../../core/bookmarks/providers.dart';
 import '../../../../../core/boorus/engine/providers.dart';
 import '../../../../../core/configs/ref.dart';
-import '../../../../../core/downloads/downloader.dart';
-import '../../../../../core/foundation/url_launcher.dart';
+import '../../../../../core/downloads/downloader/providers.dart';
 import '../../../../../core/posts/post/post.dart';
 import '../../../../../core/router.dart';
-import '../../../tags/tag/routes.dart';
+import '../../../../../core/tags/tag/routes.dart';
+import '../../../../../foundation/url_launcher.dart';
 import '../../../versions/routes.dart';
 import '../../favgroups/favgroups/routes.dart';
 import '../../post/post.dart';
@@ -92,12 +92,12 @@ class DanbooruPostContextMenu extends ConsumerWidget {
           ContextMenuButtonConfig(
             'View tags',
             onPressed: () {
-              goToDanbooruShowTaglistPage(ref, post.extractTags());
+              goToShowTaglistPage(ref, post);
             },
           ),
         ContextMenuButtonConfig(
           'View tag history',
-          onPressed: () => goToPostVersionPage(context, post),
+          onPressed: () => goToPostVersionPage(ref, post),
         ),
         if (hasAccount)
           ContextMenuButtonConfig(

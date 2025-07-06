@@ -5,18 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 // Project imports:
-import '../app_update/providers.dart';
-import '../app_update/types.dart';
+import '../../foundation/app_update/providers.dart';
+import '../../foundation/app_update/types.dart';
+import '../../foundation/display.dart';
+import '../../foundation/url_launcher.dart';
 import '../boorus/engine/engine.dart';
 import '../boorus/engine/providers.dart';
 import '../configs/ref.dart';
-import '../foundation/display.dart';
-import '../foundation/url_launcher.dart';
 import '../search/histories/providers.dart';
 import '../search/search/routes.dart';
 import '../search/search/src/widgets/search_app_bar.dart';
@@ -163,7 +163,7 @@ class HomeSearchBar extends ConsumerWidget {
           homeController?.openMenu();
         },
       ),
-      onTap: () => goToSearchPage(context),
+      onTap: () => goToSearchPage(ref),
     );
   }
 }

@@ -2,10 +2,10 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../../../core/comments/vote_event.dart';
+import '../../../../../../core/comments/types.dart';
 import '../../../../../../core/widgets/widgets.dart';
 import '../../../comment/comment.dart';
 import '../../../votes/vote.dart';

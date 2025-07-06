@@ -5,8 +5,6 @@ import 'package:equatable/equatable.dart';
 import '../../../../../core/posts/post/post.dart';
 import '../../../../../core/posts/rating/rating.dart';
 import '../../../../../core/posts/sources/source.dart';
-import '../../../../../core/tags/categories/tag_category.dart';
-import '../../../../../core/tags/tag/tag.dart';
 import 'post_variant.dart';
 
 typedef DanbooruPostsOrError = PostsOrErrorCore<DanbooruPost>;
@@ -201,57 +199,6 @@ extension PostX on DanbooruPost {
     return kCensoredTags.any(tagSet.contains);
   }
 
-  List<Tag> extractTags() {
-    final tags = <Tag>[];
-
-    for (final t in artistTags) {
-      tags.add(
-        Tag.noCount(
-          name: t,
-          category: TagCategory.artist(),
-        ),
-      );
-    }
-
-    for (final t in copyrightTags) {
-      tags.add(
-        Tag.noCount(
-          name: t,
-          category: TagCategory.copyright(),
-        ),
-      );
-    }
-
-    for (final t in characterTags) {
-      tags.add(
-        Tag.noCount(
-          name: t,
-          category: TagCategory.character(),
-        ),
-      );
-    }
-
-    for (final t in metaTags) {
-      tags.add(
-        Tag.noCount(
-          name: t,
-          category: TagCategory.meta(),
-        ),
-      );
-    }
-
-    for (final t in generalTags) {
-      tags.add(
-        Tag.noCount(
-          name: t,
-          category: TagCategory.general(),
-        ),
-      );
-    }
-
-    return tags;
-  }
-
   DanbooruPost copyWith({
     int? id,
     Set<String>? tags,
@@ -315,15 +262,39 @@ extension PostX on DanbooruPost {
 }
 
 extension PostQualityVariantX on DanbooruPost {
-  String get url180x180 => variants.getUrl(PostQualityType.v180x180);
+  String get url180x180 => _getOrFallback(
+        PostQualityType.v180x180,
+        thumbnailImageUrl,
+      );
 
-  String get url360x360 => variants.getUrl(PostQualityType.v360x360);
+  String get url360x360 => _getOrFallback(
+        PostQualityType.v360x360,
+        thumbnailImageUrl,
+      );
 
-  String get url720x720 => variants.getUrl(PostQualityType.v720x720);
+  String get url720x720 => _getOrFallback(
+        PostQualityType.v720x720,
+        thumbnailImageUrl,
+      );
 
-  String get urlSample => variants.getUrl(PostQualityType.sample);
+  String get urlSample => _getOrFallback(
+        PostQualityType.sample,
+        sampleImageUrl,
+      );
 
-  String get urlOriginal => variants.getUrl(PostQualityType.original);
+  String get urlOriginal => _getOrFallback(
+        PostQualityType.original,
+        originalImageUrl,
+      );
+
+  String _getOrFallback(
+    PostQualityType type,
+    String fallbackUrl,
+  ) {
+    final url = variants.getUrl(type);
+
+    return url.isNotEmpty ? url : fallbackUrl;
+  }
 }
 
 abstract interface class DanbooruTagDetails implements TagDetails {

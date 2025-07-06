@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
-import '../../../../../../../core/configs/failsafe.dart';
+import '../../../../../../../core/configs/auth/widgets.dart';
 import '../../../../../../../core/configs/ref.dart';
 import '../../../../../../../core/images/booru_image.dart';
 import '../../../details/routes.dart';
@@ -87,7 +87,7 @@ class FavoriteGroupsPageInternal extends ConsumerWidget {
                         ],
                       ),
                       onTap: () {
-                        goToFavoriteGroupDetailsPage(context, group);
+                        goToFavoriteGroupDetailsPage(ref, group);
                       },
                       leading: _Preview(group: group),
                       trailing: IconButton(

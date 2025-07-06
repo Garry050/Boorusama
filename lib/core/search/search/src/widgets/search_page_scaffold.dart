@@ -1,11 +1,14 @@
-import 'dart:math';
-
+// Flutter imports:
 import 'package:flutter/material.dart';
+
+// Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/widgets.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:rich_text_controller/rich_text_controller.dart';
 
-import '../../../../analytics.dart';
+// Project imports:
+import '../../../../analytics/providers.dart';
 import '../../../../boorus/booru/booru.dart';
 import '../../../../boorus/engine/providers.dart';
 import '../../../../configs/config.dart';
@@ -24,7 +27,7 @@ import '../../../suggestions/widgets.dart';
 import '../pages/search_page.dart';
 import '../views/search_landing_view.dart';
 import 'raw_search_page_scaffold.dart';
-import 'search_app_bar.dart';
+import 'raw_search_region.dart';
 import 'search_button.dart';
 import 'search_controller.dart';
 import 'selected_tag_list_with_data.dart';
@@ -35,11 +38,12 @@ class SearchPageScaffold<T extends Post> extends ConsumerStatefulWidget {
     required this.params,
     super.key,
     this.noticeBuilder,
-    this.queryPattern,
+    this.textMatchers,
     this.metatags,
     this.trending,
     this.extraHeaders,
     this.itemBuilder,
+    this.innerSearchButtonBuilder,
   });
 
   final SearchParams params;
@@ -60,7 +64,7 @@ class SearchPageScaffold<T extends Post> extends ConsumerStatefulWidget {
     SelectedTagController selectedTagController,
   ) fetcher;
 
-  final Map<RegExp, TextStyle>? queryPattern;
+  final List<TextMatcher>? textMatchers;
 
   final IndexedSelectableSearchWidgetBuilder<T>? itemBuilder;
 
@@ -68,6 +72,9 @@ class SearchPageScaffold<T extends Post> extends ConsumerStatefulWidget {
       metatags;
   final Widget? Function(BuildContext context, SearchPageController controller)?
       trending;
+
+  final Widget Function(SearchPageController controller)?
+      innerSearchButtonBuilder;
 
   @override
   ConsumerState<SearchPageScaffold<T>> createState() =>
@@ -96,7 +103,7 @@ class _SearchPageScaffoldState<T extends Post>
             .read(searchHistoryProvider.notifier)
             .addHistoryFromController(_tagsController);
       },
-      queryPattern: widget.queryPattern,
+      textMatchers: widget.textMatchers,
       tagsController: _tagsController,
     );
   }
@@ -124,7 +131,6 @@ class _SearchPageScaffoldState<T extends Post>
       },
       noticeBuilder: widget.noticeBuilder,
       extraHeaders: widget.extraHeaders,
-      queryPattern: widget.queryPattern,
       landingView: Consumer(
         builder: (context, ref, __) {
           final searchBarPosition = ref.watch(searchBarPositionProvider);
@@ -164,20 +170,9 @@ class _SearchPageScaffoldState<T extends Post>
       ),
       searchRegion: DefaultSearchRegion(
         controller: _controller,
-        tagList: Consumer(
-          builder: (context, ref, child) {
-            return SelectedTagListWithData(
-              controller: _tagsController,
-              config: ref.watchConfig,
-            );
-          },
-        ),
-        onSearch: () {
-          _controller.search();
-          _postController?.refresh();
-          _controller.focus.unfocus();
-        },
         initialQuery: widget.initialQuery,
+        postController: _postController,
+        innerSearchButton: widget.innerSearchButtonBuilder?.call(_controller),
       ),
       onPostControllerCreated: (controller) {
         _postController = controller;
@@ -188,84 +183,56 @@ class _SearchPageScaffoldState<T extends Post>
 
 class DefaultSearchRegion extends ConsumerWidget {
   const DefaultSearchRegion({
-    required this.onSearch,
     required this.controller,
-    required this.tagList,
-    super.key,
+    required this.postController,
+    this.innerSearchButton,
     this.initialQuery,
-    this.trailingSearchButton,
+    super.key,
   });
 
-  final VoidCallback onSearch;
-  final String? initialQuery;
   final SearchPageController controller;
-  final Widget tagList;
-  final Widget? trailingSearchButton;
+  final PostGridController? postController;
+  final String? initialQuery;
+  final Widget? innerSearchButton;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final parentRoute = ModalRoute.of(context);
     final autoFocusSearchBar = ref.watch(
       settingsProvider.select((value) => value.autoFocusSearchBar),
     );
     final searchBarPosition = ref.watch(searchBarPositionProvider);
 
-    final children = [
-      SizedBox(
-        height: kSearchBarHeight,
-        child: MultiValueListenableBuilder2(
-          first: controller.state,
-          second: controller.didSearchOnce,
-          builder: (_, state, searchOnce) {
-            return SearchAppBar(
-              onTapOutside: switch (searchBarPosition) {
-                SearchBarPosition.top => null,
-                // When search bar is at the bottom, keyboard will be kept open for better UX unless the app switches to results
-                SearchBarPosition.bottom =>
-                  searchOnce && state == SearchState.initial ? null : () {},
-              },
-              onSubmitted: (value) => controller.submit(value),
-              trailingSearchButton: trailingSearchButton ??
-                  DefaultTrailingSearchButton(controller: controller),
-              innerSearchButton: _buildSearchButton(context),
-              focusNode: controller.focus,
-              autofocus: initialQuery == null ? autoFocusSearchBar : false,
-              controller: controller.textController,
-              leading: (parentRoute?.impliesAppBarDismissal ?? false)
-                  ? const SearchAppBarBackButton()
-                  : null,
-            );
-          },
-        ),
+    return RawSearchRegion(
+      searchBarPosition: searchBarPosition,
+      autoFocusSearchBar: autoFocusSearchBar,
+      controller: controller,
+      tagList: SelectedTagListWithData(
+        controller: controller.tagsController,
+        config: ref.watchConfig,
       ),
-      tagList,
-    ];
-
-    final region = ColoredBox(
-      color: theme.colorScheme.surface,
-      child: Column(
-        children: switch (searchBarPosition) {
-          SearchBarPosition.top => children,
-          SearchBarPosition.bottom => children.reversed.toList(),
-        },
-      ),
+      innerSearchButton: innerSearchButton ??
+          DefaultInnerSearchButton(
+            controller: controller,
+          ),
+      initialQuery: initialQuery,
     );
-
-    return searchBarPosition == SearchBarPosition.top
-        ? region
-        : Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              region,
-              const _SearchRegionBottomDisplacement(),
-            ],
-          );
   }
+}
 
-  Widget _buildSearchButton(BuildContext context) {
-    final controller = InheritedSearchPageController.of(context);
+class DefaultInnerSearchButton extends StatelessWidget {
+  const DefaultInnerSearchButton({
+    required this.controller,
+    this.postController,
+    super.key,
+    this.disableAnimation,
+  });
 
+  final SearchPageController controller;
+  final PostGridController? postController;
+  final bool? disableAnimation;
+
+  @override
+  Widget build(BuildContext context) {
     return MultiValueListenableBuilder2(
       first: controller.allowSearch,
       second: controller.didSearchOnce,
@@ -275,9 +242,24 @@ class DefaultSearchRegion extends ConsumerWidget {
             right: 8,
           ),
           child: SearchButton2(
-            onTap: onSearch,
+            onTap: () {
+              controller.search();
+              postController?.refresh();
+              controller.focus.unfocus();
+            },
           ),
         );
+
+        final disable = disableAnimation ?? false;
+
+        if (disable) {
+          return searchOnce
+              ? searchButton
+              : allowSearch
+                  ? searchButton
+                  : const SizedBox.shrink();
+        }
+
         return searchOnce
             ? searchButton
             : AnimatedOpacity(
@@ -332,22 +314,6 @@ class DefaultTrailingSearchButton extends StatelessWidget {
                     : const SizedBox.shrink(),
               );
       },
-    );
-  }
-}
-
-class _SearchRegionBottomDisplacement extends StatelessWidget {
-  const _SearchRegionBottomDisplacement();
-
-  @override
-  Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
-    final viewPadding = MediaQuery.viewPaddingOf(context).bottom;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      color: colorScheme.surface,
-      height: max(viewInsets, viewPadding),
     );
   }
 }

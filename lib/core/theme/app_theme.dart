@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 
 // Project imports:
-import '../foundation/display.dart';
+import '../../foundation/display.dart';
 import 'colors.dart';
 import 'extended_color_scheme.dart';
 import 'grayscale_shades.dart';
@@ -235,17 +235,23 @@ class AppTheme {
             color: colorScheme.onSurface,
           ),
         ),
+        checkboxTheme: CheckboxThemeData(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(6)),
+          ),
+          checkColor: WidgetStateProperty.all(colorScheme.onPrimary),
+        ),
         chipTheme: const ChipThemeData(
           shape: StadiumBorder(),
           side: BorderSide.none,
         ),
-        cardTheme: const CardTheme(
+        cardTheme: const CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(8)),
           ),
         ),
-        dialogTheme: DialogTheme(
+        dialogTheme: DialogThemeData(
           surfaceTintColor: Colors.transparent,
           backgroundColor: colorScheme.surfaceContainer,
           shape: const RoundedRectangleBorder(
@@ -351,7 +357,7 @@ class AppTheme {
             },
           ),
         ),
-        tabBarTheme: TabBarTheme(
+        tabBarTheme: TabBarThemeData(
           tabAlignment: TabAlignment.start,
           indicatorColor: colorScheme.onSurface,
           labelStyle: TextStyle(

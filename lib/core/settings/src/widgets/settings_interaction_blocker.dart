@@ -7,8 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Project imports:
+import '../../../configs/create/routes.dart';
 import '../../../configs/ref.dart';
-import '../../../configs/routes.dart';
 import '../../../theme/theme.dart';
 import '../../../widgets/widgets.dart';
 import '../providers/listing_provider.dart';
@@ -99,7 +99,7 @@ class ListingSettingsInteractionBlocker extends ConsumerWidget {
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
                   goToUpdateBooruConfigPage(
-                    context,
+                    ref,
                     config: config,
                     initialTab: 'listing',
                   );
@@ -158,7 +158,7 @@ class ThemeSettingsInteractionBlocker extends ConsumerWidget {
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
                   goToUpdateBooruConfigPage(
-                    context,
+                    ref,
                     config: config,
                     initialTab: 'appearance',
                   );

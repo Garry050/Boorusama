@@ -2,9 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../../../core/comments/comment.dart';
+import '../../../../../../core/comments/types.dart';
 import '../../../../../../core/configs/config.dart';
-import '../../../../danbooru_provider.dart';
+import '../../../../client_provider.dart';
 import '../types/danbooru_comment.dart';
 import 'converter.dart';
 
@@ -14,7 +14,7 @@ final danbooruCommentRepoProvider =
   final client = ref.watch(danbooruClientProvider(config));
 
   return CommentRepositoryBuilder(
-    fetch: (postId) => client
+    fetch: (postId, {page}) => client
         .getComments(postId: postId, limit: 1000)
         .then((dtos) => dtos.map(commentDtoToComment).toList()),
     create: (postId, body) => client

@@ -5,20 +5,20 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // Project imports:
 import '../../../../core/widgets/widgets.dart';
-import '../../../analytics.dart';
+import '../../../../foundation/info/app_info.dart';
+import '../../../../foundation/scrolling.dart';
+import '../../../../foundation/toast.dart';
+import '../../../../foundation/url_launcher.dart';
+import '../../../analytics/providers.dart';
 import '../../../boorus/engine/providers.dart';
+import '../../../configs/create/routes.dart';
 import '../../../configs/ref.dart';
-import '../../../configs/routes.dart';
-import '../../../foundation/scrolling.dart';
-import '../../../foundation/toast.dart';
-import '../../../foundation/url_launcher.dart';
-import '../../../info/app_info.dart';
 import '../../../premiums/premiums.dart';
 import '../../../premiums/providers.dart';
 import '../../../premiums/routes.dart';
@@ -370,7 +370,7 @@ class _SettingsLargePageState extends ConsumerState<SettingsLargePage> {
                   onTap: () => setState(() {
                     _selectedEntry = entries.indexOf(entry);
                     ref.read(analyticsProvider).whenData(
-                          (a) => a.logScreenView(entry.name),
+                          (a) => a?.logScreenView(entry.name),
                         );
 
                     widget.onTabChanged?.call(entry.title);
@@ -424,7 +424,7 @@ class SettingsPageOtherSection extends ConsumerWidget {
               FontAwesomeIcons.gear,
             ),
             onTap: () => goToUpdateBooruConfigPage(
-              context,
+              ref,
               config: ref.watchConfig,
             ),
           ),
@@ -463,13 +463,13 @@ class SettingsPageOtherSection extends ConsumerWidget {
                   },
                 ),
               )
-        else if (kPremiumEnabled && !kForcePremium)
+        else if (ref.watch(showPremiumFeatsProvider) && !kForcePremium)
           SettingTile(
             title: kPremiumBrandNameFull,
             leading: const FaIcon(
               FontAwesomeIcons.solidStar,
             ),
-            onTap: () => goToPremiumPage(context),
+            onTap: () => goToPremiumPage(ref),
           ),
         SettingTile(
           title: 'settings.changelog'.tr(),

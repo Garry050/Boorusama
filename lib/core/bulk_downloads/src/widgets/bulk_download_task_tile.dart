@@ -6,16 +6,19 @@ import 'package:context_menus/context_menus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:foundation/foundation.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:readmore/readmore.dart';
 
 // Project imports:
+import '../../../../foundation/clipboard.dart';
+import '../../../../foundation/toast.dart';
 import '../../../config_widgets/booru_logo.dart';
-import '../../../downloads/manager.dart';
-import '../../../foundation/clipboard.dart';
-import '../../../foundation/toast.dart';
+import '../../../download_manager/providers.dart';
+import '../../../download_manager/types.dart';
 import '../../../images/booru_image.dart';
+import '../../../premiums/providers.dart';
 import '../../../router.dart';
 import '../../../theme.dart';
 import '../../../widgets/widgets.dart';
@@ -98,20 +101,12 @@ class BulkDownloadTaskTile extends ConsumerWidget {
                                         const EdgeInsets.symmetric(vertical: 4),
                                     child: _InfoText(session),
                                   ),
-                                  if (session.session.status ==
-                                      DownloadSessionStatus.suspended)
-                                    CompactChip(
-                                      label: 'Saved',
-                                      textStyle: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.onSecondaryContainer,
-                                        fontSize: 13,
-                                      ),
-                                      backgroundColor:
-                                          colorScheme.secondaryContainer,
-                                    )
-                                  else if (session.canViewInvidualProgresses)
-                                    const _MoreIndicator(),
+                                  if (ref.watch(showPremiumFeatsProvider))
+                                    if (session.session.status ==
+                                        DownloadSessionStatus.suspended)
+                                      const _SuspendTaskChip()
+                                    else if (session.canViewInvidualProgresses)
+                                      const _MoreIndicator(),
                                 ],
                               ),
                             ),
@@ -140,6 +135,25 @@ class BulkDownloadTaskTile extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SuspendTaskChip extends StatelessWidget {
+  const _SuspendTaskChip();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return CompactChip(
+      label: 'Saved',
+      textStyle: TextStyle(
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSecondaryContainer,
+        fontSize: 13,
+      ),
+      backgroundColor: colorScheme.secondaryContainer,
     );
   }
 }
@@ -350,7 +364,7 @@ class _DetailsInkWell extends ConsumerWidget {
               final updates = ref.read(downloadTaskUpdatesProvider).all(id);
 
               if (updates.isNotEmpty) {
-                context.push(
+                ref.router.push(
                   '/download_manager?group=$id',
                 );
               } else {
