@@ -18,14 +18,14 @@ jobs:
         include:
           - target: android
             os: ubuntu-latest
-            flutter_version: '3.27.4'
+            flutter_version: '3.32.8'
             flutter_channel: 'stable'
             artifact_name: release-prod-apk
             artifact_path: build/app/outputs/apk/prod/release/*.apk
 
           - target: ios
             os: macos-latest
-            flutter_version: '3.27.4'
+            flutter_version: '3.32.8'
             flutter_channel: 'stable'
             artifact_name: release-prod-ios
             artifact_path: build/*.ipa
