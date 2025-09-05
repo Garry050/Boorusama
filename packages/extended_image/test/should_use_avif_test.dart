@@ -29,40 +29,25 @@ void main() {
     });
 
     group('Android', () {
-      test('returns false when Android version is null', () {
+      test('returns true with .avif extension regardless of version', () {
         expect(
           shouldUseAvif(
             'test.avif',
             platform: TargetPlatform.android,
           ),
-          false,
+          true,
         );
       });
 
-      test('returns false for Android 12 (API 31) and above', () {
+      test('returns false for Android with non-avif extension', () {
         expect(
           shouldUseAvif(
-            'test.avif',
+            'test.jpg',
             platform: TargetPlatform.android,
-            androidVersion: 31,
           ),
           false,
         );
       });
-
-      test(
-        'returns true for Android 11 (API 30) and below with .avif extension',
-        () {
-          expect(
-            shouldUseAvif(
-              'test.avif',
-              platform: TargetPlatform.android,
-              androidVersion: 30,
-            ),
-            true,
-          );
-        },
-      );
     });
 
     group('URL variations', () {

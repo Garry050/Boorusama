@@ -33,8 +33,7 @@ bool shouldUseAvif(
   final isAvif = fileExt == 'avif';
 
   return switch (platform) {
-    TargetPlatform.android =>
-      androidVersion == null || androidVersion > 30 ? false : isAvif,
+    TargetPlatform.android => isAvif,
     TargetPlatform.iOS || TargetPlatform.macOS || null => false,
     _ => isAvif,
   };
