@@ -52,9 +52,9 @@ Future<void> boot(BootData bootData) async {
   final appLogger = bootData.appLogger;
 
   final stopwatch = Stopwatch()..start();
-  logger.info('Start up', 'App Start up');
+  logger..info('Start up', 'App Start up')
 
-  logger.debugBoot('Initialize MediaKit');
+  ..debugBoot('Initialize MediaKit');
   MediaKit.ensureInitialized();
 
   if (isDesktopPlatform()) {
@@ -116,7 +116,7 @@ Future<void> boot(BootData bootData) async {
         'ios',
         'windows',
         'macos',
-        if (settings.videoPlayerEngine == VideoPlayerEngine.mdk) 'android',
+        if (!settings.mediaKitHardwareDecoding) 'android',
       ],
     },
   );

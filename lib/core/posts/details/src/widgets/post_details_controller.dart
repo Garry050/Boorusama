@@ -10,8 +10,6 @@ import 'package:media_kit/media_kit.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 // Project imports:
-import '../../../../../../core/widgets/widgets.dart';
-import '../../../../../foundation/platform.dart';
 import '../../../../videos/video_progress.dart';
 import '../../../post/post.dart';
 
@@ -90,7 +88,6 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
 
   //TODO: should have an abstraction for this crap, but I'm too lazy to do it since there are only 2 types of video anyway
   final Map<int, Player> _videoControllers = {};
-  final Map<int, WebmVideoController> _webmVideoControllers = {};
 
   ValueNotifier<VideoProgress> get videoProgress => _videoProgress;
   ValueNotifier<bool> get isVideoPlaying => _isVideoPlaying;
@@ -112,12 +109,7 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
     bool isWebm,
     bool useDefaultEngine,
   ) {
-    // Only Android is using Webview for webm
-    if (isWebm && isAndroid() && useDefaultEngine) {
-      _webmVideoControllers[id]?.seek(position.inSeconds.toDouble());
-    } else {
-      _videoControllers[id]?.seek(position);
-    }
+    _videoControllers[id]?.seek(position);
 
     _seekStreamController.add(
       VideoProgress(
@@ -128,20 +120,11 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
   }
 
   bool isPlaying(int id, bool isWebm, bool useDefaultEngine) {
-    if (isWebm && isAndroid() && useDefaultEngine) {
-      return _webmVideoControllers[id]?.isPlaying ?? false;
-    } else {
-      return _videoControllers[id]?.state.playing ?? false;
-    }
+    return _videoControllers[id]?.state.playing ?? false;
   }
 
   Future<void> playVideo(int id, bool isWebm, bool useDefaultEngine) async {
-    if (isWebm && isAndroid() && useDefaultEngine) {
-      unawaited(_webmVideoControllers[id]?.play());
-    } else {
-      unawaited(_videoControllers[id]?.play());
-    }
-
+    unawaited(_videoControllers[id]?.play());
     _isVideoPlaying.value = true;
   }
 
@@ -166,17 +149,8 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
   }
 
   Future<void> pauseVideo(int id, bool isWebm, bool useDefaultEngine) async {
-    if (isWebm && isAndroid() && useDefaultEngine) {
-      unawaited(_webmVideoControllers[id]?.pause());
-    } else {
-      unawaited(_videoControllers[id]?.pause());
-    }
-
+    unawaited(_videoControllers[id]?.pause());
     _isVideoPlaying.value = false;
-  }
-
-  void onWebmVideoPlayerCreated(WebmVideoController controller, int id) {
-    _webmVideoControllers[id] = controller;
   }
 
   void onVideoPlayerCreated(Player controller, int id) {
@@ -194,12 +168,7 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
       controller.dispose();
     }
 
-    for (final controller in _webmVideoControllers.values) {
-      controller.dispose();
-    }
-
     _videoControllers.clear();
-    _webmVideoControllers.clear();
 
     _videoProgress.dispose();
     _isVideoPlaying.dispose();

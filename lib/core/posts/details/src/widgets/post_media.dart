@@ -6,15 +6,11 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../../core/widgets/widgets.dart';
 import '../../../../../foundation/display.dart';
-import '../../../../../foundation/path.dart';
-import '../../../../../foundation/platform.dart';
 import '../../../../configs/config/types.dart';
 import '../../../../http/providers.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/routes.dart';
-import '../../../../settings/settings.dart';
 import '../../../../videos/providers.dart';
 import '../../../../videos/video_player.dart';
 import '../../../details_pageview/widgets.dart';
@@ -48,9 +44,9 @@ class PostMedia<T extends Post> extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final details = PostDetails.of<T>(context);
-    final useDefault = ref.watch(
+    ref.watch(
       settingsProvider.select(
-        (value) => value.videoPlayerEngine != VideoPlayerEngine.mdk,
+        (value) => value.mediaKitHardwareDecoding,
       ),
     );
     final headers = ref.watch(httpHeadersProvider(config));
@@ -60,39 +56,25 @@ class PostMedia<T extends Post> extends ConsumerWidget {
         ? Stack(
             children: [
               Positioned.fill(
-                child:
-                    extension(post.videoUrl) == '.webm' &&
-                        isAndroid() &&
-                        useDefault
-                    ? EmbeddedWebViewWebm(
-                        heroTag: heroTag,
-                        url: post.videoUrl,
-                        onCurrentPositionChanged:
-                            details.controller.onCurrentPositionChanged,
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        onWebmVideoPlayerCreated: (wvpc) => details.controller
-                            .onWebmVideoPlayerCreated(wvpc, post.id),
-                        sound: ref.isGlobalVideoSoundOn,
-                        playbackSpeed: ref.watchPlaybackSpeed(post.videoUrl),
-                        userAgent: ref.watch(
-                          userAgentProvider(config),
-                        ),
-                      )
-                    : BooruVideo(
-                        heroTag: heroTag,
-                        url: post.videoUrl,
-                        aspectRatio: post.aspectRatio,
-                        onCurrentPositionChanged:
-                            details.controller.onCurrentPositionChanged,
-                        onVideoPlayerCreated: (vpc) => details.controller
-                            .onVideoPlayerCreated(vpc, post.id),
-                        sound: ref.isGlobalVideoSoundOn,
-                        speed: ref.watchPlaybackSpeed(post.videoUrl),
-                        thumbnailUrl: post.videoThumbnailUrl,
-                        onOpenSettings: () => _openSettings(ref),
-                        headers: headers,
-                        onInitializing: details.controller.onInitializing,
-                      ),
+                child: BooruVideo(
+                  heroTag: heroTag,
+                  url: post.videoUrl,
+                  aspectRatio: post.aspectRatio,
+                  onCurrentPositionChanged:
+                      details.controller.onCurrentPositionChanged,
+                  onVideoPlayerCreated: (vpc) => details.controller
+                      .onVideoPlayerCreated(vpc, post.id),
+                  sound: ref.isGlobalVideoSoundOn,
+                  speed: ref.watchPlaybackSpeed(post.videoUrl),
+                  thumbnailUrl: post.videoThumbnailUrl,
+                  onOpenSettings: () => _openSettings(ref),
+                  headers: headers,
+                  onInitializing: details.controller.onInitializing,
+                  onTap: () {
+                    // Toggle overlay
+                    controller.toggleOverlay();
+                  },
+                ),
               ),
               if (context.isLargeScreen)
                 Align(
