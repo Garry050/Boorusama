@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:cache_manager/cache_manager.dart';
 import 'package:dio/dio.dart';
-import 'package:extended_image_library/extended_image_library.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_avif/flutter_avif.dart';
 import 'package:retriable/retriable.dart';
-
-import 'image_cache_manager.dart';
 
 class CustomCachedNetworkAvifImage extends AvifImage {
   CustomCachedNetworkAvifImage(
@@ -38,7 +36,7 @@ class CustomCachedNetworkAvifImage extends AvifImage {
     Map<String, String>? headers,
     ImageCacheManager? cacheManager,
     required Dio dio,
-    CancellationToken? cancelToken,
+    CancelToken? cancelToken,
     FetchStrategyBuilder? fetchStrategy,
     String? cacheKey,
     Duration? cacheMaxAge,
@@ -74,7 +72,7 @@ class CustomCachedNetworkAvifImageProvider extends NetworkAvifImage {
 
   late final ImageCacheManager cacheManager;
   final Dio dio;
-  final CancellationToken? cancelToken;
+  final CancelToken? cancelToken;
   final FetchStrategyBuilder? fetchStrategy;
   final String? cacheKey;
   final Duration? cacheMaxAge;
@@ -114,17 +112,12 @@ class CustomCachedNetworkAvifImageProvider extends NetworkAvifImage {
       url,
       customKey: this.cacheKey,
     );
-    final hasValidCache = await cacheManager.hasValidCache(
+    final cachedBytes = await cacheManager.getCachedFileBytes(
       cacheKey,
       maxAge: cacheMaxAge,
     );
-
-    // Try to load from cache first
-    if (hasValidCache) {
-      final cachedBytes = await cacheManager.getCachedFileBytes(cacheKey);
-      if (cachedBytes != null) {
-        return _processAvifBytes(cachedBytes, chunkEvents);
-      }
+    if (cachedBytes != null) {
+      return _processAvifBytes(cachedBytes, chunkEvents);
     }
 
     // If not in cache, fetch from network
@@ -164,10 +157,16 @@ class CustomCachedNetworkAvifImageProvider extends NetworkAvifImage {
       }
 
       return _processAvifBytes(bytes, chunkEvents);
-    } on OperationCanceledError catch (_) {
-      PaintingBinding.instance.imageCache.evict(key);
-      chunkEvents.close();
-      throw StateError('User canceled request $url.');
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        PaintingBinding.instance.imageCache.evict(key);
+        chunkEvents.close();
+        throw StateError('User canceled request $url.');
+      } else {
+        PaintingBinding.instance.imageCache.evict(key);
+        chunkEvents.close();
+        throw StateError('Failed to load $url: $e');
+      }
     } catch (e) {
       PaintingBinding.instance.imageCache.evict(key);
       chunkEvents.close();

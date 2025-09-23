@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:extended_image/extended_image.dart';
+import 'package:cache_manager/cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
@@ -33,10 +33,12 @@ class PostDetailsImage<T extends Post> extends ConsumerStatefulWidget {
   final T post;
 
   @override
-  ConsumerState<PostDetailsImage> createState() => _PostDetailsImageState();
+  ConsumerState<PostDetailsImage<T>> createState() =>
+      _PostDetailsImageState<T>();
 }
 
-class _PostDetailsImageState extends ConsumerState<PostDetailsImage> {
+class _PostDetailsImageState<T extends Post>
+    extends ConsumerState<PostDetailsImage<T>> {
   @override
   Widget build(BuildContext context) {
     final imageUrl = widget.imageUrlBuilder != null

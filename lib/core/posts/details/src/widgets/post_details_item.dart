@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:extended_image/extended_image.dart';
+import 'package:cache_manager/cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
@@ -12,11 +12,7 @@ import '../../../../../foundation/platform.dart';
 import '../../../../boorus/engine/providers.dart';
 import '../../../../configs/config/types.dart';
 import '../../../../configs/gesture/gesture.dart';
-import '../../../../settings/providers.dart';
-import '../../../../settings/settings.dart';
-import '../../../../videos/play_pause_button.dart';
-import '../../../../videos/providers.dart';
-import '../../../../videos/sound_control_button.dart';
+import '../../../../videos/widgets.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../details_pageview/widgets.dart';
 import '../../../post/post.dart';
@@ -53,10 +49,6 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
     final pageViewController = PostDetailsPageViewScope.of(context);
     final post = posts[index];
 
-    final videoPlayerEngine = ref.watch(
-      settingsProvider.select((value) => value.videoPlayerEngine),
-    );
-
     final booruBuilder = ref.watch(booruBuilderProvider(authConfig));
     final postGesturesHandler = booruBuilder?.postGestureHandlerBuilder;
     final gestures = gestureConfig?.fullview;
@@ -67,13 +59,9 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
       if (isDesktopPlatform()) {
         if (controller.currentPost.value.isVideo) {
           if (controller.isVideoPlaying.value) {
-            controller.pauseCurrentVideo(
-              useDefaultEngine: videoPlayerEngine.isDefault,
-            );
+            controller.pauseCurrentVideo();
           } else {
-            controller.playCurrentVideo(
-              useDefaultEngine: videoPlayerEngine.isDefault,
-            );
+            controller.playCurrentVideo();
           }
         } else {
           if (pageViewController.isExpanded) return;
@@ -131,9 +119,7 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
                     // This is used to make sure we have a thumbnail to show instead of a black placeholder
                     thumbnailUrlBuilder:
                         isInitPage && initialThumbnailUrl != null
-                        // Need to specify the type here to avoid type inference error
-                        // ignore: avoid_types_on_closure_parameters
-                        ? (Post _) => initialThumbnailUrl
+                        ? (_) => initialThumbnailUrl
                         : null,
                     controller: pageViewController,
                   );
@@ -152,30 +138,16 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
                                 isPlaying: detailsController.isVideoPlaying,
                                 onPlayingChanged: (value) {
                                   if (value) {
-                                    detailsController.pauseVideo(
-                                      post.id,
-                                      post.isWebm,
-                                      videoPlayerEngine.isDefault,
-                                    );
+                                    detailsController.pauseVideo(post.id);
                                   } else if (!value) {
-                                    detailsController.playVideo(
-                                      post.id,
-                                      post.isWebm,
-                                      videoPlayerEngine.isDefault,
-                                    );
+                                    detailsController.playVideo(post.id);
                                   } else {
                                     // do nothing
                                   }
                                 },
                               ),
-                              VideoSoundScope(
-                                builder: (context, soundOn) =>
-                                    SoundControlButton(
-                                      padding: const EdgeInsets.all(8),
-                                      soundOn: soundOn,
-                                      onSoundChanged: (value) =>
-                                          ref.setGlobalVideoSound(value),
-                                    ),
+                              const SoundControlButton(
+                                padding: EdgeInsets.all(8),
                               ),
                             ],
                           ),

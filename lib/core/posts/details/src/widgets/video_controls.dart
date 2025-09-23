@@ -10,11 +10,8 @@ import '../../../../../foundation/display.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/settings.dart';
 import '../../../../theme.dart';
-import '../../../../videos/more_options_control_button.dart';
-import '../../../../videos/play_pause_button.dart';
 import '../../../../videos/providers.dart';
-import '../../../../videos/sound_control_button.dart';
-import '../../../../videos/video_progress_bar.dart';
+import '../../../../videos/widgets.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../post/post.dart';
 import 'post_details_controller.dart';
@@ -29,26 +26,6 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rightControls = [
-      VideoSoundScope(
-        builder: (context, soundOn) => SoundControlButton(
-          soundOn: soundOn,
-          onSoundChanged: (value) => ref.setGlobalVideoSound(value),
-        ),
-      ),
-      const SizedBox(width: 8),
-      MoreOptionsControlButton(
-        speed: ref.watchPlaybackSpeed(
-          controller.currentPost.value.videoUrl,
-        ),
-        onSpeedChanged: (speed) => ref.setPlaybackSpeed(
-          controller.currentPost.value.videoUrl,
-          speed,
-        ),
-      ),
-      const SizedBox(width: 8),
-    ];
-
     final isLarge = context.isLargeScreen;
     final surfaceColor = Theme.of(context).colorScheme.surface;
 
@@ -74,7 +51,26 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
               child: _buildControls(
                 isLarge,
                 constraints,
-                rightControls,
+                [
+                  const SoundControlButton(),
+                  const SizedBox(width: 8),
+                  ValueListenableBuilder(
+                    valueListenable: controller.currentPost,
+                    builder: (context, post, child) => MoreOptionsControlButton(
+                      speed: ref.watch(
+                        playbackSpeedProvider(
+                          post.videoUrl,
+                        ),
+                      ),
+                      onSpeedChanged: (speed) => ref
+                          .read(
+                            playbackSpeedProvider(post.videoUrl).notifier,
+                          )
+                          .setSpeed(speed),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
               ),
             ),
           ),
@@ -102,7 +98,8 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
           builder: (context, ref, child) {
             final useDefaultEngine = ref.watch(
               settingsProvider.select(
-                (value) => value.videoPlayerEngine != VideoPlayerEngine.mdk,
+                (value) =>
+                    value.viewer.videoPlayerEngine != VideoPlayerEngine.mdk,
               ),
             );
 
@@ -154,17 +151,9 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
         isPlaying: controller.isVideoPlaying,
         onPlayingChanged: (value) {
           if (value) {
-            controller.pauseVideo(
-              post.id,
-              post.isWebm,
-              useDefaultEngine,
-            );
+            controller.pauseVideo(post.id);
           } else if (!value) {
-            controller.playVideo(
-              post.id,
-              post.isWebm,
-              useDefaultEngine,
-            );
+            controller.playVideo(post.id);
           } else {
             // do nothing
           }
@@ -177,40 +166,23 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
     return Container(
       color: Colors.transparent,
       height: 28,
-      child: MultiValueListenableBuilder3(
+      child: MultiValueListenableBuilder2(
         first: controller.currentPost,
         second: controller.videoProgress,
-        third: controller.isVideoInitializing,
-        builder: (context, post, progress, initializing) {
+        builder: (context, post, progress) {
           final colorScheme = Theme.of(context).colorScheme;
 
           return VideoProgressBar(
-            indeterminate: initializing,
             duration: progress.duration,
             position: progress.position,
             buffered: const [],
             onDragStart: () {
-              // pause the video when dragging
-              controller.pauseVideo(
-                post.id,
-                post.isWebm,
-                useDefaultEngine,
-              );
+              controller.pauseVideo(post.id);
             },
             onDragEnd: () {
-              // resume the video when dragging ends
-              controller.playVideo(
-                post.id,
-                post.isWebm,
-                useDefaultEngine,
-              );
+              controller.playVideo(post.id);
             },
-            seekTo: (position) => controller.onVideoSeekTo(
-              position,
-              post.id,
-              post.isWebm,
-              useDefaultEngine,
-            ),
+            seekTo: (position) => controller.onVideoSeekTo(position, post.id),
             barHeight: 3,
             handleHeight: 6,
             drawShadow: true,

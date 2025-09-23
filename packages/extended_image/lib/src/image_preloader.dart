@@ -1,5 +1,5 @@
 // Flutter imports:
-import 'package:extended_image_library/extended_image_library.dart';
+import 'package:cache_manager/cache_manager.dart';
 import 'package:flutter/foundation.dart';
 
 // Package imports:
@@ -7,7 +7,6 @@ import 'package:dio/dio.dart';
 import 'package:retriable/retriable.dart';
 
 // Project imports:
-import 'image_cache_manager.dart';
 import 'image_fetcher.dart';
 
 class ImagePreloader {
@@ -25,7 +24,7 @@ class ImagePreloader {
     String url, {
     Map<String, String>? headers,
     FetchStrategyBuilder? fetchStrategy,
-    CancellationToken? cancelToken,
+    CancelToken? cancelToken,
     String? customKey,
     Duration? maxAge,
   }) async {

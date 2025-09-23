@@ -93,13 +93,8 @@ class _PostDetailPageScaffoldState<T extends Post>
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      final videoPlayerEngine = ref.read(
-        settingsProvider.select((value) => value.videoPlayerEngine),
-      );
-
       widget.controller.setPage(
         widget.controller.initialPage,
-        useDefaultEngine: videoPlayerEngine.isDefault,
       );
     });
 
@@ -145,12 +140,6 @@ class _PostDetailPageScaffoldState<T extends Post>
 
   @override
   Widget build(BuildContext context) {
-    final useDefaultEngine = ref.watch(
-      settingsProvider.select(
-        (value) => value.videoPlayerEngine.isDefault,
-      ),
-    );
-
     // Sync slideshow options with settings
     ref.listen(
       settingsProvider.select(
@@ -184,16 +173,12 @@ class _PostDetailPageScaffoldState<T extends Post>
               visibilityNotifier.value = false;
               _previouslyPlaying = widget.controller.isVideoPlaying.value;
               if (_previouslyPlaying) {
-                widget.controller.pauseCurrentVideo(
-                  useDefaultEngine: useDefaultEngine,
-                );
+                widget.controller.pauseCurrentVideo();
               }
             } else if (info.visibleFraction == 1) {
               visibilityNotifier.value = true;
               if (_previouslyPlaying) {
-                widget.controller.playCurrentVideo(
-                  useDefaultEngine: useDefaultEngine,
-                );
+                widget.controller.playCurrentVideo();
               }
             }
           },
@@ -209,14 +194,11 @@ class _PostDetailPageScaffoldState<T extends Post>
 
     final uiBuilder = widget.uiBuilder;
 
-    final videoPlayerEngine = ref.watch(
-      settingsProvider.select((value) => value.videoPlayerEngine),
-    );
     final reduceAnimations = ref.watch(
       settingsProvider.select((value) => value.reduceAnimations),
     );
     final swipeMode = ref.watch(
-      settingsProvider.select((value) => value.swipeMode),
+      settingsProvider.select((value) => value.viewer.swipeMode),
     );
 
     return Scaffold(
@@ -229,10 +211,7 @@ class _PostDetailPageScaffoldState<T extends Post>
         onPageChanged: (page) {
           final post = posts[page];
 
-          widget.controller.setPage(
-            page,
-            useDefaultEngine: videoPlayerEngine.isDefault,
-          );
+          widget.controller.setPage(page);
 
           _isInitPage.value = false;
 

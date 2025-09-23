@@ -6,47 +6,148 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../foundation/utils/file_utils.dart';
+import '../images/providers.dart';
 import '../tags/local/providers.dart';
+
+final appCacheSizeProvider = FutureProvider.autoDispose<DirectorySizeInfo>((
+  ref,
+) async {
+  return getCacheSize().catchError((_) => DirectorySizeInfo.zero);
+});
+
+final imageCacheSizeProvider = FutureProvider.autoDispose<DirectorySizeInfo>((
+  ref,
+) async {
+  return getImageCacheSize().catchError((_) => DirectorySizeInfo.zero);
+});
+
+final tagCacheSizeProvider = FutureProvider.autoDispose<int>((ref) async {
+  return _getTagCacheSize().catchError((_) => 0);
+});
+
+final diskSpaceInfoProvider = FutureProvider.autoDispose<DiskSpaceInfo>((
+  ref,
+) async {
+  return DiskSpaceInfo.fromTempDir().catchError((_) => DiskSpaceInfo.zero);
+});
 
 final cacheSizeProvider =
     AsyncNotifierProvider.autoDispose<CacheSizeNotifier, CacheSizeInfo>(
       CacheSizeNotifier.new,
     );
 
+enum StorageType {
+  systemData,
+  imageCache,
+  bookmarkImages,
+  tagCache,
+  appCache,
+  freeSpace,
+}
+
+class StorageInfo {
+  const StorageInfo({
+    required this.type,
+    required this.size,
+  });
+
+  final StorageType type;
+  final int size;
+}
+
 class CacheSizeInfo {
   const CacheSizeInfo({
     required this.appCacheSize,
     required this.imageCacheSize,
     required this.tagCacheSize,
+    required this.diskSpaceInfo,
   });
 
   final DirectorySizeInfo appCacheSize;
   final DirectorySizeInfo imageCacheSize;
   final int tagCacheSize;
+  final DiskSpaceInfo diskSpaceInfo;
 
   static final zero = CacheSizeInfo(
     appCacheSize: DirectorySizeInfo.zero,
     imageCacheSize: DirectorySizeInfo.zero,
     tagCacheSize: 0,
+    diskSpaceInfo: DiskSpaceInfo.zero,
   );
 
   int get totalSize => appCacheSize.size + imageCacheSize.size + tagCacheSize;
+
+  List<StorageInfo> getStorageBreakdown({
+    int bookmarkCacheSize = 0,
+  }) {
+    final totalCacheSize = totalSize + bookmarkCacheSize;
+    final systemUsedSpace = diskSpaceInfo.usedSpace - totalCacheSize;
+
+    return [
+      if (systemUsedSpace > 0)
+        StorageInfo(
+          type: StorageType.systemData,
+          size: systemUsedSpace,
+        ),
+      if (imageCacheSize.size > 0)
+        StorageInfo(
+          type: StorageType.imageCache,
+          size: imageCacheSize.size,
+        ),
+      if (bookmarkCacheSize > 0)
+        StorageInfo(
+          type: StorageType.bookmarkImages,
+          size: bookmarkCacheSize,
+        ),
+      if (tagCacheSize > 0)
+        StorageInfo(
+          type: StorageType.tagCache,
+          size: tagCacheSize,
+        ),
+      if (appCacheSize.size > 0)
+        StorageInfo(
+          type: StorageType.appCache,
+          size: appCacheSize.size,
+        ),
+      if (diskSpaceInfo.freeSpace > 0)
+        StorageInfo(
+          type: StorageType.freeSpace,
+          size: diskSpaceInfo.freeSpace,
+        ),
+    ];
+  }
 }
 
 class CacheSizeNotifier extends AutoDisposeAsyncNotifier<CacheSizeInfo> {
   @override
-  Future<CacheSizeInfo> build() {
-    return calculateCacheSize();
+  Future<CacheSizeInfo> build() async {
+    final appCache = ref.watch(appCacheSizeProvider);
+    final imageCache = ref.watch(imageCacheSizeProvider);
+    final tagCache = ref.watch(tagCacheSizeProvider);
+    final diskSpace = ref.watch(diskSpaceInfoProvider);
+
+    return CacheSizeInfo(
+      appCacheSize: appCache.valueOrNull ?? DirectorySizeInfo.zero,
+      imageCacheSize: imageCache.valueOrNull ?? DirectorySizeInfo.zero,
+      tagCacheSize: tagCache.valueOrNull ?? 0,
+      diskSpaceInfo: diskSpace.valueOrNull ?? DiskSpaceInfo.zero,
+    );
   }
 
   void refreshCacheSize() {
-    ref.invalidateSelf();
+    ref
+      ..invalidate(appCacheSizeProvider)
+      ..invalidate(imageCacheSizeProvider)
+      ..invalidate(tagCacheSizeProvider)
+      ..invalidate(diskSpaceInfoProvider)
+      ..invalidateSelf();
   }
 
   Future<void> clearAllCache() async {
     state = const AsyncValue.loading();
     await _withMinimumDelay(() async {
-      await clearImageCache();
+      final cacheManager = ref.read(defaultImageCacheManagerProvider);
+      await clearImageCache(cacheManager);
       await clearCache();
       await clearTagCacheDatabase(ref);
     });
@@ -56,7 +157,8 @@ class CacheSizeNotifier extends AutoDisposeAsyncNotifier<CacheSizeInfo> {
   Future<void> clearAppImageCache() async {
     state = const AsyncValue.loading();
     await _withMinimumDelay(() async {
-      await clearImageCache();
+      final cacheManager = ref.read(defaultImageCacheManagerProvider);
+      await clearImageCache(cacheManager);
     });
     refreshCacheSize();
   }
@@ -80,20 +182,6 @@ class CacheSizeNotifier extends AutoDisposeAsyncNotifier<CacheSizeInfo> {
       await Future.delayed(Duration(milliseconds: remainingTime));
     }
   }
-}
-
-Future<CacheSizeInfo> calculateCacheSize() async {
-  final results = await Future.wait([
-    getCacheSize().catchError((_) => DirectorySizeInfo.zero),
-    getImageCacheSize().catchError((_) => DirectorySizeInfo.zero),
-    _getTagCacheSize().catchError((_) => 0),
-  ]);
-
-  return CacheSizeInfo(
-    appCacheSize: results[0] as DirectorySizeInfo,
-    imageCacheSize: results[1] as DirectorySizeInfo,
-    tagCacheSize: results[2] as int,
-  );
 }
 
 Future<int> _getTagCacheSize() async {

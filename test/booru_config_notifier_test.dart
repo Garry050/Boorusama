@@ -8,6 +8,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 // Project imports:
+import 'package:boorusama/core/configs/config/providers.dart';
 import 'package:boorusama/core/configs/config/src/data/booru_config_converter.dart';
 import 'package:boorusama/core/configs/config/types.dart';
 import 'package:boorusama/core/configs/manage/providers.dart';
@@ -127,6 +128,13 @@ ProviderContainer createBooruConfigContainer({
       booruConfigProvider.overrideWith(
         () => BooruConfigNotifier(
           initialConfigs: [],
+        ),
+      ),
+      booruLoginDetailsProvider.overrideWith(
+        (_, _) => const DefaultBooruLoginDetails(
+          login: '',
+          apiKey: '',
+          url: '',
         ),
       ),
     ],

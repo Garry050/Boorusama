@@ -1,9 +1,10 @@
 abstract class BooruFeature extends Equatable {
-  const BooruFeature(this.id);
+  const BooruFeature(this.id, this.endpointType);
   final BooruFeatureId id;
+  final EndpointType endpointType;
 
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [id, endpointType];
 }
 
 {{#featureClasses}}
@@ -13,7 +14,7 @@ class {{className}} extends BooruFeature {
 {{#capabilities}}
     required this.{{name}},
 {{/capabilities}}
-  }) : super(BooruFeatureId.{{featureId}});
+  }) : super(BooruFeatureId.{{featureId}}, EndpointType.{{endpointType}});
 
 {{#capabilities}}
   final {{type}} {{name}};
@@ -28,7 +29,7 @@ class {{className}} extends BooruFeature {
   ];
 {{/hasCapabilities}}
 {{^hasCapabilities}}
-  const {{className}}() : super(BooruFeatureId.{{featureId}});
+  const {{className}}() : super(BooruFeatureId.{{featureId}}, EndpointType.{{endpointType}});
 {{/hasCapabilities}}
 }
 
@@ -86,10 +87,16 @@ class AuthConfig {
   const AuthConfig({
     this.apiKeyUrl,
     this.instructionsKey,
+    this.loginUrl,
+    this.required,
+    this.cookie,
   });
 
   final String? apiKeyUrl;
   final String? instructionsKey;
+  final String? loginUrl;
+  final bool? required;
+  final String? cookie;
 }
 
 {{{overrideClasses}}}

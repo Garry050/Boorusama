@@ -8,6 +8,7 @@ import 'package:i18n/i18n.dart';
 // Project imports:
 import '../../../configs/config/widgets.dart';
 import '../../../router.dart';
+import '../../../videos/providers.dart';
 import '../../../widgets/widgets.dart';
 import '../providers/settings_notifier.dart';
 import '../providers/settings_provider.dart';
@@ -44,10 +45,14 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
               title: Text(
                 context.t.settings.image_details.ui_overlay.ui_overlay,
               ),
-              selectedOption: settings.postDetailsOverlayInitialState,
+              selectedOption: settings.viewer.postDetailsOverlayInitialState,
               items: PostDetailsOverlayInitialState.values,
               onChanged: (value) => notifer.updateSettings(
-                settings.copyWith(postDetailsOverlayInitialState: value),
+                settings.copyWith(
+                  viewer: settings.viewer.copyWith(
+                    postDetailsOverlayInitialState: value,
+                  ),
+                ),
               ),
               optionBuilder: (value) => Text(value.localize(context)),
             ),
@@ -58,7 +63,7 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
                 SettingsCardEntry(
                   title: context.t.settings.image_viewer.swipe_modes.horizontal,
                   value: PostDetailsSwipeMode.horizontal.name,
-                  groupValue: settings.swipeMode.name,
+                  groupValue: settings.viewer.swipeMode.name,
                   subtitle: context
                       .t
                       .settings
@@ -68,7 +73,9 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
                   onSelected: (value) {
                     notifer.updateSettings(
                       settings.copyWith(
-                        swipeMode: PostDetailsSwipeMode.horizontal,
+                        viewer: settings.viewer.copyWith(
+                          swipeMode: PostDetailsSwipeMode.horizontal,
+                        ),
                       ),
                     );
                   },
@@ -76,7 +83,7 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
                 SettingsCardEntry(
                   title: context.t.settings.image_viewer.swipe_modes.vertical,
                   value: PostDetailsSwipeMode.vertical.name,
-                  groupValue: settings.swipeMode.name,
+                  groupValue: settings.viewer.swipeMode.name,
                   subtitle: context
                       .t
                       .settings
@@ -86,7 +93,9 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
                   onSelected: (value) {
                     notifer.updateSettings(
                       settings.copyWith(
-                        swipeMode: PostDetailsSwipeMode.vertical,
+                        viewer: settings.viewer.copyWith(
+                          swipeMode: PostDetailsSwipeMode.vertical,
+                        ),
                       ),
                     );
                   },
@@ -97,10 +106,14 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
             SettingsHeader(label: context.t.settings.image_viewer.slideshow),
             SettingsTile(
               title: Text(context.t.settings.image_viewer.slideshow_mode),
-              selectedOption: settings.slideshowDirection,
+              selectedOption: settings.viewer.slideshowDirection,
               items: SlideshowDirection.values,
               onChanged: (value) => notifer.updateSettings(
-                settings.copyWith(slideshowDirection: value),
+                settings.copyWith(
+                  viewer: settings.viewer.copyWith(
+                    slideshowDirection: value,
+                  ),
+                ),
               ),
               optionBuilder: (value) => Text(value.localize(context)),
             ),
@@ -109,11 +122,15 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
               subtitle: Text(
                 context.t.settings.image_viewer.slideshow_interval_explanation,
               ),
-              selectedOption: settings.slideshowInterval,
+              selectedOption: settings.viewer.slideshowInterval,
               items: getSlideShowIntervalPossibleValue(),
               onChanged: (newValue) {
                 notifer.updateSettings(
-                  settings.copyWith(slideshowInterval: newValue),
+                  settings.copyWith(
+                    viewer: settings.viewer.copyWith(
+                      slideshowInterval: newValue,
+                    ),
+                  ),
                 );
               },
               optionBuilder: (value) => Text(
@@ -124,12 +141,14 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
             ),
             BooruSwitchListTile(
               title: Text(context.t.settings.image_viewer.slideshow_skip),
-              value: settings.skipSlideshowTransition,
+              value: settings.viewer.skipSlideshowTransition,
               onChanged: (value) => notifer.updateSettings(
                 settings.copyWith(
-                  slideshowTransitionType: value
-                      ? SlideshowTransitionType.none
-                      : SlideshowTransitionType.natural,
+                  viewer: settings.viewer.copyWith(
+                    slideshowTransitionType: value
+                        ? SlideshowTransitionType.none
+                        : SlideshowTransitionType.natural,
+                  ),
                 ),
               ),
             ),
@@ -139,55 +158,33 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
             ),
             BooruSwitchListTile(
               title: Text(context.t.settings.image_viewer.mute_video),
-              value: settings.muteAudioByDefault,
+              value: settings.viewer.muteAudioByDefault,
               onChanged: (value) => notifer.updateSettings(
                 settings.copyWith(
-                  videoAudioDefaultState: value
-                      ? VideoAudioDefaultState.mute
-                      : VideoAudioDefaultState.unmute,
+                  viewer: settings.viewer.copyWith(
+                    videoAudioDefaultState: value
+                        ? VideoAudioDefaultState.mute
+                        : VideoAudioDefaultState.unmute,
+                  ),
                 ),
               ),
             ),
           ],
         ),
-        SettingsCard(
+        SettingsNavigationTile(
           title: context.t.settings.image_viewer.video.video_player_engine,
-          subtitle: context.t.generic.app_restart_request,
-          entries: [
-            SettingsCardEntry(
-              title: context.t.settings.image_viewer.video.engine.kDefault,
-              value: VideoPlayerEngine.auto.name,
-              groupValue: settings.videoPlayerEngine.name,
-              subtitle: context
-                  .t
-                  .settings
-                  .image_viewer
-                  .video
-                  .engine
-                  .default_description,
-              onSelected: (value) {
-                notifer.updateSettings(
-                  settings.copyWith(
-                    videoPlayerEngine: VideoPlayerEngine.auto,
-                  ),
-                );
-              },
-            ),
-            SettingsCardEntry(
-              title: 'MDK',
-              value: VideoPlayerEngine.mdk.name,
-              groupValue: settings.videoPlayerEngine.name,
-              subtitle:
-                  context.t.settings.image_viewer.video.engine.mdk_description,
-              onSelected: (value) {
-                notifer.updateSettings(
-                  settings.copyWith(
-                    videoPlayerEngine: VideoPlayerEngine.mdk,
-                  ),
-                );
-              },
-            ),
-          ],
+          value: settings.viewer.videoPlayerEngine,
+          valueBuilder: (engine) => VideoEngineUtils.getUnderlyingEngineName(
+            engine,
+            platform: Theme.of(context).platform,
+            context: context,
+          ),
+          onTap: () {
+            showBooruModalBottomSheet(
+              context: context,
+              builder: (context) => const _VideoEngineSelectorSheet(),
+            );
+          },
         ),
         BooruConfigMoreSettingsRedirectCard.imageViewer(
           extraActions: [
@@ -207,6 +204,47 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _VideoEngineSelectorSheet extends ConsumerWidget {
+  const _VideoEngineSelectorSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final notifer = ref.watch(settingsNotifierProvider.notifier);
+    final platform = Theme.of(context).platform;
+
+    return SettingsSelectionSheet(
+      title: context.t.settings.image_viewer.video.video_player_engine,
+      value: settings.viewer.videoPlayerEngine,
+      items: VideoPlayerEngine.getSupportedEnginesForPlatform(platform),
+      itemBuilder: (engine) => VideoEngineUtils.getUnderlyingEngineName(
+        engine,
+        platform: platform,
+        context: context,
+      ),
+      subtitleBuilder: (engine) => switch (engine) {
+        VideoPlayerEngine.auto =>
+          context.t.settings.image_viewer.video.engine.auto_description,
+        VideoPlayerEngine.videoPlayerPlugin =>
+          context.t.settings.image_viewer.video.engine.default_description,
+        VideoPlayerEngine.mdk =>
+          context.t.settings.image_viewer.video.engine.mdk_description,
+        VideoPlayerEngine.mpv =>
+          context.t.settings.image_viewer.video.engine.mpv_description,
+        VideoPlayerEngine.webview =>
+          context.t.settings.image_viewer.video.engine.webview_description,
+      },
+      onChanged: (value) => notifer.updateSettings(
+        settings.copyWith(
+          viewer: settings.viewer.copyWith(
+            videoPlayerEngine: value,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -236,16 +274,18 @@ class SettingsCardEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RadioListTile(
-      controlAffinity: ListTileControlAffinity.trailing,
-      contentPadding: EdgeInsets.zero,
-      value: value,
+    return RadioGroup(
       groupValue: groupValue,
       onChanged: (value) {
         if (value != null) onSelected(value);
       },
-      subtitle: Text(subtitle),
-      title: Text(title),
+      child: RadioListTile(
+        controlAffinity: ListTileControlAffinity.trailing,
+        contentPadding: EdgeInsets.zero,
+        value: value,
+        subtitle: Text(subtitle),
+        title: Text(title),
+      ),
     );
   }
 }

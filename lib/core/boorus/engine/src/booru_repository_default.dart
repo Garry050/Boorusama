@@ -9,6 +9,7 @@ import '../../../blacklists/providers.dart';
 import '../../../comments/providers.dart';
 import '../../../comments/types.dart';
 import '../../../configs/config.dart';
+import '../../../configs/config/providers.dart';
 import '../../../configs/create/create.dart';
 import '../../../downloads/urls/providers.dart';
 import '../../../downloads/urls/types.dart';
@@ -53,7 +54,7 @@ abstract class BooruRepositoryDefault implements BooruRepository {
   }
 
   @override
-  GridThumbnailUrlGenerator gridThumbnailUrlGenerator() {
+  GridThumbnailUrlGenerator gridThumbnailUrlGenerator(BooruConfigAuth config) {
     return const DefaultGridThumbnailUrlGenerator();
   }
 
@@ -132,5 +133,10 @@ abstract class BooruRepositoryDefault implements BooruRepository {
   @override
   AppErrorTranslator appErrorTranslator(BooruConfigAuth config) {
     return ref.watch(defaultAppErrorTranslatorProvider);
+  }
+
+  @override
+  BooruLoginDetails loginDetails(BooruConfigAuth config) {
+    return ref.watch(defaultLoginDetailsProvider(config));
   }
 }
