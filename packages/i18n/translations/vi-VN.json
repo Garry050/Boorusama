@@ -51,6 +51,7 @@
     "profile": "Hồ sơ",
     "copy_user_id": "Sao chép ID người dùng",
     "fail_to_load_profile": "Không thể tải hồ sơ",
+    "previous_names": "Tên trước đây",
     "tabs": {
       "info": "Thông tin",
       "uploads": "Tải lên",
@@ -162,8 +163,8 @@
       "none": "Trống",
       "edit": "Sửa",
       "use_default": "Dùng mặc định",
-      "toggle_bookmark": "Đảo chiều đánh dấu",
-      "toggle_favorite": "Đảo chiều yêu thích",
+      "toggle_bookmark": "Bật/tắt đánh dấu",
+      "toggle_favorite": "Bật/tắt yêu thích",
       "view_in_browser": "Xem bằng trình duyệt",
       "view_original": "Xem ảnh gốc"
     },
@@ -188,10 +189,9 @@
       "reply": "Trả lời",
       "reply_to": "Gửi tới",
       "delete": "Xóa",
-      "noComments": "Không có bình luận",
+      "no_comments": "Không có bình luận",
       "last_updated": "Cập nhật lần cuối",
-      "send": "Gửi",
-      "no_comments": "Không có bình luận"
+      "send": "Gửi"
     },
     "counter": {
       "one": "Bình luận",
@@ -211,6 +211,7 @@
     "new": "Mới",
     "newest": "Mới nhất",
     "oldest": "Cũ nhất",
+    "random": "Ngẫu nhiên",
     "ordered": "Theo thứ tự"
   },
   "search": {
@@ -369,9 +370,13 @@
       "video": {
         "video_player_engine": "Trình phát video",
         "engine": {
+          "auto": "Tự động",
+          "auto_description": "Tự động chọn trình phát tốt nhất dựa trên khả năng thiết bị của bạn.",
           "default": "Mặc định",
           "default_description": "Hoạt động tốt với hầu hết thiết bị, có thể gặp sự cố với một số định dạng video hoặc thiết bị cũ.",
-          "mdk_description": "Thử nghiệm, hiệu suất tốt hơn với một số định dạng video nhất định, có thể gây sập ứng dụng. Tự chịu rủi ro khi dùng."
+          "mdk_description": "Tải nhanh, hiệu suất tốt hơn với một số định dạng video, nhưng không ổn định và có thể gây crash app.",
+          "mpv_description": "Hỗ trợ định dạng và hiệu suất tốt, tôc độ tải chậm hơn.",
+          "webview_description": "Tương thích tốt nhưng sử dụng nhiều tài nguyên và hiệu suất kém, chỉ nên dùng khi không còn lựa chọn nào khác."
         }
       }
     },
@@ -447,6 +452,16 @@
       "image_only_cache": "Bộ nhớ đệm chỉ hình ảnh",
       "bookmark_images": "Ảnh được đánh dấu",
       "loading": "Đang tải...",
+      "storage": "Bộ nhớ",
+      "disk_space": {
+        "status_title": "$freeSpace trong tổng số $totalSpace",
+        "groups": {
+          "system": "Hệ thống",
+          "images": "Ảnh",
+          "others": "Khác",
+          "free": "Trống"
+        }
+      },
       "error_loading_cache_info": "Lỗi khi tải thông tin bộ nhớ đệm"
     },
     "backup_and_restore": {
@@ -480,7 +495,8 @@
       "imported_count": "Đã nhập {count}",
       "skipped_count": "Bỏ qua {count}",
       "failed_count": "Thất bại {count}",
-      "default_backup_location": "Vị trí sao lưu mặc định",
+      "invalid_location_error": "Không thể xuất đến vị trí này, hãy thử dùng thư mục \"Download\" hoặc \"Documents\". Tạo thư mục nếu nó không tồn tại.",
+      "invalid_backup_format_error": "Định dạng sao lưu không hợp lệ",
       "never": "Chưa bao giờ",
       "receive_data": {
         "title": "Nhận dữ liệu",
@@ -504,8 +520,9 @@
           "running": "Đang chạy"
         },
         "how_to_transfer": "Cách chuyển dữ liệu",
-        "how_to_send(rich)": "• Trên thiết bị nhận, vào ${settings(Cài đặt > Sao lưu và phục hồi dữ liệu)}\n• Chọn ${receive(Nhận)} để bắt đầu nhập từ thiết bị này\n• Đừng rời khỏi trang này cho đến khi hoàn tất",
-        "disclaimer": "Chuyển dữ liệu có thể không hoạt động trên WiFi công cộng (quán cà phê, thư viện) do hạn chế bảo mật. Hãy dùng mạng riêng, ví dụ WiFi ở nhà."
+        "how_to_send(rich)": "• Trên thiết bị nhận, vào ${settings(_)}\n• Chọn ${receive(_)} để bắt đầu nhập từ thiết bị này\n• Đừng rời khỏi trang này cho đến khi hoàn tất",
+        "disclaimer": "Chuyển dữ liệu có thể không hoạt động trên WiFi công cộng (quán cà phê, thư viện) do hạn chế bảo mật. Hãy dùng mạng riêng, ví dụ WiFi ở nhà.",
+        "no_networks_error": "Cần kết nối WiFi để truyền dữ liệu. Vui lòng kết nối với mạng WiFi và thử lại."
       },
       "backward_import": {
         "title": "Phát hiện nhập dữ liệu từ phiên bản cũ",
@@ -757,10 +774,16 @@
     "validation_empty_url": "URL rỗng",
     "validation_invalid_url": "\"{0}\" không phải là một đường dẫn URL hợp lệ.",
     "validation_invalid_http_url": "\"{0}\" không phải là một đường dẫn URL HTTP hoặc HTTPS.",
-    "validation_missing_trailing_slash": "\"{0}\" thiếu dấu gạch chéo phía sau",
     "validation_redundant_www": "\"{0}\" chứa \"www\" thừa không cần thiết",
     "validation_contains_spaces": "\"{0}\" chứa khoảng trắng không cần thiết ở giữa.",
     "validation_missing_scheme": "\"{0}\" thiếu giao thức (ví dụ: https://)",
+    "api_key": {
+      "auth_error": {
+        "edit_api_key": "Sửa API key",
+        "empty_key_warning": "Trang web này có thể yêu cầu bạn nhập API key hoặc mật khẩu để truy cập nội dung.",
+        "invalid_key_warning": "Kiểm tra API key hoặc thông tin đăng nhập của bạn, vì chúng có thể không hợp lệ hoặc đã hết hạn."
+      }
+    },
     "misc": "Linh tinh",
     "authentication": {
       "title": "Đăng nhập",
@@ -791,6 +814,10 @@
       "enable_profile_specific_settings": "Dùng danh sách chặn riêng cho profile",
       "blacklist": "Danh sách chặn",
       "empty_blacklist": "Chưa có tag",
+      "blacklist_overridden": {
+        "replace_notice": "Đã bị thay thế bởi <b><a href=\"booru-profiles\">Danh sách chặn của Hồ sơ</a></b>.",
+        "merge_notice": "Đã gộp với <b><a href=\"booru-profiles\">Danh sách chặn của Hồ sơ</a></b>."
+      },
       "empty_blacklist_with_replace_notice": "Nếu danh sách chặn trống và chọn chế độ thay thế, chức năng chặn sẽ bị tắt hoàn toàn.",
       "blacklist_combine_mode": {
         "title": "Cách kết hợp danh sách chặn",
@@ -839,6 +866,7 @@
       "custom_filename_format": "Định dạng tên file tùy chỉnh",
       "custom_filename_format_invidual": "Tải riêng lẻ",
       "custom_filename_format_bulk": "Tải hàng loạt",
+      "bulk_slow_token_warning": "Sử dụng token chậm khi tải hàng loạt sẽ mất RẤT nhiều thời gian để khởi động trước khi bắt đầu tải, cân nhắc không sử dụng nếu có thể.",
       "filename": {
         "available_tokens": "Token có thể dùng: ",
         "no_token_error": "Token $token không khả dụng",
@@ -887,6 +915,7 @@
     "failed_to_add_many": "Thêm đánh dấu không thành công",
     "removed": "Đã xoá đánh dấu",
     "failed_to_remove": "Xoá đánh dấu không thành công",
+    "shuffle_tooltip": "Xáo trộn đánh dấu",
     "counter": {
       "one": "$n đánh dấu",
       "other": "$n đánh dấu"
@@ -951,8 +980,11 @@
     "created": "Đã tạo",
     "completed_with_no_new_files": "Đã hoàn thành mà không có tệp mới nào",
     "scanning_page": {
+      "preparing": "Chuẩn bị...",
+      "preparing_with_page": "Đang chuẩn bị, trang $page...",
       "with_page": "Đang quét trang $page...",
-      "null_page": "Đang quét..."
+      "null_page": "Khởi tạo...",
+      "with_page_and_index": "Đang quét trang $page, mục $index..."
     },
     "file_counter": {
       "one": "$n tệp",
@@ -1122,6 +1154,10 @@
   },
   "video_player": {
     "playback_speed": "Tốc độ phát",
+    "buffering": "Đang tải...",
+    "engine_not_supported": "Trình phát này không được hỗ trợ trên nền tảng hiện tại.",
+    "change_video_player_engine_suggest": "Nếu lỗi này xảy ra thường xuyên, cân nhắc sử dụng một trình phát video khác trong cài đặt.",
+    "change_video_player_engine_request": "Vui lòng đổi sang trình phát video khác trong cài đặt.",
     "speed": {
       "normal": "Bình thường"
     }

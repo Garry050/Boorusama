@@ -1,11 +1,10 @@
 // Dart imports:
 import 'dart:async';
-import 'dart:isolate';
 
 // Package imports:
 import 'package:collection/collection.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart';
 
 // Project imports:
 import '../../../../foundation/loggers.dart';
@@ -13,24 +12,12 @@ import '../../../../foundation/permissions.dart';
 import '../../../../foundation/platform.dart';
 import '../../../../foundation/utils/duration_utils.dart';
 import '../../../analytics/providers.dart';
-import '../../../blacklists/providers.dart';
-import '../../../configs/config.dart';
 import '../../../configs/ref.dart';
 import '../../../download_manager/providers.dart';
 import '../../../downloads/downloader/providers.dart';
 import '../../../downloads/downloader/types.dart';
-import '../../../downloads/filename/providers.dart';
-import '../../../downloads/filename/types/generator_impl.dart';
-import '../../../downloads/urls/providers.dart';
-import '../../../http/http.dart';
-import '../../../http/providers.dart';
-import '../../../posts/filter/filter.dart';
-import '../../../posts/post/post.dart';
-import '../../../posts/post/providers.dart';
 import '../../../posts/sources/source.dart';
 import '../../../premiums/providers.dart';
-import '../../../search/selected_tags/tag.dart';
-import '../../../settings/providers.dart';
 import '../notifications/providers.dart';
 import '../types/bulk_download_error.dart';
 import '../types/bulk_download_session.dart';
@@ -43,15 +30,20 @@ import '../types/download_session.dart';
 import '../types/download_session_stats.dart';
 import '../types/download_task.dart';
 import '../types/saved_download_task.dart';
+import 'bulk_progress.dart';
+import 'dry_run.dart';
+import 'dry_run_state.dart';
 import 'file_system_exist_checker.dart';
 import 'providers.dart';
 import 'saved_task_lock_notifier.dart';
+import 'session_cancellation_provider.dart';
 
 // Package imports:
 import 'package:background_downloader/background_downloader.dart'
     hide DownloadTask, PermissionStatus;
 
 const _serviceName = 'Bulk Download Manager';
+const kBulkDownloadAsyncDelay = Duration(milliseconds: 1000);
 
 final bulkDownloadProvider =
     NotifierProvider<BulkDownloadNotifier, BulkDownloadState>(
@@ -61,11 +53,6 @@ final bulkDownloadProvider =
 final bulkDownloadSessionsProvider = Provider<List<BulkDownloadSession>>((ref) {
   return ref.watch(bulkDownloadProvider.select((e) => e.sessions));
 });
-
-final bulkDownloadProgressProvider =
-    NotifierProvider<BulkDownloadProgressNotifier, Map<String, double>>(
-      BulkDownloadProgressNotifier.new,
-    );
 
 extension SessionActionX on BulkDownloadSession {
   bool get actionable {
@@ -87,56 +74,17 @@ extension SessionActionX on BulkDownloadSession {
   }
 }
 
-class BulkDownloadProgressNotifier extends Notifier<Map<String, double>> {
-  @override
-  Map<String, double> build() {
-    // Initialize progress mapping from persistent storage.
-    _initProgress();
-    return {};
-  }
-
-  Future<void> _initProgress() async {
-    final repo = await ref.watch(downloadRepositoryProvider.future);
-    final sessions = await repo.getActiveSessions();
-
-    final map = <String, double>{};
-
-    for (final session in sessions) {
-      final completedCount = await repo.getRecordsCountBySessionId(
-        session.id,
-        status: DownloadRecordStatus.completed,
-      );
-      final totalCount = await repo.getRecordsCountBySessionId(session.id);
-
-      final progress = _calculateProgress(completedCount, totalCount);
-
-      map[session.id] = progress;
-    }
-
-    state = map;
-  }
-
-  void updateProgress(String sessionId, double progress) {
-    state = {...state, sessionId: progress};
-  }
-
-  void updateProgressFromCounts(String sessionId, int completed, int total) {
-    final progress = _calculateProgress(completed, total);
-
-    updateProgress(sessionId, progress);
-  }
-
-  void removeSession(String sessionId) {
-    final newState = Map<String, double>.from(state)..remove(sessionId);
-    state = newState;
-  }
-
-  double _calculateProgress(int completed, int total) {
-    return total <= 0 ? 0.0 : completed / total;
-  }
-}
-
 class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
+  CancelToken _createSessionToken(String sessionId) {
+    return ref
+        .read(sessionCancellationProvider.notifier)
+        .createToken(sessionId);
+  }
+
+  void _cancelSessionToken(String sessionId) {
+    ref.read(sessionCancellationProvider.notifier).cancelToken(sessionId);
+  }
+
   Future<T> _withRepo<T>(Future<T> Function(DownloadRepository repo) fn) async {
     final repo = await ref.read(downloadRepositoryProvider.future);
     return fn(repo);
@@ -155,6 +103,9 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     final progressUpdateTimers = <String, Timer>{};
 
     final progressNotifier = ref.watch(bulkDownloadProgressProvider.notifier);
+    final sessionCancellationNotifier = ref.watch(
+      sessionCancellationProvider.notifier,
+    );
 
     void scheduleProgressUpdate(String sessionId) {
       if (progressUpdateTimers.containsKey(sessionId)) {
@@ -271,6 +222,8 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         for (final timer in progressUpdateTimers.values) {
           timer.cancel();
         }
+
+        sessionCancellationNotifier.cancelAll();
       });
 
     _loadTasks(init: true);
@@ -329,30 +282,6 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     } catch (e) {
       state = state.copyWith(error: () => e);
     }
-  }
-
-  Future<List<Post>> _getPosts(
-    SearchTagSet tags,
-    int page,
-    DownloadTask task,
-  ) async {
-    final config = ref.readConfigSearch;
-    final postRepo = ref.read(postRepoProvider(config));
-
-    final r = await postRepo
-        .getPostsFromController(
-          //TODO: assume space delimited tags for now, if we need to support tag with space, we need to change this
-          tags,
-          page,
-          limit: task.perPage,
-          options: PostFetchOptions.raw,
-        )
-        .run();
-
-    return r.fold(
-      (l) => [],
-      (r) => r.posts,
-    );
   }
 
   Future<bool> _shouldExitForFreeUser() async {
@@ -449,8 +378,6 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     DownloadSession session, {
     DownloadConfigs? downloadConfigs,
   }) async {
-    final config = ref.readConfig;
-
     final path = task.path;
     final directoryChecker =
         downloadConfigs?.directoryExistChecker ??
@@ -467,47 +394,12 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       return;
     }
 
-    final fallbackSettings = ref.read(settingsProvider);
-    final settings = downloadConfigs?.settings ?? fallbackSettings;
-
-    final fallbackDownloadFileUrlExtractor = ref.read(
-      downloadFileUrlExtractorProvider(config.auth),
-    );
-    final downloadFileUrlExtractor =
-        downloadConfigs?.urlExtractor ?? fallbackDownloadFileUrlExtractor;
-
-    final fallbackHeaders = ref.read(
-      cachedBypassDdosHeadersProvider(config.url),
-    );
-    final headers = downloadConfigs?.headers ?? fallbackHeaders;
-
-    final fileNameBuilder =
-        downloadConfigs?.fileNameBuilder ??
-        ref.read(downloadFilenameBuilderProvider(config.auth)) ??
-        fallbackFileNameBuilder;
-
-    final fallbackBlacklistedTags = await ref.read(
-      blacklistTagsProvider(config.filter).future,
-    );
-    final blacklistedTags =
-        downloadConfigs?.blacklistedTags ?? fallbackBlacklistedTags;
-    final effectiveBlacklistedTags = {
-      ...queryAsList(task.blacklistedTags),
-      ...blacklistedTags,
-    };
-    final patterns = effectiveBlacklistedTags
-        .map((tag) => tag.split(' ').map(TagExpression.parse).toList())
-        .toList();
-
     final mediaPermManager = ref.read(mediaPermissionManagerProvider);
 
     final notificationPermManager =
         downloadConfigs?.notificationPermissionManager != null
         ? downloadConfigs!.notificationPermissionManager!
         : ref.read(notificationPermissionManagerProvider);
-
-    final fileExistChecker =
-        downloadConfigs?.existChecker ?? const FileSystemDownloadExistChecker();
 
     final logger = ref.read(loggerProvider);
 
@@ -565,19 +457,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     });
 
     try {
-      var page = 1;
-      final tags = SearchTagSet.fromString(task.tags);
-
-      if (tags.isEmpty) {
-        await _updateSession(
-          sessionId,
-          status: DownloadSessionStatus.failed,
-          error: const EmptyTagsError().toString(),
-        );
-        return;
-      }
-
-      var rawPosts = <Post>[];
+      final cancelToken = _createSessionToken(sessionId);
 
       if (downloadConfigs?.onDownloadStart != null) {
         downloadConfigs!.onDownloadStart!();
@@ -586,119 +466,64 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       currentSession = await _updateSession(
         sessionId,
         status: DownloadSessionStatus.dryRun,
-        currentPage: page,
+        currentPage: 1,
       );
 
-      final initialPosts = await _getPosts(tags, page, task);
-
-      if (initialPosts.isEmpty) {
+      if (currentSession == null) {
         await _updateSession(
           sessionId,
           status: DownloadSessionStatus.failed,
-          error: const NoPostsFoundError().toString(),
+          error: 'Session not found after initial update',
         );
         return;
       }
 
-      // Then apply blacklist filtering
-      final filteredPosts = await _filterBlacklistedTags(
-        initialPosts,
-        patterns,
+      // Start dry run using the notifier family
+      final dryRunNotifier = ref.read(
+        dryRunNotifierProvider(sessionId).notifier,
       );
-      rawPosts = filteredPosts;
 
-      var cumulativeIndex = 0;
-      while (currentSession?.status == DownloadSessionStatus.dryRun) {
-        final records = <DownloadRecord>[];
-
-        for (var i = 0; i < rawPosts.length; i++) {
-          final item = rawPosts[i];
-
-          final urlData = await downloadFileUrlExtractor.getDownloadFileUrl(
-            post: item,
-            quality: task.quality ?? settings.downloadQuality.name,
+      await dryRunNotifier.start(
+        currentSession,
+        task,
+        cancelToken,
+        downloadConfigs,
+        onPageProgress: (page) async {
+          currentSession = await _updateSession(
+            sessionId,
+            currentPage: page,
           );
-          if (urlData == null || urlData.url.isEmpty) continue;
-
-          final fileName = await fileNameBuilder.generateForBulkDownload(
-            settings,
-            config.download,
-            item,
-            metadata: {
-              'index': cumulativeIndex.toString(),
-            },
-            downloadUrl: urlData.url,
+        },
+        shouldContinue: () async {
+          final session = await _withRepoNull(
+            (repo) => repo.getSession(sessionId),
           );
+          return session?.status == DownloadSessionStatus.dryRun;
+        },
+      );
 
-          if (task.skipIfExists) {
-            final exists = fileExistChecker.exists(fileName, task.path);
-            // Skip if file exists.
-            if (exists) {
-              cumulativeIndex++;
-              continue;
-            }
-          }
+      // Get final dry run state
+      final dryRunState = await ref.read(
+        dryRunNotifierProvider(sessionId).future,
+      );
 
-          records.add(
-            DownloadRecord(
-              url: urlData.url,
-              fileName: fileName,
-              fileSize: item.fileSize,
-              sessionId: sessionId,
-              status: DownloadRecordStatus.pending,
-              extension: extension(fileName),
-              page: page,
-              pageIndex: i,
-              createdAt: DateTime.now(),
-              headers: {
-                ...headers,
-                if (urlData.cookie != null)
-                  AppHttpHeaders.cookieHeader: urlData.cookie!,
-              },
-              thumbnailImageUrl: item.thumbnailImageUrl,
-              sourceUrl: config.url,
-            ),
-          );
-
-          cumulativeIndex++;
-        }
-
-        if (records.isNotEmpty) {
-          // Batch create records
-          await _withRepo((repo) => repo.createRecords(records));
-        }
-
-        currentSession = await _updateSession(
+      // Handle dry run result
+      if (dryRunState.status is DryRunStatusFailed) {
+        await _updateSession(
           sessionId,
-          currentPage: page,
+          status: DownloadSessionStatus.failed,
+          error: dryRunState.error,
         );
-
-        page++;
-
-        // Early exit if session is not in dry run so user doesn't have to wait
-        if (currentSession?.status != DownloadSessionStatus.dryRun) {
-          break;
-        }
-
-        final delay = downloadConfigs?.delayBetweenRequests;
-        if (delay != null) {
-          await delay.future;
-        } else {
-          await Future.delayed(const Duration(milliseconds: 200));
-        }
-
-        final items = await _getPosts(tags, page, task);
-
-        // No more items, stop dry run
-        if (items.isEmpty) {
-          page--;
-          break;
-        }
-
-        final filtered = await _filterBlacklistedTags(items, patterns);
-
-        rawPosts = filtered;
+        return;
       }
+
+      // Batch create all records
+      if (dryRunState.allRecords.isNotEmpty) {
+        await _withRepo((repo) => repo.createRecords(dryRunState.allRecords));
+      }
+
+      // Cancel token right after dry run is done
+      _cancelSessionToken(sessionId);
 
       final pendingCount = await _withRepo(
         (repo) => repo.getRecordsCountBySessionId(
@@ -724,17 +549,19 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       currentSession = await _updateSession(
         sessionId,
         status: DownloadSessionStatus.running,
-        totalPages: page,
+        totalPages: dryRunState.totalPages,
       );
 
       await _downloadSessionPages(
         sessionId: sessionId,
         task: task,
         startPage: 1,
-        endPage: page,
+        endPage: dryRunState.totalPages,
         downloadConfigs: downloadConfigs,
       );
     } catch (e) {
+      _cancelSessionToken(sessionId);
+
       await _updateSession(
         sessionId,
         status: DownloadSessionStatus.failed,
@@ -797,6 +624,9 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       }
 
       final downloader = ref.read(downloadServiceProvider);
+
+      // Cancel async token operations for suspended session
+      _cancelSessionToken(sessionId);
 
       await _updateSession(
         sessionId,
@@ -1073,6 +903,9 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       // Cancel notification immediately
       await notification.cancelNotification(sessionId);
 
+      // Cancel async token operations immediately
+      _cancelSessionToken(sessionId);
+
       if (session == null ||
           (session.status != DownloadSessionStatus.running &&
               session.status != DownloadSessionStatus.paused &&
@@ -1098,7 +931,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         downloader.cancelAll(sessionId),
       );
 
-      progressNotifier.removeSession(sessionId);
+      await progressNotifier.removeSession(sessionId);
     } catch (e) {
       state = state.copyWith(
         error: () => e is BulkDownloadError ? e : Exception(e.toString()),
@@ -1128,9 +961,12 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         return false;
       }
 
+      // Cancel any remaining async token operations before deletion
+      _cancelSessionToken(sessionId);
+
       await _withRepo((repo) => repo.deleteSession(sessionId));
 
-      progressNotifier.removeSession(sessionId);
+      await progressNotifier.removeSession(sessionId);
 
       await _loadTasks();
       return true;
@@ -1158,10 +994,11 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
   }
 
   Future<void> stopDryRun(String sessionId) async {
-    // check if session is in dry run
     final session = await _withRepo((repo) => repo.getSession(sessionId));
 
     if (session?.status != DownloadSessionStatus.dryRun) return;
+
+    _cancelSessionToken(sessionId);
 
     await _updateSession(
       sessionId,
@@ -1231,7 +1068,10 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       );
     }
 
-    progressNotifier.removeSession(sessionId);
+    // Clean up cancel token for completed session
+    _cancelSessionToken(sessionId);
+
+    await progressNotifier.removeSession(sessionId);
 
     state = state.copyWith(
       hasUnseenFinishedSessions: true,
@@ -1511,7 +1351,6 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       );
 
       final delay = downloadConfigs?.delayBetweenRequests;
-
       if (delay != null) {
         await delay.future;
       } else {
@@ -1587,11 +1426,9 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       );
 
       // Delay to prevent too many requests
-      if (downloadConfigs != null) {
-        final delay = downloadConfigs.delayBetweenDownloads;
-        if (delay != null) {
-          await delay.future;
-        }
+      final delay = downloadConfigs?.delayBetweenDownloads;
+      if (delay != null) {
+        await delay.future;
       } else {
         await const Duration(milliseconds: 200).future;
       }
@@ -1613,28 +1450,3 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
 }
 
 typedef RecordCountInfo = ({int completed, int total});
-
-Future<List<Post>> _filterBlacklistedTags(
-  List<Post> posts,
-  Iterable<List<TagExpression>>? patterns,
-) => Isolate.run(() => _filterInIsolate(posts, patterns));
-
-List<Post> _filterInIsolate(
-  List<Post> posts,
-  Iterable<List<TagExpression>>? patterns,
-) {
-  if (patterns == null || patterns.isEmpty) return posts;
-
-  final filterIds = <int>{};
-
-  for (final post in posts) {
-    for (final pattern in patterns) {
-      if (post.containsTagPattern(pattern)) {
-        filterIds.add(post.id);
-        break;
-      }
-    }
-  }
-
-  return posts.where((e) => !filterIds.contains(e.id)).toList();
-}

@@ -36,7 +36,7 @@ abstract class BooruRepository {
   TagQueryComposer tagComposer(BooruConfigSearch config);
   PostLinkGenerator postLinkGenerator(BooruConfigAuth config);
   ImageUrlResolver imageUrlResolver();
-  GridThumbnailUrlGenerator gridThumbnailUrlGenerator();
+  GridThumbnailUrlGenerator gridThumbnailUrlGenerator(BooruConfigAuth config);
   TagColorGenerator tagColorGenerator();
   DownloadFilenameGenerator downloadFilenameBuilder(BooruConfigAuth config);
   TextMatcher? queryMatcher(BooruConfigAuth config);
@@ -45,4 +45,5 @@ abstract class BooruRepository {
   Dio dio(BooruConfigAuth config);
   Map<String, String> extraHttpHeaders(BooruConfigAuth config);
   AppErrorTranslator appErrorTranslator(BooruConfigAuth config);
+  BooruLoginDetails loginDetails(BooruConfigAuth config);
 }

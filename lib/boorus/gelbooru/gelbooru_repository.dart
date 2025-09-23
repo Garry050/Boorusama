@@ -18,6 +18,7 @@ import '../../core/search/queries/query.dart';
 import '../../core/tags/autocompletes/types.dart';
 import '../../core/tags/tag/tag.dart';
 import 'comments/providers.dart';
+import 'configs/providers.dart';
 import 'favorites/providers.dart';
 import 'notes/providers.dart';
 import 'posts/providers.dart';
@@ -93,6 +94,16 @@ class GelbooruRepository extends BooruRepositoryDefault {
       defaultFileNameFormat: kDefaultCustomDownloadFileNameFormat,
       defaultBulkDownloadFileNameFormat: kDefaultCustomDownloadFileNameFormat,
       sampleData: kDanbooruPostSamples,
+      preload: (posts, config, cancelToken) async {
+        final tagExtractor = ref.read(gelbooruTagExtractorProvider(config));
+
+        await tagExtractor.extractTagsBatch(
+          posts,
+          options: ExtractOptions(
+            cancelToken: cancelToken,
+          ),
+        );
+      },
       tokenHandlers: [
         WidthTokenHandler(),
         HeightTokenHandler(),
@@ -117,6 +128,11 @@ class GelbooruRepository extends BooruRepositoryDefault {
   @override
   CommentRepository comment(BooruConfigAuth config) {
     return ref.watch(gelbooruCommentRepoProvider(config));
+  }
+
+  @override
+  BooruLoginDetails loginDetails(BooruConfigAuth config) {
+    return ref.watch(gelbooruLoginDetailsProvider(config));
   }
 }
 

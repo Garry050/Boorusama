@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cache_manager/cache_manager.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:extended_image/src/image/raw_image.dart';
@@ -19,7 +20,6 @@ import 'package:flutter_avif_platform_interface/flutter_avif_platform_interface.
 
 import 'cached_network_avif_image.dart';
 import 'dio_extended_image_provider.dart';
-import 'image_cache_manager.dart';
 import 'utils.dart';
 
 const kDefaultImageCacheDuration = Duration(hours: 1);
@@ -91,7 +91,7 @@ class ExtendedImage extends StatefulWidget {
     this.borderRadius,
     this.clearMemoryCacheIfFailed = true,
     BoxConstraints? constraints,
-    CancellationToken? cancelToken,
+    CancelToken? cancelToken,
     Map<String, String>? headers,
     bool cache = true,
     double scale = 1.0,
@@ -337,7 +337,7 @@ class _ExtendedImageState extends State<ExtendedImage>
     final current = ValueListenableBuilder(
       valueListenable: _controller.loadState,
       builder: (_, state, _) => switch (state) {
-        LoadState.loading =>
+        LoadState.loading || LoadState.cancelled =>
           widget.placeholderWidget ??
               Container(
                 width: widget.width,
@@ -506,9 +506,19 @@ class _ExtendedImageState extends State<ExtendedImage>
   }
 
   void _loadFailed(dynamic exception, StackTrace? stackTrace) {
-    _controller.changeLoadState(LoadState.failed);
+    final state = switch (exception) {
+      DioException dioException
+          when dioException.type == DioExceptionType.cancel =>
+        LoadState.cancelled,
+      StateError(message: final msg)
+          when msg.contains('cancel') || msg.contains('canceled') =>
+        LoadState.cancelled,
+      _ => LoadState.failed,
+    };
 
-    if (widget.clearMemoryCacheIfFailed) {
+    _controller.changeLoadState(state);
+
+    if (widget.clearMemoryCacheIfFailed && state != LoadState.cancelled) {
       scheduleMicrotask(() {
         widget.image.evict();
         // PaintingBinding.instance.imageCache.evict(key);

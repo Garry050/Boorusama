@@ -1,5 +1,4 @@
 // Package imports:
-import 'package:booru_clients/gelbooru.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
@@ -11,8 +10,9 @@ import '../../../core/settings/providers.dart';
 import '../../../foundation/riverpod/riverpod.dart';
 import '../client_provider.dart';
 import '../gelbooru_v2.dart';
+import '../gelbooru_v2_repository.dart';
 import '../tags/providers.dart';
-import 'parser.dart';
+import 'repo.dart';
 import 'types.dart';
 
 final gelbooruV2PostRepoProvider =
@@ -22,28 +22,19 @@ final gelbooruV2PostRepoProvider =
         final tagComposer = ref.watch(
           gelbooruV2TagQueryComposerProvider(config),
         );
+        final imageUrlResolver = ref.watch(
+          gelbooruV2PostImageUrlResolverProvider,
+        );
 
-        return PostRepositoryBuilder(
+        return GelbooruV2PostRepository(
+          fetcher: (tags, page, {limit, options}) => client.getPosts(
+            page: page,
+            tags: tags,
+            limit: limit,
+          ),
+          fetchSingle: (id, {options}) => client.getPost(id),
+          imageUrlResolver: imageUrlResolver,
           tagComposer: tagComposer,
-          fetch: client.getPostResults,
-          fetchSingle: (id, {options}) async {
-            final numericId = id as NumericPostId?;
-
-            if (numericId == null) return Future.value(null);
-
-            final post = await client.getPost(numericId.value);
-
-            return post != null
-                ? gelbooruV2PostDtoToGelbooruPost(post, null)
-                : null;
-          },
-          fetchFromController: (controller, page, {limit, options}) {
-            final tags = controller.tags.map((e) => e.originalTag).toList();
-
-            final newTags = tagComposer.compose(tags);
-
-            return client.getPostResults(newTags, page, limit: limit);
-          },
           getSettings: () async => ref.read(imageListingSettingsProvider),
         );
       },
@@ -87,31 +78,7 @@ final gelbooruV2ChildPostsProvider = FutureProvider.autoDispose
           );
     });
 
-extension GelbooruV2ClientX on GelbooruV2Client {
-  Future<PostResult<GelbooruV2Post>> getPostResults(
-    List<String> tags,
-    int page, {
-    int? limit,
-    PostFetchOptions? options,
-  }) async {
-    final posts = await getPosts(
-      tags: tags,
-      page: page,
-      limit: limit,
+final gelbooruV2PostImageUrlResolverProvider =
+    Provider<GelbooruV2ImageUrlResolver>(
+      (ref) => const GelbooruV2ImageUrlResolver(),
     );
-
-    return posts.posts
-        .map(
-          (e) => gelbooruV2PostDtoToGelbooruPost(
-            e,
-            PostMetadata(
-              page: page,
-              search: tags.join(' '),
-              limit: limit,
-            ),
-          ),
-        )
-        .toList()
-        .toResult(total: posts.count);
-  }
-}

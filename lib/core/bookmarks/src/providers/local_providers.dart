@@ -1,6 +1,3 @@
-// Flutter imports:
-import 'package:flutter/material.dart';
-
 // Package imports:
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,35 +9,30 @@ import '../../../../boorus/gelbooru_v2/tags/providers.dart';
 import '../../../../boorus/hybooru/tags/providers.dart';
 import '../../../../foundation/riverpod/riverpod.dart';
 import '../../../boorus/booru/booru.dart';
-import '../../../boorus/engine/engine.dart';
-import '../../../boorus/engine/providers.dart';
 import '../../../configs/config.dart';
-import '../../../tags/categories/providers.dart';
 import '../../../tags/local/providers.dart';
-import '../../../tags/tag/colors.dart';
 import '../../../tags/tag/providers.dart';
 import '../../../tags/tag/tag.dart';
-import '../../../theme.dart';
 import '../../providers.dart';
 import '../data/bookmark_convert.dart';
 import '../types/bookmark.dart';
 import '../types/bookmark_repository.dart';
+import 'bookmark_shuffle_provider.dart';
 
 enum BookmarkSortType {
   newest,
   oldest,
+  random,
 }
 
 List<Bookmark> filterBookmarks({
   required List<Bookmark> bookmarks,
-  required String tags,
+  required List<String> selectedTags,
   required BookmarkSortType sortType,
   String? selectedBooruUrl,
+  BookmarkShuffleState? shuffleState,
 }) {
-  // Split tags if provided, otherwise use an empty list.
-  final tagsList = tags.isEmpty
-      ? const <String>[]
-      : tags.split(' ').where((e) => e.isNotEmpty).toList();
+  final tagsList = selectedTags;
 
   // Filter bookmarks based on URL and tags.
   final filtered = selectedBooruUrl == null && tagsList.isEmpty
@@ -53,15 +45,24 @@ List<Bookmark> filterBookmarks({
                   tagsList.every((tag) => bookmark.tags.contains(tag))),
         );
 
-  // Sort filtered results.
-  return filtered
+  final sorted = filtered
       .sorted(
         (a, b) => switch (sortType) {
           BookmarkSortType.newest => b.createdAt.compareTo(a.createdAt),
           BookmarkSortType.oldest => a.createdAt.compareTo(b.createdAt),
+          BookmarkSortType.random => 0, // No initial sorting for random
         },
       )
       .toList();
+
+  if (sortType == BookmarkSortType.random) {
+    final activeShuffleState = shuffleState?.seed != null
+        ? shuffleState!
+        : const BookmarkShuffleState().withNewShuffle();
+    return activeShuffleState.applyShuffleToList(sorted);
+  }
+
+  return sorted;
 }
 
 final bookmarkEditProvider = StateProvider.autoDispose<bool>((ref) => false);
@@ -74,29 +75,6 @@ final tagCountProvider = FutureProvider.autoDispose.family<int, String>((
 
   return tagMap[tag] ?? 0;
 });
-
-final bookmarkTagColorProvider = FutureProvider.autoDispose
-    .family<Color?, (BooruConfigAuth, String)>(
-      (ref, params) async {
-        final (config, tag) = params;
-        final tagTypeStore = await ref.watch(booruTagTypeStoreProvider.future);
-        final tagType = await tagTypeStore.getTagCategory(config.url, tag);
-        final colorScheme = ref.watch(colorSchemeProvider);
-
-        final color = ref
-            .watch(booruRepoProvider(config))
-            ?.tagColorGenerator()
-            .generateColor(
-              TagColorOptions(
-                tagType: tagType,
-                colors: TagColors.fromBrightness(colorScheme.brightness),
-              ),
-            );
-
-        return color;
-      },
-      dependencies: [colorSchemeProvider],
-    );
 
 final tagMapProvider = FutureProvider.autoDispose<Map<String, int>>((
   ref,
@@ -118,36 +96,6 @@ final tagMapProvider = FutureProvider.autoDispose<Map<String, int>>((
     },
   );
 });
-
-final sortedTagsProvider =
-    FutureProvider.autoDispose<List<MapEntry<String, int>>>((
-      ref,
-    ) async {
-      final tagMap = await ref.watch(tagMapProvider.future);
-      return tagMap.entries
-          .sorted((a, b) => b.value.compareTo(a.value))
-          .toList();
-    });
-
-final tagSuggestionsProvider = FutureProvider.autoDispose<List<String>>((
-  ref,
-) async {
-  final tagString = ref.watch(tagInputProvider);
-  if (tagString.isEmpty) return const [];
-
-  final tags = tagString.trim().split(' ');
-
-  final tag = tags.lastOrNull?.trim();
-
-  if (tag == null || tag.isEmpty) return const [];
-
-  final sortedTags = await ref.watch(sortedTagsProvider.future);
-
-  return sortedTags.take(10).map((e) => e.key).toList();
-});
-
-final selectedTagsProvider = StateProvider.autoDispose<String>((ref) => '');
-final tagInputProvider = StateProvider.autoDispose<String>((ref) => '');
 
 final selectedBooruUrlProvider = StateProvider.autoDispose<String?>((ref) {
   return null;

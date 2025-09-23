@@ -76,16 +76,17 @@ class _Tile extends ConsumerWidget {
             fontSize: 16,
           ),
         ),
-        if (config.hasLoginDetails())
-          Text(
-            config.login ?? 'Unknown',
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.outline,
+        if (config.login case final login?)
+          if (login.isNotEmpty)
+            Text(
+              login,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
-          ),
       ],
     );
   }

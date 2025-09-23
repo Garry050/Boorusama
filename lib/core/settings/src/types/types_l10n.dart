@@ -106,6 +106,8 @@ extension VideoPlayerEngineTranslated on VideoPlayerEngine {
     VideoPlayerEngine.auto => 'Default',
     VideoPlayerEngine.videoPlayerPlugin => 'video_player',
     VideoPlayerEngine.mdk => 'mdk',
+    VideoPlayerEngine.mpv => 'mpv',
+    VideoPlayerEngine.webview => 'webview',
   };
 }
 

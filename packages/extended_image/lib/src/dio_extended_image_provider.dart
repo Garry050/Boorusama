@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:ui' as ui show Codec;
 
 // Flutter imports:
+import 'package:cache_manager/cache_manager.dart';
 import 'package:extended_image_library/extended_image_library.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:retriable/retriable.dart';
 
-import 'image_cache_manager.dart';
 import 'image_fetcher.dart';
 
 class DioExtendedNetworkImageProvider
@@ -67,7 +67,7 @@ class DioExtendedNetworkImageProvider
 
   /// The token to cancel network request
   @override
-  final CancellationToken? cancelToken;
+  final CancelToken? cancelToken;
 
   /// Custom cache key
   @override
@@ -151,7 +151,6 @@ class DioExtendedNetworkImageProvider
     return instantiateImageCodec(bytes, decode);
   }
 
-  /// Get an effective cache manager, creating a default one if none is provided
   ImageCacheManager _getEffectiveCacheManager() {
     return cacheManager ??
         DefaultImageCacheManager(
@@ -160,11 +159,9 @@ class DioExtendedNetworkImageProvider
         );
   }
 
-  /// Gets the image bytes, either from cache or network
   Future<Uint8List?> _fetchImageBytes(
     StreamController<ImageChunkEvent>? chunkEvents,
   ) async {
-    // Skip caching if disabled
     if (!cache) {
       return _loadNetwork(chunkEvents);
     }
@@ -175,31 +172,20 @@ class DioExtendedNetworkImageProvider
       customKey: cacheKey,
     );
 
-    final hasValidCacheResult = manager.hasValidCache(
+    final cachedBytesResult = manager.getCachedFileBytes(
       effectiveCacheKey,
       maxAge: cacheMaxAge,
     );
 
-    bool hasValidCache;
-    if (hasValidCacheResult is Future<bool>) {
-      hasValidCache = await hasValidCacheResult;
+    Uint8List? cachedBytes;
+    if (cachedBytesResult is Future<Uint8List?>) {
+      cachedBytes = await cachedBytesResult;
     } else {
-      hasValidCache = hasValidCacheResult;
+      cachedBytes = cachedBytesResult;
     }
 
-    // Try to load from cache
-    if (hasValidCache) {
-      final cachedDataResult = manager.getCachedFileBytes(effectiveCacheKey);
-      Uint8List? cachedData;
-      if (cachedDataResult is Future<Uint8List?>) {
-        cachedData = await cachedDataResult;
-      } else {
-        cachedData = cachedDataResult;
-      }
-
-      if (cachedData != null && cachedData.isNotEmpty) {
-        return cachedData;
-      }
+    if (cachedBytes != null && cachedBytes.isNotEmpty) {
+      return cachedBytes;
     }
 
     // Load from network if not in cache
@@ -211,7 +197,6 @@ class DioExtendedNetworkImageProvider
     return networkData;
   }
 
-  /// Get the image from network using shared ImageFetcher logic
   Future<Uint8List?> _loadNetwork(
     StreamController<ImageChunkEvent>? chunkEvents,
   ) async {

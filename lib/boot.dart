@@ -9,8 +9,7 @@ import 'package:flutter/services.dart';
 // Package imports:
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fvp/fvp.dart' as fvp;
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:i18n/i18n.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:stack_trace/stack_trace.dart';
@@ -24,6 +23,7 @@ import 'core/cache/providers.dart';
 import 'core/configs/config.dart';
 import 'core/configs/config/data.dart';
 import 'core/configs/manage/providers.dart';
+import 'core/hive/hive_registrar.g.dart';
 import 'core/http/http.dart';
 import 'core/http/providers.dart';
 import 'core/settings/providers.dart';
@@ -61,7 +61,9 @@ Future<void> boot(BootData bootData) async {
   final dbDirectory = await _initDbDirectory();
 
   logger.debugBoot('Initialize Hive');
-  Hive.init(dbDirectory.path);
+  Hive
+    ..init(dbDirectory.path)
+    ..registerAdapters();
 
   logger.debugBoot('Load app info');
   final appInfo = await getAppInfo();
@@ -105,18 +107,6 @@ Future<void> boot(BootData bootData) async {
     ),
   );
 
-  fvp.registerWith(
-    options: {
-      'platforms': [
-        'linux',
-        'ios',
-        'windows',
-        'macos',
-        if (settings.videoPlayerEngine == VideoPlayerEngine.mdk) 'android',
-      ],
-    },
-  );
-
   logger
     ..debugBoot('Settings: ${settings.toJson()}')
     ..debugBoot('Load current booru config');
@@ -158,7 +148,7 @@ Future<void> boot(BootData bootData) async {
     logger
       ..info('Start up', 'Clearing image cache on startup')
       ..debugBoot('Clear image cache');
-    await clearImageCache();
+    await clearImageCache(null);
   }
 
   HttpOverrides.global = AppHttpOverrides();

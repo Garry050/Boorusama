@@ -1,27 +1,46 @@
-// Dart imports:
-import 'dart:collection';
-
 extension Iterables<E> on Iterable<E> {
   Map<K, List<E>> groupBy<K>(K Function(E) keyFunction) => fold(
     <K, List<E>>{},
     (map, element) =>
         map..putIfAbsent(keyFunction(element), () => <E>[]).add(element),
   );
-}
 
-extension QueueX<E> on Queue<E> {
-  List<E> dequeue(int times) {
-    final list = <E>[];
-    for (var i = 0; i < times; i++) {
-      if (isEmpty) break;
-      list.add(removeFirst());
+  List<List<E>> chunk(int chunkSize) {
+    if (chunkSize <= 0) {
+      throw ArgumentError('Chunk size must be positive');
     }
 
-    return list;
+    final result = <List<E>>[];
+    final iterator = this.iterator;
+
+    while (iterator.moveNext()) {
+      final chunk = <E>[iterator.current];
+      for (var i = 1; i < chunkSize && iterator.moveNext(); i++) {
+        chunk.add(iterator.current);
+      }
+      result.add(chunk);
+    }
+
+    return result;
   }
 }
 
 extension ListX<E> on List<E> {
+  List<List<E>> chunk(int chunkSize) {
+    if (chunkSize <= 0) {
+      throw ArgumentError('Chunk size must be positive');
+    }
+
+    final result = <List<E>>[];
+
+    for (var i = 0; i < length; i += chunkSize) {
+      final end = (i + chunkSize < length) ? i + chunkSize : length;
+      result.add(sublist(i, end));
+    }
+
+    return result;
+  }
+
   List<E> replaceAt(
     int index,
     E e,

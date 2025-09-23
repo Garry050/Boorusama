@@ -2,14 +2,14 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:extended_image/extended_image.dart';
+import 'package:cache_manager/cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:selection_mode/selection_mode.dart';
 
 // Project imports:
 import '../../../../boorus/engine/engine.dart';
-import '../../../../configs/ref.dart';
+import '../../../../configs/config/providers.dart';
 import '../../../../images/booru_image.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/settings.dart';
@@ -65,7 +65,9 @@ class DefaultImageGridItem<T extends Post> extends StatelessWidget {
                 contextMenu ??
                 Consumer(
                   builder: (_, ref, _) => GeneralPostContextMenu(
-                    hasAccount: ref.watchConfigAuth.hasLoginDetails(),
+                    hasAccount: ref
+                        .watch(booruLoginDetailsProvider(ref.watchConfigAuth))
+                        .hasLogin(),
                     onMultiSelect: () {
                       selectionModeController.enable(
                         initialSelected: [index],
