@@ -22,8 +22,7 @@ class ManualBackupPage extends ConsumerStatefulWidget {
 }
 
 class _ManualBackupPageState extends ConsumerState<ManualBackupPage> {
-  final SelectionModeController _selectionController =
-      SelectionModeController();
+  final _selectionController = SelectionModeController();
   final _scrollController = ScrollController();
 
   @override
@@ -43,7 +42,7 @@ class _ManualBackupPageState extends ConsumerState<ManualBackupPage> {
       (previous, next) {
         if (previous?.status != BackupStatus.completed &&
             next.status == BackupStatus.completed &&
-            next.exportResult?.success == true) {
+            (next.exportResult?.success ?? false)) {
           _selectionController.disable();
         }
       },

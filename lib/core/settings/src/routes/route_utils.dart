@@ -12,7 +12,7 @@ void goToSettingsPage(
     Uri(
       path: '/settings',
       queryParameters: {
-        if (scrollTo != null) 'scrollTo': scrollTo,
+        'scrollTo': ?scrollTo,
       },
     ).toString(),
   );
@@ -46,6 +46,17 @@ Future<void> openAppearancePage(WidgetRef ref) {
       path: '/settings',
       queryParameters: {
         'initial': 'appearance',
+      },
+    ).toString(),
+  );
+}
+
+Future<void> openDataAndStoragePage(WidgetRef ref) {
+  return ref.router.push(
+    Uri(
+      path: '/settings',
+      queryParameters: {
+        'initial': 'data_and_storage',
       },
     ).toString(),
   );

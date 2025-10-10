@@ -1,6 +1,9 @@
 // Package imports:
 import 'package:equatable/equatable.dart';
 
+// Project imports:
+import '../../../foundation/platform.dart';
+
 enum AutoBackupFrequency {
   daily(Duration(days: 1)),
   weekly(Duration(days: 7));
@@ -33,13 +36,7 @@ class AutoBackupSettings extends Equatable {
     );
   }
 
-  static const disabled = AutoBackupSettings(
-    enabled: false,
-    frequency: AutoBackupFrequency.weekly,
-    maxBackups: 3,
-    userSelectedPath: null,
-    lastBackupTime: null,
-  );
+  static const disabled = AutoBackupSettings();
 
   final bool enabled;
   final AutoBackupFrequency frequency;
@@ -48,9 +45,18 @@ class AutoBackupSettings extends Equatable {
   final DateTime? lastBackupTime;
 
   bool get shouldBackup {
+    // Not enabled - no backup
     if (!enabled) return false;
+
+    // Android requires user-selected path
+    if (isAndroid() && (userSelectedPath?.isEmpty ?? true)) {
+      return false;
+    }
+
+    // First backup - always needed
     if (lastBackupTime == null) return true;
 
+    // Check if enough time has passed
     final elapsed = DateTime.now().difference(lastBackupTime!);
     return elapsed >= frequency.duration;
   }
@@ -79,9 +85,8 @@ class AutoBackupSettings extends Equatable {
     'enabled': enabled,
     'frequency': frequency.name,
     'maxBackups': maxBackups,
-    if (userSelectedPath != null) 'userSelectedPath': userSelectedPath,
-    if (lastBackupTime != null)
-      'lastBackupTime': lastBackupTime!.toIso8601String(),
+    'userSelectedPath': ?userSelectedPath,
+    'lastBackupTime': ?lastBackupTime?.toIso8601String(),
   };
 
   @override

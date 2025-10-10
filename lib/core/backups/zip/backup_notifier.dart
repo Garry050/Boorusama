@@ -87,7 +87,7 @@ class BackupNotifier extends AutoDisposeNotifier<BackupState> {
   }
 
   // Manual export operations
-  Future<void> exportAll(BuildContext context) async {
+  Future<void> exportAll(BuildContext context) {
     final registry = ref.read(backupRegistryProvider);
     final allSourceIds = registry.getAllSources().map((s) => s.id).toList();
     return exportToZip(context, allSourceIds);
@@ -118,7 +118,6 @@ class BackupNotifier extends AutoDisposeNotifier<BackupState> {
       state = state.copyWith(
         status: BackupStatus.exporting,
         progress: 0,
-        error: null,
       );
 
       final path = await _pickExportDirectory(context);
@@ -245,7 +244,6 @@ class BackupNotifier extends AutoDisposeNotifier<BackupState> {
       state = state.copyWith(
         status: BackupStatus.importing,
         progress: 0,
-        error: null,
       );
 
       final service = ref.read(bulkBackupServiceProvider);
@@ -292,7 +290,6 @@ class BackupNotifier extends AutoDisposeNotifier<BackupState> {
       state = state.copyWith(
         status: BackupStatus.importing,
         progress: 0,
-        error: null,
       );
 
       if (!context.mounted) return;
@@ -386,7 +383,6 @@ class BackupNotifier extends AutoDisposeNotifier<BackupState> {
       state = state.copyWith(
         status: BackupStatus.exporting,
         progress: 0,
-        error: null,
       );
 
       final autoBackupService = ref.read(autoBackupServiceProvider);

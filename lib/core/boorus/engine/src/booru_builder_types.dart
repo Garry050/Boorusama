@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:selection_mode/selection_mode.dart';
 
@@ -10,15 +9,11 @@ import 'package:selection_mode/selection_mode.dart';
 import '../../../configs/config.dart';
 import '../../../configs/create/create.dart';
 import '../../../posts/details/routes.dart';
-import '../../../posts/details_manager/types.dart';
 import '../../../posts/listing/providers.dart';
 import '../../../posts/post/post.dart';
-import '../../../posts/rating/rating.dart';
 import '../../../search/search/src/pages/search_page.dart';
 import '../../../settings/settings.dart';
 import '../../../tags/autocompletes/types.dart';
-import '../../../tags/configs/configs.dart';
-import '../../../tags/metatag/metatag.dart';
 import '../../../tags/tag/colors.dart';
 
 typedef CreateConfigPageBuilder =
@@ -101,8 +96,6 @@ typedef GranularRatingQueryBuilder =
       BooruConfigSearch config,
     );
 
-typedef GranularRatingOptionsBuilder = Set<Rating> Function();
-
 typedef TagColorBuilder =
     Color? Function(
       TagColorOptions options,
@@ -142,11 +135,6 @@ typedef TagSuggestionItemBuilder =
       ValueChanged<AutocompleteData> onItemTap,
     );
 
-typedef MetatagExtractorBuilder =
-    MetatagExtractor Function(
-      TagInfo tagInfo,
-    );
-
 typedef HomeViewBuilder =
     Widget Function(
       BuildContext context,
@@ -165,76 +153,8 @@ typedef CreateUnknownBooruWidgetsBuilder =
       BuildContext context,
     );
 
-const kDefaultPostDetailsPreviewPart = {
-  DetailsPart.info,
-  DetailsPart.toolbar,
-};
-
-const kDefaultPostDetailsBuildablePreviewPart = {
-  DetailsPart.info,
-  DetailsPart.toolbar,
-  DetailsPart.fileDetails,
-};
-
-class PostDetailsUIBuilder {
-  const PostDetailsUIBuilder({
-    this.preview = const {},
-    this.full = const {},
-    this.previewAllowedParts = const {
-      DetailsPart.fileDetails,
-      DetailsPart.source,
-    },
-  });
-
-  final Set<DetailsPart> previewAllowedParts;
-
-  final Map<DetailsPart, Widget Function(BuildContext context)> preview;
-  final Map<DetailsPart, Widget Function(BuildContext context)> full;
-
-  Set<DetailsPart> get buildablePreviewParts {
-    // use full widgets, except for the ones that are not allowed
-    return {
-      ...previewAllowedParts.intersection(full.keys.toSet()),
-      ...kDefaultPostDetailsBuildablePreviewPart,
-      ...preview.keys.toSet(),
-    };
-  }
-
-  Widget? buildPart(BuildContext context, DetailsPart part) {
-    final builder = full[part];
-    if (builder != null) {
-      return builder(context);
-    }
-
-    return null;
-  }
-}
-
-class TagColorOptions extends Equatable {
-  const TagColorOptions({
-    required this.tagType,
-    required this.colors,
-  });
-
-  final String? tagType;
-  final TagColors colors;
-
-  @override
-  List<Object?> get props => [
-    tagType,
-    colors,
-  ];
-}
-
-class TagColorsOptions extends Equatable {
-  const TagColorsOptions({
-    required this.brightness,
-  });
-
-  final Brightness brightness;
-
-  @override
-  List<Object?> get props => [
-    brightness,
-  ];
-}
+typedef VideoQualitySelectionBuilder =
+    Widget? Function(
+      BuildContext context,
+      Post post,
+    );

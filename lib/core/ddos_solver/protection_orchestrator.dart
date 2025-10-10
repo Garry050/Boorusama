@@ -23,7 +23,7 @@ class ProtectionOrchestrator {
   final Map<String, ProtectionSolver> _solvers;
   final UserAgentProvider _userAgentProvider;
 
-  bool _hasSolvedChallenge = false;
+  var _hasSolvedChallenge = false;
 
   // Key to track which URIs are currently being processed
   final Map<String, Completer<bool>> _inProgress = {};
@@ -75,7 +75,7 @@ class ProtectionOrchestrator {
   Future<bool> handleError(
     BuildContext context,
     HttpError error,
-  ) async {
+  ) {
     final errorDetectors = _detectors
         .where((d) => d.detectionPhase == DetectionPhase.error)
         .toList();
@@ -94,7 +94,7 @@ class ProtectionOrchestrator {
 
   Future<bool> handleResponse(
     HttpResponse response,
-  ) async {
+  ) {
     final responseDetectors = _detectors
         .where((d) => d.detectionPhase == DetectionPhase.response)
         .toList();
@@ -111,7 +111,7 @@ class ProtectionOrchestrator {
     );
   }
 
-  Future<String?> getUserAgent() async {
+  Future<String?> getUserAgent() {
     return _userAgentProvider.getUserAgent();
   }
 }

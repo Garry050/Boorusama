@@ -22,9 +22,11 @@ import '../../../../router.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/settings.dart';
 import '../../../../theme.dart';
+import '../../../../videos/lock/widgets.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../details_manager/types.dart';
 import '../../../details_pageview/widgets.dart';
+import '../../../details_parts/types.dart';
 import '../../../post/post.dart';
 import '../../../post/routes.dart';
 import '../../details.dart';
@@ -33,7 +35,7 @@ import 'post_details_full_info_sheet.dart';
 import 'video_controls.dart';
 import 'volume_key_page_navigator.dart';
 
-const String kShowInfoStateCacheKey = 'showInfoCacheStateKey';
+const kShowInfoStateCacheKey = 'showInfoCacheStateKey';
 
 class PostDetailsPageScaffold<T extends Post> extends ConsumerStatefulWidget {
   const PostDetailsPageScaffold({
@@ -96,6 +98,9 @@ class _PostDetailPageScaffoldState<T extends Post>
       widget.controller.setPage(
         widget.controller.initialPage,
       );
+      widget.controller.onPageSettled(
+        widget.controller.initialPage,
+      );
     });
 
     widget.controller.isVideoPlaying.addListener(_isVideoPlayingChanged);
@@ -113,12 +118,15 @@ class _PostDetailPageScaffoldState<T extends Post>
         settingsProvider.select((value) => value.volumeKeyViewerNavigation),
       ),
     )..initialize();
+
+    _controller.precisePage.addListener(_onPrecisePageChanged);
   }
 
   @override
   void dispose() {
     _volumeKeyPageNavigator?.dispose();
     widget.controller.isVideoPlaying.removeListener(_isVideoPlayingChanged);
+    _controller.precisePage.removeListener(_onPrecisePageChanged);
 
     super.dispose();
   }
@@ -138,11 +146,22 @@ class _PostDetailPageScaffoldState<T extends Post>
     }
   }
 
+  void _onPrecisePageChanged() {
+    final precisePage = _controller.precisePage.value;
+
+    if (precisePage != null) {
+      final page = precisePage.floor();
+      if ((page - precisePage).abs() == 0) {
+        widget.controller.onPageSettled(page);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Sync slideshow options with settings
     ref.listen(
-      settingsProvider.select(
+      imageViewerSettingsProvider.select(
         toSlideShowOptions,
       ),
       (prev, next) {
@@ -182,7 +201,18 @@ class _PostDetailPageScaffoldState<T extends Post>
               }
             }
           },
-          child: _build(),
+          child: VideoScreenLocker(
+            onLockChanged: (isLocked) {
+              if (isLocked) {
+                _controller.hideAllUI();
+                _controller.disableKeyboardShortcuts();
+              } else {
+                _controller.showAllUI();
+                _controller.enableKeyboardShortcuts();
+              }
+            },
+            child: _build(),
+          ),
         ),
       ),
     );
@@ -198,7 +228,7 @@ class _PostDetailPageScaffoldState<T extends Post>
       settingsProvider.select((value) => value.reduceAnimations),
     );
     final swipeMode = ref.watch(
-      settingsProvider.select((value) => value.viewer.swipeMode),
+      imageViewerSettingsProvider.select((value) => value.swipeMode),
     );
 
     return Scaffold(

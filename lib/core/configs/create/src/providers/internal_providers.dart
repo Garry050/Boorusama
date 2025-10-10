@@ -122,6 +122,10 @@ class EditBooruConfigNotifier
     ListingConfigs? listing,
   ) => state = state.copyWith(listing: () => listing);
 
+  void updateViewerConfigs(
+    ViewerConfigs? viewerConfigs,
+  ) => state = state.copyWith(viewerConfigs: () => viewerConfigs);
+
   void updateCustomDownloadLocation(
     String? customDownloadLocation,
   ) => state = state.copyWith(
@@ -143,6 +147,10 @@ class EditBooruConfigNotifier
   void updateImageDetailsQuality(
     String? imageDetailsQuality,
   ) => state = state.copyWith(imageDetaisQuality: () => imageDetailsQuality);
+
+  void updateVideoQuality(
+    String? videoQuality,
+  ) => state = state.copyWith(videoQuality: () => videoQuality);
 
   void updateDefaultPreviewImageButtonAction(
     String? defaultPreviewImageButtonAction,

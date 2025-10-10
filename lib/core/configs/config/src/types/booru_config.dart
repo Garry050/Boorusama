@@ -11,6 +11,7 @@ import 'package:foundation/foundation.dart';
 import '../../../../boorus/booru/booru.dart';
 import '../../../../home/custom_home.dart';
 import '../../../../posts/details_manager/types.dart';
+import '../../../../posts/details_parts/types.dart';
 import '../../../../posts/rating/rating.dart';
 import '../../../../proxy/proxy.dart';
 import '../../../../settings/settings.dart';
@@ -42,10 +43,12 @@ class BooruConfig extends Equatable {
     required this.customBulkDownloadFileNameFormat,
     required this.customDownloadLocation,
     required this.imageDetaisQuality,
+    required this.videoQuality,
     required this.granularRatingFilters,
     required this.postGestures,
     required this.defaultPreviewImageButtonAction,
     required this.listing,
+    required this.viewerConfigs,
     required this.theme,
     required this.alwaysIncludeTags,
     required this.blacklistConfigs,
@@ -85,6 +88,7 @@ class BooruConfig extends Equatable {
           json['customBulkDownloadFileNameFormat'] as String?,
       customDownloadLocation: json['customDownloadLocation'] as String?,
       imageDetaisQuality: json['imageDetaisQuality'] as String?,
+      videoQuality: json['videoQuality'] as String?,
       granularRatingFilters: parseGranularRatingFilters(
         json['granularRatingFilterString'] as String?,
       ),
@@ -98,6 +102,9 @@ class BooruConfig extends Equatable {
       listing: json['listing'] == null
           ? null
           : ListingConfigs.fromJson(json['listing'] as Map<String, dynamic>),
+      viewerConfigs: json['viewer'] == null
+          ? null
+          : ViewerConfigs.fromJson(json['viewer'] as Map<String, dynamic>),
       theme: json['theme'] == null
           ? null
           : ThemeConfigs.fromJson(json['theme'] as Map<String, dynamic>),
@@ -118,7 +125,7 @@ class BooruConfig extends Equatable {
     );
   }
 
-  static const BooruConfig empty = BooruConfig(
+  static const empty = BooruConfig(
     id: -2,
     booruId: -1,
     booruIdHint: -1,
@@ -134,10 +141,12 @@ class BooruConfig extends Equatable {
     customBulkDownloadFileNameFormat: null,
     customDownloadLocation: null,
     imageDetaisQuality: null,
+    videoQuality: null,
     granularRatingFilters: null,
     postGestures: null,
     defaultPreviewImageButtonAction: null,
     listing: null,
+    viewerConfigs: null,
     theme: null,
     alwaysIncludeTags: null,
     blacklistConfigs: null,
@@ -167,10 +176,12 @@ class BooruConfig extends Equatable {
     customBulkDownloadFileNameFormat: customDownloadFileNameFormat,
     customDownloadLocation: null,
     imageDetaisQuality: null,
+    videoQuality: null,
     granularRatingFilters: null,
     postGestures: null,
     defaultPreviewImageButtonAction: null,
     listing: null,
+    viewerConfigs: null,
     theme: null,
     alwaysIncludeTags: null,
     blacklistConfigs: null,
@@ -194,10 +205,12 @@ class BooruConfig extends Equatable {
   final String? customBulkDownloadFileNameFormat;
   final String? customDownloadLocation;
   final String? imageDetaisQuality;
+  final String? videoQuality;
   final Set<Rating>? granularRatingFilters;
   final PostGestureConfig? postGestures;
   final String? defaultPreviewImageButtonAction;
   final ListingConfigs? listing;
+  final ViewerConfigs? viewerConfigs;
   final ThemeConfigs? theme;
   final String? alwaysIncludeTags;
   final BlacklistConfigs? blacklistConfigs;
@@ -211,6 +224,7 @@ class BooruConfig extends Equatable {
     String? login,
     String? name,
     int? booruIdHint,
+    ViewerConfigs? Function()? viewerConfigs,
     LayoutConfigs? Function()? layout,
   }) {
     return BooruConfig(
@@ -229,10 +243,14 @@ class BooruConfig extends Equatable {
       customBulkDownloadFileNameFormat: customBulkDownloadFileNameFormat,
       customDownloadLocation: customDownloadLocation,
       imageDetaisQuality: imageDetaisQuality,
+      videoQuality: videoQuality,
       granularRatingFilters: granularRatingFilters,
       postGestures: postGestures,
       defaultPreviewImageButtonAction: defaultPreviewImageButtonAction,
       listing: listing,
+      viewerConfigs: viewerConfigs != null
+          ? viewerConfigs()
+          : this.viewerConfigs,
       theme: theme,
       alwaysIncludeTags: alwaysIncludeTags,
       blacklistConfigs: blacklistConfigs,
@@ -259,10 +277,12 @@ class BooruConfig extends Equatable {
     customBulkDownloadFileNameFormat,
     customDownloadLocation,
     imageDetaisQuality,
+    videoQuality,
     granularRatingFilters,
     postGestures,
     defaultPreviewImageButtonAction,
     listing,
+    viewerConfigs,
     theme,
     alwaysIncludeTags,
     blacklistConfigs,
@@ -293,12 +313,14 @@ class BooruConfig extends Equatable {
       'customBulkDownloadFileNameFormat': customBulkDownloadFileNameFormat,
       'customDownloadLocation': customDownloadLocation,
       'imageDetaisQuality': imageDetaisQuality,
+      'videoQuality': videoQuality,
       'granularRatingFilterString': granularRatingFilterToString(
         granularRatingFilters,
       ),
       'postGestures': postGestures?.toJson(),
       'defaultPreviewImageButtonAction': defaultPreviewImageButtonAction,
       'listing': listing?.toJson(),
+      'viewer': viewerConfigs?.toJson(),
       'theme': theme?.toJson(),
       'alwaysIncludeTags': alwaysIncludeTags,
       'blacklistedTags': blacklistConfigs?.toJson(),
@@ -527,18 +549,26 @@ class BooruConfigFilter extends Equatable {
 class BooruConfigViewer extends Equatable {
   const BooruConfigViewer({
     required this.imageDetaisQuality,
+    required this.videoQuality,
     required this.viewerNotesFetchBehavior,
+    required this.settings,
   });
 
   factory BooruConfigViewer.fromConfig(BooruConfig config) {
     return BooruConfigViewer(
       imageDetaisQuality: config.imageDetaisQuality,
+      videoQuality: config.videoQuality,
       viewerNotesFetchBehavior: config.viewerNotesFetchBehavior,
+      settings: (config.viewerConfigs?.enable ?? false)
+          ? config.viewerConfigs?.settings
+          : null,
     );
   }
 
   final String? imageDetaisQuality;
+  final String? videoQuality;
   final BooruConfigViewerNotesFetchBehavior? viewerNotesFetchBehavior;
+  final ImageViewerSettings? settings;
 
   bool get autoFetchNotes =>
       viewerNotesFetchBehavior == BooruConfigViewerNotesFetchBehavior.auto;
@@ -546,7 +576,9 @@ class BooruConfigViewer extends Equatable {
   @override
   List<Object?> get props => [
     imageDetaisQuality,
+    videoQuality,
     viewerNotesFetchBehavior,
+    settings,
   ];
 }
 

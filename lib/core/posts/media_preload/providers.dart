@@ -25,9 +25,7 @@ final preloadManagerProvider =
             headers: headers,
             cancelToken: cancelToken,
           ),
-          downloadConfiguration: const DownloadConfiguration(
-            maxConcurrentDownloads: 2,
-          ),
+          downloadConfiguration: const DownloadConfiguration(),
         );
 
         ref.onDispose(() {

@@ -3,9 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 // Project imports:
-import 'package:boorusama/core/settings/settings.dart';
-import 'package:boorusama/core/videos/src/types/booru_player.dart';
-import 'package:boorusama/core/videos/src/types/video_player_state.dart';
+import 'package:boorusama/core/videos/engines/types.dart';
+import 'package:boorusama/core/videos/player/types.dart';
 
 // Test constants
 const kTestWebmUrl = 'https://example.com/video.webm';
@@ -32,7 +31,6 @@ void main() {
         final result = VideoPlayerState.resolveVideoEngine(
           engine: VideoPlayerEngine.auto,
           url: kTestWebmUrl,
-          isAndroid: false,
         );
 
         expect(result, VideoPlayerEngine.videoPlayerPlugin);
@@ -64,7 +62,6 @@ void main() {
       final result = VideoPlayerState.resolveVideoEngine(
         engine: null,
         url: kTestMp4Url,
-        isAndroid: false,
       );
 
       expect(result, VideoPlayerEngine.videoPlayerPlugin);

@@ -1117,19 +1117,18 @@ packages:
     dependency: "direct main"
     description:
       name: media_kit
-      sha256: "48c10c3785df5d88f0eef970743f8c99b2e5da2b34b9d8f9876e598f62d9e776"
+      sha256: "52a8e989babc431db0aa242f32a4a08e55f60662477ea09759a105d7cd6410da"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "1.2.1"
   media_kit_libs_android_video:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "libs/android/media_kit_libs_android_video"
-      ref: main
-      resolved-ref: ad84c59faa2b871926cb31516bdeec65d7676884
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.3.6"
+      name: media_kit_libs_android_video
+      sha256: "3f6274e5ab2de512c286a25c327288601ee445ed8ac319e0ef0b66148bd8f76c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.8"
   media_kit_libs_ios_video:
     dependency: transitive
     description:
@@ -1158,10 +1157,10 @@ packages:
     dependency: "direct main"
     description:
       name: media_kit_libs_video
-      sha256: "958cc55e7065d9d01f52a2842dab2a0812a92add18489f1006d864fb5e42a3ef"
+      sha256: "2b235b5dac79c6020e01eef5022c6cc85fedc0df1738aadc6ea489daa12a92a9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.6"
+    version: "1.0.7"
   media_kit_libs_windows_video:
     dependency: transitive
     description:
@@ -1174,12 +1173,12 @@ packages:
     dependency: "direct main"
     description:
       name: media_kit_video
-      sha256: a656a9463298c1adc64c57f2d012874f7f2900f0c614d9545a3e7b8bb9e2137b
+      sha256: "813858c3fe84eb46679eb698695f60665e2bfbef757766fac4d2e683f926e15a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.0"
+    version: "1.3.1"
   meta:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: meta
       sha256: e3641ec5d63ebf0d9b41bd43201a66e3fc79a65db5f61fc181f04cd27aab950c
@@ -1789,21 +1788,19 @@ packages:
   slang:
     dependency: transitive
     description:
-      path: slang
-      ref: "76c198928e423de4302a73e313aab953e9e51e3d"
-      resolved-ref: "76c198928e423de4302a73e313aab953e9e51e3d"
-      url: "https://github.com/khoadng/slang.git"
-    source: git
-    version: "4.8.1"
+      name: slang
+      sha256: "47182d10ce284e232f25a02eb74a421a11e7eb6a6fab9ab84fd8182bb0761130"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.9.0"
   slang_flutter:
     dependency: transitive
     description:
-      path: slang_flutter
-      ref: "76c198928e423de4302a73e313aab953e9e51e3d"
-      resolved-ref: "76c198928e423de4302a73e313aab953e9e51e3d"
-      url: "https://github.com/khoadng/slang.git"
-    source: git
-    version: "4.8.0"
+      name: slang_flutter
+      sha256: "5ecf841d6252c05ea335920ec299bb7edbb860eb793eebb4b40f68b9d148a571"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.9.0"
   sliver_tools:
     dependency: "direct main"
     description:
@@ -2213,7 +2210,7 @@ packages:
     source: hosted
     version: "3.4.0"
   wakelock_plus:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: wakelock_plus
       sha256: "9296d40c9adbedaba95d1e704f4e0b434be446e2792948d0e4aa977048104228"
@@ -2272,8 +2269,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "8572dd54c437c919aedc8dca6c5bffd25fe74b3c"
-      resolved-ref: "8572dd54c437c919aedc8dca6c5bffd25fe74b3c"
+      ref: ffb49899077d68af449262784bc4e837aa767392
+      resolved-ref: ffb49899077d68af449262784bc4e837aa767392
       url: "https://github.com/khoadng/webview_cookie_manager"
     source: git
     version: "2.0.7"

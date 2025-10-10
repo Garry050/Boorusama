@@ -50,8 +50,7 @@ class PostDetailsPageViewController extends ChangeNotifier
   late final _pageController = PageController(
     initialPage: initialPage,
   );
-  final DraggableScrollableController _sheetController =
-      DraggableScrollableController();
+  final _sheetController = DraggableScrollableController();
 
   final bool Function() checkIfLargeScreen;
 
@@ -97,6 +96,7 @@ class PostDetailsPageViewController extends ChangeNotifier
   final forceHideOverlay = ValueNotifier(false);
   final forceHideBottomSheet = ValueNotifier(false);
   final cooldown = ValueNotifier(false);
+  final keyboardShortcutsEnabled = ValueNotifier(true);
 
   var previouslyForcedShowUIByDrag = false;
 
@@ -310,9 +310,7 @@ class PostDetailsPageViewController extends ChangeNotifier
       if (!bottomSheet.value && !overlay.value) {
         previouslyForcedShowUIByDrag = true;
       }
-      showOverlay(
-        includeSystemStatus: true,
-      );
+      showOverlay();
     }
 
     if (verticalPosition.value < 0) {
@@ -467,6 +465,14 @@ class PostDetailsPageViewController extends ChangeNotifier
     canPull.value = true;
   }
 
+  void enableKeyboardShortcuts() {
+    keyboardShortcutsEnabled.value = true;
+  }
+
+  void disableKeyboardShortcuts() {
+    keyboardShortcutsEnabled.value = false;
+  }
+
   void setDisplacement(double value) {
     displacement.value = value;
     isItemPushed.value = value > 0;
@@ -604,6 +610,7 @@ class PostDetailsPageViewController extends ChangeNotifier
     isItemPushed.dispose();
     forceHideOverlay.dispose();
     forceHideBottomSheet.dispose();
+    keyboardShortcutsEnabled.dispose();
 
     super.dispose();
   }

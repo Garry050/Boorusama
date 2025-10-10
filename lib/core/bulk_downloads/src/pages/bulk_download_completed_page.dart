@@ -26,8 +26,6 @@ class BulkDownloadCompletedPage extends ConsumerStatefulWidget {
 
 class _BulkDownloadCompletedPageState
     extends ConsumerState<BulkDownloadCompletedPage> {
-  static const _pageSize = 20;
-
   late final _pagingController = PagingController(
     getNextPageKey: (state) =>
         state.lastPageIsEmpty ? null : state.nextIntPageKey,
@@ -38,7 +36,6 @@ class _BulkDownloadCompletedPageState
     final repo = await ref.read(downloadRepositoryProvider.future);
     final newItems = await repo.getCompletedSessions(
       offset: pageKey - 1,
-      limit: _pageSize,
     );
 
     return newItems;

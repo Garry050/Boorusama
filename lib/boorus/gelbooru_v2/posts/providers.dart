@@ -10,7 +10,6 @@ import '../../../core/settings/providers.dart';
 import '../../../foundation/riverpod/riverpod.dart';
 import '../client_provider.dart';
 import '../gelbooru_v2.dart';
-import '../gelbooru_v2_repository.dart';
 import '../tags/providers.dart';
 import 'repo.dart';
 import 'types.dart';
@@ -67,7 +66,7 @@ final gelbooruV2ChildPostsProvider = FutureProvider.autoDispose
     .family<
       List<GelbooruV2Post>,
       (BooruConfigFilter, BooruConfigSearch, GelbooruV2Post)
-    >((ref, params) async {
+    >((ref, params) {
       final (filter, search, post) = params;
 
       return ref

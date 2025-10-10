@@ -4,6 +4,9 @@ import 'dart:math';
 // Flutter imports:
 import 'package:flutter/material.dart';
 
+// Package imports:
+import 'package:meta/meta.dart';
+
 // Project imports:
 import '../../core/theme.dart';
 
@@ -15,12 +18,16 @@ extension type LegacyColor(Color color) implements Color {
     double opacity,
   ) : this(Color.fromRGBO(r, g, b, opacity));
 
+  @redeclare
   int get red => (0x00ff0000 & value) >> 16;
 
+  @redeclare
   int get green => (0x0000ff00 & value) >> 8;
 
+  @redeclare
   int get blue => (0x000000ff & value) >> 0;
 
+  @redeclare
   int get value {
     return _floatToInt8(a) << 24 |
         _floatToInt8(r) << 16 |
@@ -54,7 +61,7 @@ class ColorUtils {
   }
 
   static String colorToHex(
-    final Color color, {
+    Color color, {
     bool includeAlpha = false,
   }) {
     final legacyColor = LegacyColor(color);
@@ -64,7 +71,7 @@ class ColorUtils {
     return includeAlpha ? '#$hexValue' : '#${hexValue.substring(2)}';
   }
 
-  static Color? hexToColor(final String? hexString) {
+  static Color? hexToColor(String? hexString) {
     var hex = hexString?.trim();
 
     if (hex == null || hex.isEmpty) return null;

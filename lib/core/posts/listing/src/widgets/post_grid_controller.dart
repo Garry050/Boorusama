@@ -59,7 +59,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
   final Future<Set<String>> Function()? blacklistedUrlsFetcher;
 
   Set<String>? blacklistedTags;
-  List<List<TagExpression>>? _cachedParsedTags;
+  List<List<TagExpression>> _cachedParsedTags = [];
   final Future<Set<String>> Function() blacklistedTagsFetcher;
 
   // Terrible hack to check if the widget is mounted, should have a better way to do this
@@ -71,11 +71,11 @@ class PostGridController<T extends Post> extends ChangeNotifier {
   final PostDuplicateTracker<T> _duplicateTracker;
 
   int _page = _kFirstPage;
-  bool _hasMore = true;
-  bool _loading = false;
-  bool _refreshing = false;
+  var _hasMore = true;
+  var _loading = false;
+  var _refreshing = false;
 
-  int _total = 0;
+  var _total = 0;
 
   Iterable<T> get items => _filteredItems;
   Iterable<T> get allItems => _items;
@@ -141,7 +141,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
         .map((tag) => tag.split(' ').map(TagExpression.parse).toList())
         .toList();
 
-    tagCounts.value = await _count(_items, _cachedParsedTags!);
+    tagCounts.value = await _count(_items, _cachedParsedTags);
 
     if (!mountedChecker()) return;
 
@@ -204,7 +204,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
           .toList();
     }
 
-    return _cachedParsedTags!;
+    return _cachedParsedTags;
   }
 
   Future<void> _filter() async {
@@ -467,7 +467,7 @@ List<T> _filterPosts<T extends Post>(
 ) {
   return items.where((e) {
     for (final entry in tagCounts.entries) {
-      if (activeFilters[entry.key] == true && entry.value.contains(e.id)) {
+      if ((activeFilters[entry.key] ?? false) && entry.value.contains(e.id)) {
         return false;
       }
     }

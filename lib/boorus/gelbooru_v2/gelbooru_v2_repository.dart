@@ -4,14 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rich_text_controller/rich_text_controller.dart';
 
 // Project imports:
-import '../../core/boorus/engine/engine.dart';
+import '../../core/boorus/defaults/types.dart';
 import '../../core/comments/types.dart';
 import '../../core/configs/config.dart';
 import '../../core/configs/create/create.dart';
+import '../../core/configs/gesture/gesture.dart';
 import '../../core/downloads/filename/types.dart';
 import '../../core/http/providers.dart';
-import '../../core/notes/notes.dart';
+import '../../core/notes/note/types.dart';
 import '../../core/posts/favorites/types.dart';
+import '../../core/posts/favorites/widgets.dart';
 import '../../core/posts/listing/list.dart';
 import '../../core/posts/listing/providers.dart';
 import '../../core/posts/post/post.dart';
@@ -140,29 +142,16 @@ class GelbooruV2Repository extends BooruRepositoryDefault {
   BooruLoginDetails loginDetails(BooruConfigAuth config) {
     return ref.watch(gelbooruV2LoginDetailsProvider(config));
   }
-}
-
-class GelbooruV2ImageUrlResolver implements ImageUrlResolver {
-  const GelbooruV2ImageUrlResolver();
 
   @override
-  String resolveImageUrl(String url) => url;
+  bool handlePostGesture(WidgetRef ref, String? action, Post post) =>
+      PostGestureHandler(
+        customActions: {
+          kToggleFavoriteAction: (ref, action, post) {
+            ref.toggleFavorite(post.id);
 
-  @override
-  String resolvePreviewUrl(String url) {
-    if (url.isEmpty) return url;
-
-    final uri = Uri.tryParse(url);
-
-    return switch (uri) {
-      null => url,
-      Uri(host: 'api-cdn.rule34.xxx', path: final p)
-          when p.contains('/samples/') =>
-        uri.replace(host: 'wimg.rule34.xxx').toString(),
-      _ => url,
-    };
-  }
-
-  @override
-  String resolveThumbnailUrl(String url) => url;
+            return true;
+          },
+        },
+      ).handle(ref, action, post);
 }

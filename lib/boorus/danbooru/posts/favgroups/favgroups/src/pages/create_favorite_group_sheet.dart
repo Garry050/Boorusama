@@ -34,7 +34,7 @@ class _EditFavoriteGroupDialogState
     extends ConsumerState<EditFavoriteGroupSheet> {
   final textController = TextEditingController();
   final nameController = TextEditingController();
-  bool isPrivate = false;
+  var isPrivate = false;
 
   @override
   void initState() {
@@ -89,7 +89,6 @@ class _EditFavoriteGroupDialogState
           BooruTextField(
             autofocus: true,
             controller: nameController,
-            maxLines: 1,
             textInputAction: TextInputAction.done,
             decoration: InputDecoration(
               hintText: context.t.favorite_groups.group_name_hint,

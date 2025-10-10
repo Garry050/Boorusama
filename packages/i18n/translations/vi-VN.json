@@ -79,6 +79,10 @@
     "messages": {
       "title": "Tin nhắn",
       "empty": "Bạn chưa có tin nhắn nào",
+      "unread_message_notice": {
+        "one": "Bạn có $n tin nhắn chưa đọc",
+        "other": "Bạn có $n tin nhắn chưa đọc"
+      },
       "categories": {
         "all": "Tất cả",
         "received": "Đã nhận",
@@ -366,7 +370,11 @@
         "vertical_description": "Vuốt lên/xuống kiểu TikTok. Phổ biến trên các nền tảng video ngắn. Chỉ dùng chế độ dọc."
       },
       "mute_video": "Mặc định tắt tiếng video",
+      "double_tap_seek": "Chạm hai lần để tua",
       "video_section_title": "Video",
+      "manage_cache": "Quản lý bộ nhớ đệm",
+      "enable_video_cache": "Bật bộ nhớ đệm video",
+      "enable_video_cache_description": "Tải video trong lúc xem và lưu vào bộ nhớ đệm để giảm sử dụng dữ liệu và phát nhanh hơn khi xem lại.",
       "video": {
         "video_player_engine": "Trình phát video",
         "engine": {
@@ -450,6 +458,10 @@
       "all_cache": "Tất cả bộ nhớ đệm",
       "tag_cache": "Bộ nhớ đệm thẻ",
       "image_only_cache": "Bộ nhớ đệm chỉ hình ảnh",
+      "video_cache": "Bộ nhớ đệm video",
+      "video_cache_limit": "Giới hạn bộ nhớ đệm video",
+      "video_cache_limit_description": "Kích thước tối đa cho bộ nhớ đệm video",
+      "no_limit": "Không giới hạn",
       "bookmark_images": "Ảnh được đánh dấu",
       "loading": "Đang tải...",
       "storage": "Bộ nhớ",
@@ -458,6 +470,7 @@
         "groups": {
           "system": "Hệ thống",
           "images": "Ảnh",
+          "videos": "Video",
           "others": "Khác",
           "free": "Trống"
         }
@@ -854,7 +867,8 @@
     },
     "viewer": {
       "auto_fetch_notes": "Tự động lấy ghi chú",
-      "auto_fetch_notes_description": "Tự động tải và hiển thị ghi chú khi có thể."
+      "auto_fetch_notes_description": "Tự động tải và hiển thị ghi chú khi có thể.",
+      "overridden_notice": "Cài đặt này bị ghi đè bởi trình xem tùy chỉnh. Vui lòng chỉnh trong phần <b><a href=\"booru-profiles\">Trình xem của Hồ sơ</a></b>."
     },
     "gestures": {
       "title": "Cử chỉ",
@@ -1154,10 +1168,18 @@
   },
   "video_player": {
     "playback_speed": "Tốc độ phát",
+    "lock_screen": "Khoá màn hình",
     "buffering": "Đang tải...",
     "engine_not_supported": "Trình phát này không được hỗ trợ trên nền tảng hiện tại.",
     "change_video_player_engine_suggest": "Nếu lỗi này xảy ra thường xuyên, cân nhắc sử dụng một trình phát video khác trong cài đặt.",
     "change_video_player_engine_request": "Vui lòng đổi sang trình phát video khác trong cài đặt.",
+    "video_quality": "Chất lượng video",
+    "video_qualities": {
+      "auto": "Tự động",
+      "sample": "Mẫu",
+      "original": "Gốc"
+    },
+    "current_video_quality_disclaimer": "Phần này chỉ áp dụng cho video hiện tại. Để áp dụng cho tất cả video, hãy vào <a href=\"booru-profiles\">$video_profile_path</a>.",
     "speed": {
       "normal": "Bình thường"
     }

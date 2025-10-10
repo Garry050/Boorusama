@@ -87,7 +87,6 @@ class ImportingStep extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 32),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: 8,
             children: [
@@ -161,7 +160,6 @@ class ImportingStep extends ConsumerWidget {
           forceRestart
               ? Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
                       'PLEASE CLOSE AND REOPEN THE APP'.hc,
@@ -451,7 +449,7 @@ class SelectDataStep extends ConsumerWidget {
 Future<void> showTransferOptionsDialog(
   BuildContext context, {
   required String url,
-}) async {
+}) {
   return showDialog(
     context: context,
     barrierDismissible: false,

@@ -3,11 +3,13 @@ import 'package:booru_clients/hydrus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../core/boorus/engine/engine.dart';
+import '../../core/boorus/defaults/types.dart';
 import '../../core/configs/config.dart';
 import '../../core/configs/create/create.dart';
 import '../../core/downloads/filename/types.dart';
 import '../../core/http/providers.dart';
+import '../../core/posts/details/details.dart';
+import '../../core/posts/details/providers.dart';
 import '../../core/posts/favorites/types.dart';
 import '../../core/posts/post/post.dart';
 import '../../core/posts/post/providers.dart';
@@ -75,5 +77,10 @@ class HydrusRepository extends BooruRepositoryDefault {
     return {
       ...ref.watch(hydrusClientProvider(config)).apiKeyHeader,
     };
+  }
+
+  @override
+  MediaUrlResolver mediaUrlResolver(BooruConfigAuth config) {
+    return ref.watch(sampleMediaUrlResolverProvider(config));
   }
 }

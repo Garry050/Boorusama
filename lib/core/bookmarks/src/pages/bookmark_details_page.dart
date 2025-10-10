@@ -7,7 +7,6 @@ import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
-import '../../../boorus/engine/engine.dart';
 import '../../../boorus/engine/providers.dart';
 import '../../../configs/config/providers.dart';
 import '../../../configs/config/types.dart';
@@ -15,7 +14,7 @@ import '../../../downloads/downloader/providers.dart';
 import '../../../downloads/filename/types.dart';
 import '../../../posts/details/details.dart';
 import '../../../posts/details/widgets.dart';
-import '../../../posts/details_manager/types.dart';
+import '../../../posts/details_parts/types.dart';
 import '../../../posts/details_parts/widgets.dart';
 import '../../../posts/listing/providers.dart';
 import '../../../posts/shares/widgets.dart';
@@ -100,15 +99,14 @@ class _BookmarkDetailsPageState
     final viewer = ref.watchConfigViewer;
     final layout = ref.watchLayoutConfigs;
     final gestures = ref.watchPostGestures;
-    final booruBuilder = ref.watch(booruBuilderProvider(auth));
-    final postGesturesHandler = booruBuilder?.postGestureHandlerBuilder;
+    final booruRepo = ref.watch(booruRepoProvider(auth));
 
     return PostDetailsPageScaffold(
       isInitPage: _isInitPage,
       transformController: _transformController,
       controller: controller,
       posts: posts,
-      postGestureHandlerBuilder: postGesturesHandler,
+      postGestureHandlerBuilder: booruRepo?.handlePostGesture,
       gestureConfig: gestures,
       layoutConfig: layout,
       uiBuilder: bookmarkUiBuilder,
@@ -150,6 +148,7 @@ class _BookmarkDetailsPageState
           transformController: _transformController,
           isInitPageListenable: _isInitPage,
           authConfig: config?.auth ?? auth,
+          viewerConfig: config?.viewer ?? viewer,
           gestureConfig: gestures,
           imageCacheManager: imageCacheManager,
           detailsController: controller,

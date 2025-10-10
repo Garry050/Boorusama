@@ -172,8 +172,7 @@ class DanbooruUploadGrid extends ConsumerStatefulWidget {
 }
 
 class _DanbooruUploadGridState extends ConsumerState<DanbooruUploadGrid> {
-  late final AutoScrollController _autoScrollController =
-      AutoScrollController();
+  late final _autoScrollController = AutoScrollController();
 
   @override
   void dispose() {
@@ -236,7 +235,7 @@ class _DanbooruUploadGridState extends ConsumerState<DanbooruUploadGrid> {
             valueListenable: controller.itemsNotifier,
             builder: (_, posts, _) {
               final post = posts[index];
-              final isHidden = hideMap[post.id] == true;
+              final isHidden = hideMap[post.id] ?? false;
 
               return Stack(
                 children: [
@@ -245,6 +244,7 @@ class _DanbooruUploadGridState extends ConsumerState<DanbooruUploadGrid> {
                     autoScrollController: scrollController,
                     controller: controller,
                     useHero: useHero,
+                    quickActionButton: const SizedBox.shrink(),
                     contextMenu: GenericContextMenu(
                       buttonConfigs: [
                         ContextMenuButtonConfig(

@@ -4,16 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rich_text_controller/rich_text_controller.dart';
 
 // Project imports:
-import '../../core/boorus/engine/engine.dart';
+import '../../core/boorus/defaults/types.dart';
 import '../../core/comments/types.dart';
 import '../../core/configs/config.dart';
 import '../../core/configs/create/create.dart';
+import '../../core/configs/gesture/gesture.dart';
 import '../../core/downloads/filename/types.dart';
 import '../../core/http/providers.dart';
-import '../../core/notes/notes.dart';
+import '../../core/notes/note/types.dart';
 import '../../core/posts/favorites/types.dart';
+import '../../core/posts/favorites/widgets.dart';
 import '../../core/posts/post/post.dart';
 import '../../core/posts/post/providers.dart';
+import '../../core/posts/rating/rating.dart';
 import '../../core/search/queries/query.dart';
 import '../../core/tags/autocompletes/types.dart';
 import '../../core/tags/tag/tag.dart';
@@ -22,6 +25,7 @@ import 'configs/providers.dart';
 import 'favorites/providers.dart';
 import 'notes/providers.dart';
 import 'posts/providers.dart';
+import 'posts/types.dart';
 import 'syntax/providers.dart';
 import 'tags/providers.dart';
 
@@ -134,36 +138,26 @@ class GelbooruRepository extends BooruRepositoryDefault {
   BooruLoginDetails loginDetails(BooruConfigAuth config) {
     return ref.watch(gelbooruLoginDetailsProvider(config));
   }
-}
-
-class GelbooruImageUrlResolver implements ImageUrlResolver {
-  const GelbooruImageUrlResolver();
 
   @override
-  String resolveImageUrl(String url) {
-    // Handle the img3 to img4 migration
-    final uri = Uri.tryParse(url);
-
-    if (uri == null) {
-      return url; // Return original if URL is invalid
-    }
-
-    // Check if this is a gelbooru URL
-    if (uri.host.contains('gelbooru.com')) {
-      // Handle specific subdomain changes
-      if (uri.host == 'img3.gelbooru.com') {
-        // Create new URL with updated subdomain
-        final newUri = uri.replace(host: 'img4.gelbooru.com');
-        return newUri.toString();
-      }
-    }
-
-    return url; // Return original if no patterns match
-  }
+  Set<Rating> getGranularRatingOptions(
+    BooruConfigAuth config,
+  ) => {
+    Rating.explicit,
+    Rating.questionable,
+    Rating.sensitive,
+    Rating.general,
+  };
 
   @override
-  String resolvePreviewUrl(String url) => resolveImageUrl(url);
+  bool handlePostGesture(WidgetRef ref, String? action, Post post) =>
+      PostGestureHandler(
+        customActions: {
+          kToggleFavoriteAction: (ref, action, post) {
+            ref.toggleFavorite(post.id);
 
-  @override
-  String resolveThumbnailUrl(String url) => resolveImageUrl(url);
+            return true;
+          },
+        },
+      ).handle(ref, action, post);
 }

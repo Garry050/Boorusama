@@ -19,7 +19,7 @@ void main() {
         final failedUrls = <String>[];
         final stateSnapshots = <PreloadManagerState>[];
         final activeDownloadsSnapshots = <int>[];
-        final testClock = Clock.fixed(DateTime(2024, 1, 1));
+        final testClock = Clock.fixed(DateTime(2024));
 
         // Mock preloader with error simulation
         Future<void> mockPreloader(String url, CancelToken cancelToken) async {
@@ -100,10 +100,6 @@ void main() {
 
         final directionHistory = DirectionHistory(
           clock: testClock,
-          options: const DirectionHistoryOptions(
-            mediumConfidenceThreshold: 4,
-            highConfidenceThreshold: 8,
-          ),
         );
 
         final strategy = DirectionBasedPreloadStrategy(
@@ -302,7 +298,7 @@ void main() {
 
         // Navigate around boundaries
         for (var i = 0; i < 6; i++) {
-          final direction = i % 2 == 0 ? -200.0 : 200.0;
+          final direction = i.isEven ? -200.0 : 200.0;
           await tester.fling(
             find.byType(PageView),
             Offset(direction, 0),
@@ -331,7 +327,7 @@ void main() {
 
         // Navigate around end boundaries
         for (var i = 0; i < 6; i++) {
-          final direction = i % 2 == 0 ? -200.0 : 200.0;
+          final direction = i.isEven ? -200.0 : 200.0;
           await tester.fling(
             find.byType(PageView),
             Offset(direction, 0),

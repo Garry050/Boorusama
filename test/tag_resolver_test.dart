@@ -32,11 +32,11 @@ class TagRepositoryException implements Exception {
 
 // Test constants
 class TestConstants {
-  static const String siteHost = 'test.com';
-  static const Duration shortCacheLifetime = Duration(hours: 6);
-  static const Duration mediumCacheLifetime = Duration(days: 2);
-  static const Duration staleAge = Duration(days: 1);
-  static const Duration freshAge = Duration(minutes: 30);
+  static const siteHost = 'test.com';
+  static const shortCacheLifetime = Duration(hours: 6);
+  static const mediumCacheLifetime = Duration(days: 2);
+  static const staleAge = Duration(days: 1);
+  static const freshAge = Duration(minutes: 30);
 }
 
 // Test helper methods
@@ -170,7 +170,6 @@ void main() {
 
           final staleCachedTag = TestHelpers.createCachedTag(
             'duplicate_tag',
-            postCount: 100,
             age: const Duration(days: 1),
           );
 
@@ -232,7 +231,7 @@ void main() {
         TestHelpers.expectTagWithPostCount(result[0], 'error_tag', 0);
       });
 
-      test('handles cache builder exceptions', () async {
+      test('handles cache builder exceptions', () {
         final inputTags = [TestHelpers.createTag('test_tag', 0)];
 
         final failingTagResolver = TagResolver(
@@ -262,7 +261,6 @@ void main() {
           tagCacheBuilder: () async => mockTagCache,
           siteHost: TestConstants.siteHost,
           cachedTagMapper: mockCachedTagMapper,
-          tagRepositoryBuilder: null,
         );
       });
 
@@ -640,7 +638,6 @@ void main() {
 
           final foundTag = TestHelpers.createCachedTag(
             'duplicate_across_collections',
-            postCount: 100,
             age: const Duration(days: 1),
           );
 
@@ -740,7 +737,6 @@ void main() {
         final cachedTags = [
           TestHelpers.createCachedTag(
             'fresh_tag',
-            postCount: 100,
             age: const Duration(minutes: 30),
           ),
         ];
@@ -789,7 +785,7 @@ void main() {
     });
 
     group('Cache builder failures', () {
-      test('handles cache builder throwing exception', () async {
+      test('handles cache builder throwing exception', () {
         final inputTags = [TestHelpers.createTag('test_tag', 0)];
 
         final failingTagResolver = TagResolver(
@@ -806,7 +802,7 @@ void main() {
         );
       });
 
-      test('handles cache builder with different error types', () async {
+      test('handles cache builder with different error types', () {
         const tagNames = ['test_tag'];
 
         final nullCacheTagResolver = TagResolver(
@@ -840,7 +836,6 @@ void main() {
         final cachedTags = [
           TestHelpers.createCachedTag(
             'fresh_tag',
-            postCount: 100,
             age: const Duration(minutes: 30),
           ),
         ];
@@ -881,7 +876,6 @@ void main() {
 
         final staleCachedTag = TestHelpers.createCachedTag(
           'stale_tag',
-          postCount: 100,
           age: const Duration(days: 1),
         );
 

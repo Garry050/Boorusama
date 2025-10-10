@@ -32,7 +32,7 @@ class FavoritePostButton extends StatelessWidget {
     return IconButton(
       splashRadius: 16,
       onPressed: isFaved != null
-          ? () async {
+          ? () {
               if (!isAuthorized) {
                 showSimpleSnackBar(
                   context: context,
@@ -51,7 +51,7 @@ class FavoritePostButton extends StatelessWidget {
               }
             }
           : null,
-      icon: isFaved == true
+      icon: (isFaved ?? false)
           ? Icon(
               Symbols.favorite,
               fill: 1,

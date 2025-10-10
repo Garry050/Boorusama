@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
+import '../../core/boorus/defaults/widgets.dart';
 import '../../core/boorus/engine/engine.dart';
 import '../../core/configs/config.dart';
 import '../../core/configs/config/providers.dart';
@@ -14,7 +15,7 @@ import '../../core/configs/manage/widgets.dart';
 import '../../core/downloads/filename/types.dart';
 import '../../core/home/custom_home.dart';
 import '../../core/posts/details/widgets.dart';
-import '../../core/posts/details_manager/types.dart';
+import '../../core/posts/details_parts/types.dart';
 import '../../core/posts/details_parts/widgets.dart';
 import '../../core/search/search/widgets.dart';
 import 'artists/widgets.dart';
@@ -26,23 +27,9 @@ import 'popular/widgets.dart';
 import 'posts/providers.dart';
 import 'posts/types.dart';
 import 'posts/widgets.dart';
+import 'videos/widgets.dart';
 
-class E621Builder
-    with
-        CharacterNotSupportedMixin,
-        LegacyGranularRatingOptionsBuilderMixin,
-        UnknownMetatagsMixin,
-        DefaultUnknownBooruWidgetsBuilderMixin,
-        DefaultViewTagListBuilderMixin,
-        DefaultTagSuggestionsItemBuilderMixin,
-        DefaultMultiSelectionActionsBuilderMixin,
-        DefaultHomeMixin,
-        DefaultQuickFavoriteButtonBuilderMixin,
-        DefaultPostGesturesHandlerMixin,
-        DefaultPostStatisticsPageBuilderMixin,
-        DefaultGranularRatingFiltererMixin,
-        DefaultPostImageDetailsUrlMixin
-    implements BooruBuilder {
+class E621Builder extends BaseBooruBuilder {
   E621Builder();
 
   @override
@@ -122,7 +109,13 @@ class E621Builder
       ke621AltHomeView;
 
   @override
-  final PostDetailsUIBuilder postDetailsUIBuilder = PostDetailsUIBuilder(
+  VideoQualitySelectionBuilder get videoQualitySelectionBuilder =>
+      (context, post) => E621VideoQualitySelector(
+        post: post,
+      );
+
+  @override
+  final postDetailsUIBuilder = PostDetailsUIBuilder(
     preview: {
       DetailsPart.info: (context) =>
           const DefaultInheritedInformationSection<E621Post>(

@@ -1,36 +1,18 @@
-// Package imports:
-import 'package:foundation/foundation.dart';
-
 // Project imports:
+import '../../core/boorus/defaults/widgets.dart';
 import '../../core/boorus/engine/engine.dart';
 import '../../core/configs/auth/widgets.dart';
 import '../../core/configs/config.dart';
 import '../../core/configs/create/widgets.dart';
 import '../../core/configs/manage/widgets.dart';
 import '../../core/posts/details/widgets.dart';
-import '../../core/posts/details_manager/types.dart';
+import '../../core/posts/details_parts/types.dart';
 import '../../core/posts/details_parts/widgets.dart';
 import 'configs/widgets.dart';
 import 'posts/types.dart';
 import 'posts/widgets.dart';
 
-class PhilomenaBuilder
-    with
-        FavoriteNotSupportedMixin,
-        CommentNotSupportedMixin,
-        ArtistNotSupportedMixin,
-        CharacterNotSupportedMixin,
-        LegacyGranularRatingOptionsBuilderMixin,
-        UnknownMetatagsMixin,
-        DefaultViewTagListBuilderMixin,
-        DefaultTagSuggestionsItemBuilderMixin,
-        DefaultMultiSelectionActionsBuilderMixin,
-        DefaultHomeMixin,
-        DefaultGranularRatingFiltererMixin,
-        DefaultPostGesturesHandlerMixin,
-        DefaultPostStatisticsPageBuilderMixin,
-        DefaultBooruUIMixin
-    implements BooruBuilder {
+class PhilomenaBuilder extends BaseBooruBuilder {
   PhilomenaBuilder();
 
   @override
@@ -81,32 +63,7 @@ class PhilomenaBuilder
   };
 
   @override
-  PostImageDetailsUrlBuilder get postImageDetailsUrlBuilder =>
-      (
-        imageQuality,
-        rawPost,
-        config,
-      ) => castOrNull<PhilomenaPost>(rawPost).toOption().fold(
-        () => rawPost.sampleImageUrl,
-        (post) => config.imageDetaisQuality.toOption().fold(
-          () => post.sampleImageUrl,
-          (quality) => switch (stringToPhilomenaPostQualityType(quality)) {
-            PhilomenaPostQualityType.full => post.representation.full,
-            PhilomenaPostQualityType.large => post.representation.large,
-            PhilomenaPostQualityType.medium => post.representation.medium,
-            PhilomenaPostQualityType.tall => post.representation.tall,
-            PhilomenaPostQualityType.small => post.representation.small,
-            PhilomenaPostQualityType.thumb => post.representation.thumb,
-            PhilomenaPostQualityType.thumbSmall =>
-              post.representation.thumbSmall,
-            PhilomenaPostQualityType.thumbTiny => post.representation.thumbTiny,
-            null => post.representation.small,
-          },
-        ),
-      );
-
-  @override
-  final PostDetailsUIBuilder postDetailsUIBuilder = PostDetailsUIBuilder(
+  final postDetailsUIBuilder = PostDetailsUIBuilder(
     preview: {
       DetailsPart.info: (context) =>
           const DefaultInheritedInformationSection<PhilomenaPost>(),
@@ -132,7 +89,6 @@ class PhilomenaBuilder
   @override
   CreateUnknownBooruWidgetsBuilder get unknownBooruWidgetsBuilder =>
       (context) => const UnknownBooruWidgetsBuilder(
-        loginField: null,
         apiKeyField: DefaultBooruApiKeyField(),
       );
 }

@@ -9,6 +9,7 @@ import '../../../../configs/config/types.dart';
 import '../../../../premiums/providers.dart';
 import '../../../../theme.dart';
 import '../../../details_manager/types.dart';
+import '../../../details_parts/types.dart';
 import '../../../details_parts/widgets.dart';
 import '../../../post/post.dart';
 import '../../details.dart';
@@ -19,8 +20,8 @@ List<Widget> defaultActions({
   required Widget? fallbackMoreButton,
 }) {
   return [
-    if (note != null) note,
-    if (fallbackMoreButton != null) fallbackMoreButton,
+    ?note,
+    ?fallbackMoreButton,
   ];
 }
 

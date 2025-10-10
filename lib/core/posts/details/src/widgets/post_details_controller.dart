@@ -9,8 +9,13 @@ import 'package:foundation/foundation.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 // Project imports:
-import '../../../../videos/types.dart';
+import '../../../../videos/engines/types.dart';
+import '../../../../videos/player/types.dart';
 import '../../../post/post.dart';
+
+const kSeekAnimationDuration = Duration(milliseconds: 400);
+
+enum SeekDirection { forward, backward }
 
 class PostDetailsController<T extends Post> extends ChangeNotifier {
   PostDetailsController({
@@ -20,49 +25,46 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
     required this.initialThumbnailUrl,
     required this.reduceAnimations,
     required this.dislclaimer,
+    required this.doubleTapSeekDuration,
   }) : currentPage = ValueNotifier(initialPage),
        _initialPage = initialPage,
-       currentPost = ValueNotifier(posts[initialPage]);
+       currentPost = ValueNotifier(posts[initialPage]),
+       _playback = VideoPlaybackManager();
   final AutoScrollController? scrollController;
   final bool reduceAnimations;
   final List<T> posts;
   final int _initialPage;
   final String? initialThumbnailUrl;
   final String? dislclaimer;
+  final int doubleTapSeekDuration;
 
+  int? currentSettledPage;
   late ValueNotifier<int> currentPage;
   late ValueNotifier<T> currentPost;
-
-  final StreamController<VideoProgress> _seekStreamController =
-      StreamController<VideoProgress>.broadcast();
-
-  Stream<VideoProgress> get seekStream => _seekStreamController.stream;
+  final VideoPlaybackManager _playback;
 
   int get initialPage =>
       currentPage.value != _initialPage ? currentPage.value : _initialPage;
 
+  // ignore: use_setters_to_change_properties
   void setPage(int page) {
     currentPage.value = page;
-    _videoProgress.value = VideoProgress.zero;
+  }
+
+  void onPageSettled(int page) {
+    if (page == currentSettledPage) return;
+
+    currentSettledPage = page;
 
     final post = posts.getOrNull(page);
 
-    if (post?.isMp4 ?? false) {
-      if (_isVideoPlaying.value) {
-        _isVideoPlaying.value = false;
-      }
-    }
-
     if (post != null) {
       currentPost.value = post;
-      if (page == initialPage.toDouble()) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          playVideo(
-            post.id,
-          );
-        });
-        return;
-      }
+      _playback.resetProgress();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        playVideo(post.id);
+      });
     }
   }
 
@@ -76,45 +78,26 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
     scrollController?.scrollToIndex(page);
   }
 
-  final _videoProgress = ValueNotifier(VideoProgress.zero);
-  final _isVideoPlaying = ValueNotifier<bool>(false);
+  final _seekDirection = ValueNotifier<SeekDirection?>(null);
 
-  final Map<int, BooruPlayer> _booruPlayers = {};
+  ValueNotifier<VideoProgress> get videoProgress => _playback.videoProgress;
+  ValueNotifier<bool> get isVideoPlaying => _playback.isVideoPlaying;
+  ValueNotifier<SeekDirection?> get seekDirection => _seekDirection;
+  Stream<VideoProgress> get seekStream => _playback.seekStream;
 
-  ValueNotifier<VideoProgress> get videoProgress => _videoProgress;
-  ValueNotifier<bool> get isVideoPlaying => _isVideoPlaying;
-
-  void onCurrentPositionChanged(double current, double total, String url) {
-    // // check if the current video is the same as the one being played
-    if (posts[currentPage.value].videoUrl != url) return;
-
-    _videoProgress.value = VideoProgress(
-      Duration(milliseconds: (total * 1000).toInt()),
-      Duration(milliseconds: (current * 1000).toInt()),
-    );
+  void onCurrentPositionChanged(double current, double total, String id) {
+    if (posts.getOrNull(currentSettledPage ?? -1)?.id case final currentId?
+        when currentId.toString() == id) {
+      _playback.updateProgress(current, total, currentId);
+    }
   }
 
-  void onVideoSeekTo(
-    Duration position,
-    int id,
-  ) {
-    _booruPlayers[id]?.seek(position);
-
-    _seekStreamController.add(
-      VideoProgress(
-        position,
-        _videoProgress.value.duration,
-      ),
-    );
-  }
-
-  bool isPlaying(int id) {
-    return _booruPlayers[id]?.isPlaying ?? false;
+  void onVideoSeekTo(Duration position, int id) {
+    _playback.seekVideo(position, id);
   }
 
   Future<void> playVideo(int id) async {
-    unawaited(_booruPlayers[id]?.play());
-    _isVideoPlaying.value = true;
+    await _playback.playVideo(id);
   }
 
   Future<void> playCurrentVideo() {
@@ -132,25 +115,60 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
   }
 
   Future<void> pauseVideo(int id) async {
-    unawaited(_booruPlayers[id]?.pause());
-    _isVideoPlaying.value = false;
+    await _playback.pauseVideo(id);
+  }
+
+  Future<void> seekFromDoubleTap(Offset tapPosition, Size viewport) async {
+    final post = currentPost.value;
+    if (!post.isVideo) return;
+
+    final width = viewport.width;
+    final leftBoundary = width * 0.5;
+
+    final direction = switch (tapPosition.dx) {
+      final x when x < leftBoundary => SeekDirection.backward,
+      final x when x >= leftBoundary => SeekDirection.forward,
+      _ => null,
+    };
+
+    if (direction != null) {
+      final isForward = direction == SeekDirection.forward;
+      final seekPosition = _playback.seekVideoByDirection(
+        post.id,
+        isForward,
+        Duration(seconds: post.duration.round()),
+        doubleTapSeekDuration,
+      );
+
+      if (seekPosition != null) {
+        _showSeekAnimation(direction);
+      }
+    }
+  }
+
+  void _showSeekAnimation(SeekDirection direction) {
+    _seekDirection.value = direction;
+
+    // Hide the animation after a short delay
+    Timer(kSeekAnimationDuration, () {
+      if (_seekDirection.value == direction) {
+        _seekDirection.value = null;
+      }
+    });
   }
 
   void onBooruVideoPlayerCreated(BooruPlayer player, int id) {
-    _booruPlayers[id] = player;
+    _playback.registerPlayer(player, id);
+  }
+
+  void onBooruVideoPlayerDisposed(int id) {
+    _playback.unregisterPlayer(id);
   }
 
   @override
   void dispose() {
-    for (final player in _booruPlayers.values) {
-      player.dispose();
-    }
-
-    _booruPlayers.clear();
-
-    _videoProgress.dispose();
-    _isVideoPlaying.dispose();
-    _seekStreamController.close();
+    _playback.dispose();
+    _seekDirection.dispose();
 
     currentPage.dispose();
     currentPost.dispose();

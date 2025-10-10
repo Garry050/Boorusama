@@ -8,7 +8,6 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:selection_mode/selection_mode.dart';
 
 // Project imports:
-import '../../../../../core/boorus/engine/engine.dart';
 import '../../../../../core/config_widgets/website_logo.dart';
 import '../../../../../core/configs/ref.dart';
 import '../../../../../core/images/booru_image.dart';
@@ -38,6 +37,7 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
     this.contextMenu,
     this.onTap,
     this.useHero = true,
+    this.quickActionButton,
   });
 
   final int index;
@@ -47,6 +47,7 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
   final Widget? contextMenu;
   final VoidCallback? onTap;
   final bool useHero;
+  final Widget? quickActionButton;
 
   @override
   Widget build(BuildContext context) {
@@ -106,13 +107,14 @@ class DefaultDanbooruImageGridItem extends StatelessWidget {
                             index: index,
                             multiSelectEnabled: multiSelect,
                             quickActionButton:
-                                !post.isBanned &&
-                                    !multiSelect &&
-                                    loginDetails.hasLogin()
-                                ? DefaultImagePreviewQuickActionButton(
-                                    post: post,
-                                  )
-                                : const SizedBox.shrink(),
+                                quickActionButton ??
+                                (!post.isBanned &&
+                                        !multiSelect &&
+                                        loginDetails.hasLogin()
+                                    ? DefaultImagePreviewQuickActionButton(
+                                        post: post,
+                                      )
+                                    : const SizedBox.shrink()),
                             autoScrollOptions: AutoScrollOptions(
                               controller: autoScrollController,
                               index: index,

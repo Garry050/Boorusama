@@ -97,8 +97,8 @@ class _SearchPageScaffoldState<T extends Post>
 
     _searchModeController = SelectionModeController();
 
-    _tagsController = SelectedTagController.fromBooruBuilder(
-      builder: ref.read(booruBuilderProvider(ref.readConfigAuth)),
+    _tagsController = SelectedTagController.fromBooruRepository(
+      repository: ref.read(booruRepoProvider(ref.readConfigAuth)),
       tagInfo: ref.read(tagInfoProvider),
     );
 
@@ -290,7 +290,6 @@ class DefaultInnerSearchButton extends StatelessWidget {
                   scale: allowSearch ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutBack,
-                  alignment: Alignment.center,
                   child: searchButton,
                 ),
               );

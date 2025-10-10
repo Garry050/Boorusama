@@ -29,10 +29,12 @@ class BooruConfigData extends Equatable {
     required this.customBulkDownloadFileNameFormat,
     required this.customDownloadLocation,
     required this.imageDetaisQuality,
+    required this.videoQuality,
     required this.granularRatingFilterString,
     required this.postGestures,
     required this.defaultPreviewImageButtonAction,
     required this.listing,
+    required this.viewerConfigs,
     required this.theme,
     required this.alwaysIncludeTags,
     required this.blacklistConfigs,
@@ -50,6 +52,7 @@ class BooruConfigData extends Equatable {
     required String? customDownloadFileNameFormat,
     required String? customBulkDownloadFileNameFormat,
     required String? imageDetaisQuality,
+    required String? videoQuality,
   }) => BooruConfigData(
     booruId: booru.id,
     booruIdHint: booruHint.id,
@@ -65,10 +68,12 @@ class BooruConfigData extends Equatable {
     customBulkDownloadFileNameFormat: customBulkDownloadFileNameFormat,
     customDownloadLocation: null,
     imageDetaisQuality: imageDetaisQuality,
+    videoQuality: videoQuality,
     granularRatingFilterString: null,
     postGestures: null,
     defaultPreviewImageButtonAction: null,
     listing: null,
+    viewerConfigs: null,
     theme: null,
     alwaysIncludeTags: null,
     blacklistConfigs: null,
@@ -96,12 +101,14 @@ class BooruConfigData extends Equatable {
             json['customBulkDownloadFileNameFormat'] as String?,
         customDownloadLocation: json['customDownloadLocation'] as String?,
         imageDetaisQuality: json['imageDetaisQuality'] as String?,
+        videoQuality: json['videoQuality'] as String?,
         granularRatingFilterString:
             json['granularRatingFilterString'] as String?,
         postGestures: json['postGestures'] as String?,
         defaultPreviewImageButtonAction:
             json['defaultPreviewImageButtonAction'] as String?,
         listing: json['listing'] as String?,
+        viewerConfigs: json['viewer'] as String?,
         theme: json['theme'] as String?,
         alwaysIncludeTags: json['alwaysIncludeTags'] as String?,
         blacklistConfigs:
@@ -132,10 +139,12 @@ class BooruConfigData extends Equatable {
       'customBulkDownloadFileNameFormat': customBulkDownloadFileNameFormat,
       'customDownloadLocation': customDownloadLocation,
       'imageDetaisQuality': imageDetaisQuality,
+      'videoQuality': videoQuality,
       'granularRatingFilterString': granularRatingFilterString,
       'postGestures': postGestures,
       'defaultPreviewImageButtonAction': defaultPreviewImageButtonAction,
       'listing': listing,
+      'viewer': viewerConfigs,
       'theme': theme,
       'alwaysIncludeTags': alwaysIncludeTags,
       'blacklistConfigs': blacklistConfigs,
@@ -159,10 +168,12 @@ class BooruConfigData extends Equatable {
   final String? customBulkDownloadFileNameFormat;
   final String? customDownloadLocation;
   final String? imageDetaisQuality;
+  final String? videoQuality;
   final String? granularRatingFilterString;
   final String? postGestures;
   final String? defaultPreviewImageButtonAction;
   final String? listing;
+  final String? viewerConfigs;
   final String? theme;
   final String? alwaysIncludeTags;
   final String? blacklistConfigs;
@@ -186,10 +197,12 @@ class BooruConfigData extends Equatable {
     customBulkDownloadFileNameFormat,
     customDownloadLocation,
     imageDetaisQuality,
+    videoQuality,
     granularRatingFilterString,
     postGestures,
     defaultPreviewImageButtonAction,
     listing,
+    viewerConfigs,
     theme,
     alwaysIncludeTags,
     blacklistConfigs,
@@ -206,6 +219,10 @@ extension BooruConfigDataX on BooruConfigData {
 
   ListingConfigs? get listingTyped {
     return ListingConfigs.fromJsonString(listing);
+  }
+
+  ViewerConfigs? get viewerTyped {
+    return ViewerConfigs.fromJsonString(viewerConfigs);
   }
 
   LayoutConfigs? get layoutTyped {
@@ -284,10 +301,12 @@ extension BooruConfigDataCopyWith on BooruConfigData {
     String? Function()? customBulkDownloadFileNameFormat,
     String? Function()? customDownloadLocation,
     String? Function()? imageDetaisQuality,
+    String? Function()? videoQuality,
     Set<Rating>? Function()? granularRatingFilter,
     PostGestureConfig? Function()? postGestures,
     String? Function()? defaultPreviewImageButtonAction,
     ListingConfigs? Function()? listing,
+    ViewerConfigs? Function()? viewerConfigs,
     ThemeConfigs? Function()? theme,
     String? Function()? alwaysIncludeTags,
     BlacklistConfigs? Function()? blacklistConfigs,
@@ -324,6 +343,7 @@ extension BooruConfigDataCopyWith on BooruConfigData {
       imageDetaisQuality: imageDetaisQuality != null
           ? imageDetaisQuality()
           : this.imageDetaisQuality,
+      videoQuality: videoQuality != null ? videoQuality() : this.videoQuality,
       granularRatingFilterString: granularRatingFilter != null
           ? granularRatingFilterToString(granularRatingFilter())
           : granularRatingFilterString,
@@ -335,6 +355,9 @@ extension BooruConfigDataCopyWith on BooruConfigData {
           ? defaultPreviewImageButtonAction()
           : this.defaultPreviewImageButtonAction,
       listing: listing != null ? listing()?.toJsonString() : this.listing,
+      viewerConfigs: viewerConfigs != null
+          ? viewerConfigs()?.toJsonString()
+          : this.viewerConfigs,
       theme: theme != null ? theme()?.toJsonString() : this.theme,
       alwaysIncludeTags: alwaysIncludeTags != null
           ? alwaysIncludeTags()

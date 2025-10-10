@@ -79,6 +79,10 @@
     "messages": {
       "title": "Messages",
       "empty": "You have no messages",
+      "unread_message_notice": {
+        "one": "You have $n unread message",
+        "other": "You have $n unread messages"
+      },
       "categories": {
         "all": "All",
         "received": "Received",
@@ -366,7 +370,11 @@
         "vertical_description": "TikTok-style up/down swiping. Popular on short video platforms. Portrait mode only."
       },
       "mute_video": "Mute video by default",
+      "double_tap_seek": "Double-tap to seek",
       "video_section_title": "Video",
+      "manage_cache": "Manage cache",
+      "enable_video_cache": "Enable video cache",
+      "enable_video_cache_description": "Download videos while streaming and cache them to reduce data usage and faster playback on subsequent views.",
       "video": {
         "video_player_engine": "Video player engine",
         "engine": {
@@ -450,6 +458,10 @@
       "all_cache": "All cache",
       "tag_cache": "Tag cache",
       "image_only_cache": "Image only cache",
+      "video_cache": "Video cache",
+      "video_cache_limit": "Video cache limit",
+      "video_cache_limit_description": "Maximum size for video cache storage",
+      "no_limit": "No Limit",
       "bookmark_images": "Bookmark images",
       "loading": "Loading...",
       "storage": "Storage",
@@ -458,6 +470,7 @@
         "groups": {
           "system": "System",
           "images": "Images",
+          "videos": "Videos",
           "others": "Others",
           "free": "Free"
         }
@@ -854,7 +867,8 @@
     },
     "viewer": {
       "auto_fetch_notes": "Auto-fetch notes",
-      "auto_fetch_notes_description": "Automatically fetch and display notes whenever possible."
+      "auto_fetch_notes_description": "Automatically fetch and display notes whenever possible.",
+      "overridden_notice": "These settings are overridden by custom viewer. Go to <b><a href=\"booru-profiles\">Profile's Viewer</a></b> page instead."
     },
     "gestures": {
       "title": "Gestures",
@@ -1154,10 +1168,18 @@
   },
   "video_player": {
     "playback_speed": "Playback speed",
+    "lock_screen": "Lock screen",
     "buffering": "Buffering...",
     "engine_not_supported": "This engine is not supported on the current platform.",
     "change_video_player_engine_suggest": "If this happens on a regular basis, consider using a different video player engine in the settings.",
     "change_video_player_engine_request": "Please change to a different video player engine in the settings.",
+    "video_quality": "Video quality",
+    "video_qualities": {
+      "auto": "Auto",
+      "sample": "Sample",
+      "original": "Original"
+    },
+    "current_video_quality_disclaimer": "This section only applies to the current video. For all videos, go to <a href=\"booru-profiles\">$video_profile_path</a>.",
     "speed": {
       "normal": "Normal"
     }

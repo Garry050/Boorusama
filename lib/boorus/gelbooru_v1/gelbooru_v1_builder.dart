@@ -5,36 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
+import '../../core/boorus/defaults/widgets.dart';
 import '../../core/boorus/engine/engine.dart';
 import '../../core/configs/config.dart';
 import '../../core/configs/config/providers.dart';
 import '../../core/configs/create/widgets.dart';
 import '../../core/configs/manage/widgets.dart';
 import '../../core/downloads/filename/types.dart';
+import '../../core/posts/details_parts/types.dart';
 import '../../core/posts/post/providers.dart';
 import '../../core/search/search/widgets.dart';
 import '../../core/widgets/widgets.dart';
 import '../../foundation/html.dart';
 import 'configs/widgets.dart';
 
-class GelbooruV1Builder
-    with
-        FavoriteNotSupportedMixin,
-        ArtistNotSupportedMixin,
-        CharacterNotSupportedMixin,
-        CommentNotSupportedMixin,
-        UnknownMetatagsMixin,
-        DefaultViewTagListBuilderMixin,
-        DefaultTagSuggestionsItemBuilderMixin,
-        DefaultMultiSelectionActionsBuilderMixin,
-        DefaultHomeMixin,
-        DefaultPostImageDetailsUrlMixin,
-        DefaultPostGesturesHandlerMixin,
-        DefaultGranularRatingFiltererMixin,
-        LegacyGranularRatingOptionsBuilderMixin,
-        DefaultPostStatisticsPageBuilderMixin,
-        DefaultBooruUIMixin
-    implements BooruBuilder {
+class GelbooruV1Builder extends BaseBooruBuilder {
   GelbooruV1Builder();
 
   @override

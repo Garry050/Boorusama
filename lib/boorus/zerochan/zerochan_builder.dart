@@ -1,31 +1,14 @@
 // Project imports:
+import '../../core/boorus/defaults/widgets.dart';
 import '../../core/boorus/engine/engine.dart';
 import '../../core/configs/config.dart';
 import '../../core/configs/create/widgets.dart';
-import '../../core/configs/manage/widgets.dart';
 import '../../core/posts/details/widgets.dart';
-import '../../core/posts/details_manager/types.dart';
+import '../../core/posts/details_parts/types.dart';
 import '../../core/posts/details_parts/widgets.dart';
 import 'posts/types.dart';
 
-class ZerochanBuilder
-    with
-        FavoriteNotSupportedMixin,
-        ArtistNotSupportedMixin,
-        CharacterNotSupportedMixin,
-        CommentNotSupportedMixin,
-        LegacyGranularRatingOptionsBuilderMixin,
-        DefaultMultiSelectionActionsBuilderMixin,
-        DefaultHomeMixin,
-        UnknownMetatagsMixin,
-        DefaultViewTagListBuilderMixin,
-        DefaultTagSuggestionsItemBuilderMixin,
-        DefaultPostImageDetailsUrlMixin,
-        DefaultPostGesturesHandlerMixin,
-        DefaultGranularRatingFiltererMixin,
-        DefaultPostStatisticsPageBuilderMixin,
-        DefaultBooruUIMixin
-    implements BooruBuilder {
+class ZerochanBuilder extends BaseBooruBuilder {
   ZerochanBuilder();
 
   @override
@@ -47,21 +30,6 @@ class ZerochanBuilder
       );
 
   @override
-  UpdateConfigPageBuilder get updateConfigPageBuilder =>
-      (
-        context,
-        id, {
-        backgroundColor,
-        initialTab,
-      }) => UpdateBooruConfigScope(
-        id: id,
-        child: CreateAnonConfigPage(
-          backgroundColor: backgroundColor,
-          initialTab: initialTab,
-        ),
-      );
-
-  @override
   PostDetailsPageBuilder get postDetailsPageBuilder => (context, payload) {
     final posts = payload.posts.map((e) => e as ZerochanPost).toList();
 
@@ -76,7 +44,7 @@ class ZerochanBuilder
   };
 
   @override
-  final PostDetailsUIBuilder postDetailsUIBuilder = PostDetailsUIBuilder(
+  final postDetailsUIBuilder = PostDetailsUIBuilder(
     preview: {
       DetailsPart.toolbar: (context) =>
           const DefaultInheritedPostActionToolbar<ZerochanPost>(),
@@ -92,8 +60,4 @@ class ZerochanBuilder
           const DefaultInheritedFileDetailsSection<ZerochanPost>(),
     },
   );
-
-  @override
-  CreateUnknownBooruWidgetsBuilder get unknownBooruWidgetsBuilder =>
-      (context) => const AnonUnknownBooruWidgets();
 }

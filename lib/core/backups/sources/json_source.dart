@@ -43,6 +43,7 @@ abstract class JsonBackupSource<T> implements BackupDataSource {
       currentVersion: appVersion,
       extraSteps: extraSteps,
       validator: validator,
+      dataTypeName: displayName,
     );
   }
 
@@ -204,7 +205,7 @@ abstract class JsonBackupSource<T> implements BackupDataSource {
     }
   }
 
-  Future<String> readFile(String path) async {
+  Future<String> readFile(String path) {
     final file = File(path);
     return file.readAsString();
   }
