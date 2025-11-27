@@ -2,8 +2,8 @@
 import 'package:booru_clients/danbooru.dart';
 
 // Project imports:
-import '../../../users/creator/creator.dart';
-import '../../../users/user/user.dart';
+import '../../../users/creator/types.dart';
+import '../../../users/user/types.dart';
 import '../types/danbooru_post_version.dart';
 
 DanbooruPostVersion convertDtoToPostVersion(PostVersionDto e) =>
@@ -30,7 +30,7 @@ DanbooruPostVersion convertDtoToPostVersion(PostVersionDto e) =>
       updater: Creator(
         id: e.updater?.id ?? 0,
         name: e.updater?.name ?? '',
-        level: stringToUserLevel(e.updater?.levelString),
+        level: UserLevel.parse(e.updater?.levelString),
       ),
       thumbnailUrl: e.previewFileUrl,
     );

@@ -11,10 +11,10 @@ import '../../../../configs/config/providers.dart';
 import '../../../../router.dart';
 import '../../../../widgets/adaptive_button_row.dart';
 import '../../../../widgets/booru_menu_button_row.dart';
-import '../../../details/details.dart';
+import '../../../details/types.dart';
 import '../../../favorites/providers.dart';
 import '../../../favorites/widgets.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 import '../../../shares/widgets.dart';
 import '../common_post_buttons.dart';
 import 'bookmark_post_button.dart';
@@ -25,25 +25,17 @@ class SimplePostActionToolbar extends ConsumerWidget {
   const SimplePostActionToolbar({
     required this.post,
     required this.onStartSlideshow,
+    required this.favoriteButton,
     super.key,
-    this.isFaved,
-    this.isAuthorized,
-    this.addFavorite,
-    this.removeFavorite,
-    this.forceHideFav = false,
     this.onDownload,
     this.maxVisibleButtons,
   });
 
   final Post post;
   final int? maxVisibleButtons;
-  final bool? isFaved;
-  final bool? isAuthorized;
-  final bool forceHideFav;
-  final Future<void> Function()? addFavorite;
-  final Future<void> Function()? removeFavorite;
   final void Function(Post post)? onDownload;
   final void Function() onStartSlideshow;
+  final Widget? favoriteButton;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,19 +54,10 @@ class SimplePostActionToolbar extends ConsumerWidget {
         return BooruMenuButtonRow(
           maxVisibleButtons: maxVisibleButtons,
           buttons: [
-            if (!forceHideFav &&
-                isAuthorized != null &&
-                addFavorite != null &&
-                removeFavorite != null &&
-                booruBuilder != null)
+            if (favoriteButton case final btn?)
               ButtonData(
                 required: true,
-                widget: FavoritePostButton(
-                  isFaved: isFaved,
-                  isAuthorized: isAuthorized!,
-                  addFavorite: addFavorite!,
-                  removeFavorite: removeFavorite!,
-                ),
+                widget: btn,
                 title: context.t.post.action.favorite,
               ),
             ButtonData(
@@ -100,10 +83,10 @@ class SimplePostActionToolbar extends ConsumerWidget {
             if (commentPageBuilder != null)
               ButtonData(
                 widget: CommentPostButton(
-                  onPressed: () => goToCommentPage(context, ref, post.id),
+                  onPressed: () => goToCommentPage(context, ref, post),
                 ),
                 title: context.t.comment.comments,
-                onTap: () => goToCommentPage(context, ref, post.id),
+                onTap: () => goToCommentPage(context, ref, post),
               ),
             ...buttons,
           ],
@@ -146,16 +129,26 @@ class DefaultPostActionToolbar<T extends Post> extends ConsumerWidget {
     final isFaved = ref.watch(favoriteProvider((config, post.id)));
     final notifier = ref.watch(favoritesProvider(config).notifier);
     final canFavorite = ref.watch(canFavoriteProvider(config));
+    final isAuthorized = loginDetails.hasLogin();
+    final addFavorite = canFavorite ? () => notifier.add(post.id) : null;
+    final removeFavorite = canFavorite ? () => notifier.remove(post.id) : null;
 
     return SimplePostActionToolbar(
       post: post,
-      isFaved: isFaved,
-      isAuthorized: loginDetails.hasLogin(),
       maxVisibleButtons: 5,
-      addFavorite: canFavorite ? () => notifier.add(post.id) : null,
-      removeFavorite: canFavorite ? () => notifier.remove(post.id) : null,
-      forceHideFav: forceHideFav,
       onStartSlideshow: PostDetailsPageViewScope.of(context).startSlideshow,
+      favoriteButton:
+          (!forceHideFav &&
+              isAuthorized &&
+              addFavorite != null &&
+              removeFavorite != null)
+          ? FavoritePostButton(
+              isFaved: isFaved,
+              isAuthorized: isAuthorized,
+              addFavorite: addFavorite,
+              removeFavorite: removeFavorite,
+            )
+          : null,
     );
   }
 }

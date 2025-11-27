@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../../core/configs/ref.dart';
+import '../../../../../core/configs/config/providers.dart';
 import '../../../../../core/posts/listing/widgets.dart';
 import '../../../../../core/tags/details/widgets.dart';
-import '../../../../../core/tags/tag/tag.dart';
+import '../../../../../core/tags/tag/types.dart';
 import '../../../posts/listing/widgets.dart';
 import '../../../posts/post/providers.dart';
 import 'artist_tag_cloud.dart';
@@ -68,11 +68,15 @@ class _DanbooruTagDetailsPageState
         gridBuilder: (context, slivers) => PostGrid(
           controller: controller,
           itemBuilder: (context, index, scrollController, useHero) =>
-              DefaultDanbooruImageGridItem(
+              DanbooruPostListingContextMenu(
                 index: index,
-                autoScrollController: scrollController,
                 controller: controller,
-                useHero: useHero,
+                child: DefaultDanbooruImageGridItem(
+                  index: index,
+                  autoScrollController: scrollController,
+                  controller: controller,
+                  useHero: useHero,
+                ),
               ),
           sliverHeaders: slivers,
         ),

@@ -4,18 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../../analytics/providers.dart';
-import '../../../../boorus/booru/booru.dart';
+import '../../../../boorus/booru/types.dart';
 import '../../../../boorus/engine/providers.dart';
-import '../../../../posts/rating/rating.dart';
-import '../../../../proxy/proxy.dart';
-import '../../../../settings/settings.dart';
-import '../../../../theme/theme_configs.dart';
+import '../../../../posts/listing/types.dart';
+import '../../../../posts/rating/types.dart';
+import '../../../../proxy/types.dart';
+import '../../../../settings/types.dart';
+import '../../../../themes/configs/types.dart';
 import '../../../config/data.dart';
-import '../../../config/src/providers/providers.dart';
+import '../../../config/providers.dart';
 import '../../../config/types.dart';
-import '../../../gesture/gesture.dart';
+import '../../../gesture/types.dart';
 import '../../../manage/providers.dart';
-import '../../../search/search.dart';
+import '../../../search/types.dart';
 import '../types/edit_booru_config_id.dart';
 
 final booruEngineProvider = StateProvider.autoDispose<BooruType?>(
@@ -157,6 +158,10 @@ class EditBooruConfigNotifier
   ) => state = state.copyWith(
     defaultPreviewImageButtonAction: () => defaultPreviewImageButtonAction,
   );
+
+  void updateTooltipDisplayMode(
+    TooltipDisplayMode? tooltipDisplayMode,
+  ) => state = state.copyWith(tooltipDisplayMode: () => tooltipDisplayMode);
 
   void updateGranularRatingFilter(
     Set<Rating>? granularRatingFilter,

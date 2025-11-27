@@ -1,17 +1,17 @@
 // Package imports:
 import 'package:booru_clients/sankaku.dart';
+import 'package:coreutils/coreutils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../core/boorus/defaults/types.dart';
-import '../../core/configs/config.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/create.dart';
 import '../../core/downloads/filename/types.dart';
-import '../../core/downloads/urls/sanitizer.dart';
-import '../../core/http/providers.dart';
-import '../../core/posts/post/post.dart';
+import '../../core/http/client/providers.dart';
+import '../../core/posts/post/types.dart';
 import '../../core/tags/autocompletes/types.dart';
-import '../../core/tags/tag/tag.dart';
+import '../../core/tags/tag/types.dart';
 import 'posts/providers.dart';
 import 'posts/types.dart';
 import 'tags/providers.dart';
@@ -74,7 +74,7 @@ class SankakuRepository extends BooruRepositoryDefault {
         MPixelsTokenHandler(),
         TokenHandler(
           'source',
-          (post, config) => sanitizedUrl(config.downloadUrl),
+          (post, config) => normalizeUrl(config.downloadUrl),
         ),
       ],
     );

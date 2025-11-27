@@ -9,100 +9,107 @@ import 'package:i18n/i18n.dart';
 import '../../../../../../core/configs/config/providers.dart';
 import '../../../../../../core/posts/details_parts/widgets.dart';
 import '../../../../../../core/search/search/routes.dart';
-import '../../../../../../core/tags/show/routes.dart';
 import '../../../../../../core/tags/tag/providers.dart';
-import '../../../../../../core/tags/tag/tag.dart';
+import '../../../../../../core/tags/tag/types.dart';
 import '../../../../../../core/tags/tag/widgets.dart';
+import '../../../../../../core/widgets/booru_popup_menu_button.dart';
 import '../../../../configs/providers.dart';
 import '../../../../tags/_shared/tag_list_notifier.dart';
 import '../../../../tags/tag/widgets.dart';
 import '../../../listing/providers.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 
-final danbooruTagTileExpansionStateProvider = StateProvider.autoDispose
-    .family<bool, bool>((ref, value) {
-      return value;
-    });
-
-class DanbooruTagsTile extends ConsumerWidget {
+class DanbooruTagsTile extends StatefulWidget {
   const DanbooruTagsTile({
     required this.post,
     super.key,
-    this.allowFetch = true,
-    this.initialExpanded = false,
   });
 
   final DanbooruPost post;
-  final bool allowFetch;
-  final bool initialExpanded;
+
+  @override
+  State<DanbooruTagsTile> createState() => _DanbooruTagsTileState();
+}
+
+class _DanbooruTagsTileState extends State<DanbooruTagsTile> {
+  var _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawTagsTile(
+      title: DanbooruTagsTileTitle(
+        post: widget.post,
+      ),
+      initiallyExpanded: _isExpanded,
+      onExpansionChanged: (value) {
+        setState(() {
+          _isExpanded = value;
+        });
+      },
+      children: [
+        Column(
+          children: [
+            if (_isExpanded)
+              Consumer(
+                builder: (_, ref, _) {
+                  final config = ref.watchConfigAuth;
+
+                  return PostTagList(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    tags: ref
+                        .watch(tagGroupsProvider((config, widget.post)))
+                        .maybeWhen(
+                          data: (data) => data,
+                          orElse: () => null,
+                        ),
+                    itemBuilder: (context, tag) => DanbooruTagContextMenu(
+                      tag: tag.rawName,
+                      child: PostTagListChip(
+                        tag: tag,
+                        auth: config,
+                        onTap: () => goToSearchPage(ref, tag: tag.rawName),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class DanbooruTagsTileTitle extends ConsumerWidget {
+  const DanbooruTagsTileTitle({
+    super.key,
+    required this.post,
+  });
+
+  final DanbooruPost post;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watchConfigAuth;
-    final loginDetails = ref.watch(danbooruLoginDetailsProvider(config));
-    final tagDetails = allowFetch
-        ? ref.watch(danbooruTagListProvider(config))[post.id]
-        : null;
+    final tagDetails = ref.watch(
+      danbooruTagListProvider(config),
+    )[post.id];
     final count = tagDetails?.allTags.length ?? post.tags.length;
-    final isExpanded = ref.watch(
-      danbooruTagTileExpansionStateProvider(initialExpanded),
-    );
+    final loginDetails = ref.watch(danbooruLoginDetailsProvider(config));
 
-    return RawTagsTile(
-      title: RawTagsTileTitle(
-        auth: config,
-        post: post,
-        count: count,
-        itemBuilder: {
-          if (loginDetails.hasLogin())
-            'edit': Text(context.t.generic.action.edit),
-        },
-        onMultiSelect: () {
-          goToShowTaglistPage(
-            ref,
-            post,
-            initiallyMultiSelectEnabled: true,
-            auth: config,
-          );
-        },
-        onSelected: (value) {
-          if (value == 'edit') {
-            ref.danbooruEdit(post);
-          }
-        },
-      ),
-      initiallyExpanded: initialExpanded,
-      onExpansionChanged: (value) {
-        ref
-                .read(
-                  danbooruTagTileExpansionStateProvider(
-                    initialExpanded,
-                  ).notifier,
-                )
-                .state =
-            value;
-      },
-      children: [
-        if (isExpanded)
-          PostTagList(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            tags: ref
-                .watch(tagGroupsProvider((config, post)))
-                .maybeWhen(
-                  data: (data) => data,
-                  orElse: () => null,
-                ),
-            itemBuilder: (context, tag) => DanbooruTagContextMenu(
-              tag: tag.rawName,
-              child: PostTagListChip(
-                tag: tag,
-                auth: config,
-                onTap: () => goToSearchPage(ref, tag: tag.rawName),
+    return RawTagsTileTitle(
+      auth: config,
+      post: post,
+      count: count,
+      menuItems: loginDetails.hasLogin()
+          ? [
+              BooruPopupMenuItem(
+                title: Text(context.t.generic.action.edit),
+                onTap: () => ref.danbooruEdit(post),
               ),
-            ),
-          ),
-        const SizedBox(height: 8),
-      ],
+            ]
+          : null,
     );
   }
 }

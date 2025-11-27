@@ -3,10 +3,10 @@ import 'package:booru_clients/gelbooru.dart';
 import 'package:path/path.dart' as path;
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
 import '../../../core/posts/post/tags.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 import 'types.dart';
 
 GelbooruV2Post gelbooruV2PostDtoToGelbooruPostNoMetadata(
@@ -39,7 +39,7 @@ GelbooruV2Post gelbooruV2PostDtoToGelbooruPost(
     height: dto.height?.toDouble() ?? 0,
     format: path.extension(dto.fileUrl ?? 'foo.png').substring(1),
     source: PostSource.from(dto.source),
-    rating: mapStringToRating(dto.rating ?? 'safe'),
+    rating: Rating.parse(dto.rating ?? 'safe'),
     md5: dto.hash ?? '',
     hasComment: dto.commentCount != null && dto.commentCount! > 0,
     hasParentOrChildren: dto.parentId != null && dto.parentId != 0,
@@ -51,6 +51,7 @@ GelbooruV2Post gelbooruV2PostDtoToGelbooruPost(
     uploaderName: dto.owner,
     hasNotes: _checkIfHasNotes(dto),
     metadata: metadata,
+    status: StringPostStatus.tryParse(dto.status),
   );
 }
 

@@ -8,7 +8,7 @@ import 'package:selection_mode/selection_mode.dart';
 
 // Project imports:
 import '../../../../configs/config/types.dart';
-import '../../../../posts/post/post.dart';
+import '../../../../posts/post/types.dart';
 import '../../../../search/search/widgets.dart';
 import '../../../../settings/providers.dart';
 import '../../../../widgets/default_selection_bar.dart';
@@ -77,16 +77,15 @@ class _ShowTagListPageScaffoldState
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: BooruPopupMenuButton(
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'select':
+                    items: [
+                      BooruPopupMenuItem(
+                        title: Text(context.t.generic.action.select),
+                        icon: const Icon(Icons.select_all),
+                        onTap: () {
                           _selectionModeController.enable();
-                        default:
-                      }
-                    },
-                    itemBuilder: {
-                      'select': Text(context.t.generic.action.select),
-                    },
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],

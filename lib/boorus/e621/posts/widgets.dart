@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../core/artists/types.dart';
-import '../../../core/posts/details/details.dart';
+import '../../../core/posts/details/types.dart';
+import '../../../core/posts/details_parts/types.dart';
 import '../../../core/posts/details_parts/widgets.dart';
+import '../../../core/search/search/routes.dart';
+import 'providers.dart';
 import 'types.dart';
 
 class E621ArtistSection extends ConsumerWidget {
@@ -30,3 +33,72 @@ class E621ArtistSection extends ConsumerWidget {
     );
   }
 }
+
+class E621UploaderFileDetailTile extends ConsumerWidget {
+  const E621UploaderFileDetailTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final post = InheritedPost.of<E621Post>(context);
+    final uploaderName = post.uploaderName;
+
+    return switch (uploaderName) {
+      null => const SizedBox.shrink(),
+      final name => UploaderFileDetailTile(
+        uploaderName: name,
+        onSearch: switch (ref.watch(e621UploaderQueryProvider(post))) {
+          final query? => () => goToSearchPage(
+            ref,
+            tag: query.resolveTag(),
+          ),
+          _ => null,
+        },
+      ),
+    };
+  }
+}
+
+class E621UploaderPostsSection extends ConsumerWidget {
+  const E621UploaderPostsSection({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final post = InheritedPost.of<E621Post>(context);
+
+    return UploaderPostsSection<E621Post>(
+      query: ref.watch(
+        e621UploaderQueryProvider(post),
+      ),
+    );
+  }
+}
+
+final kE621PostDetailsUIBuilder = PostDetailsUIBuilder(
+  preview: {
+    DetailsPart.info: (context) =>
+        const DefaultInheritedInformationSection<E621Post>(
+          showSource: true,
+        ),
+    DetailsPart.toolbar: (context) =>
+        const DefaultInheritedPostActionToolbar<E621Post>(),
+  },
+  full: {
+    DetailsPart.info: (context) =>
+        const DefaultInheritedInformationSection<E621Post>(
+          showSource: true,
+        ),
+    DetailsPart.toolbar: (context) =>
+        const DefaultInheritedPostActionToolbar<E621Post>(),
+    DetailsPart.artistInfo: (context) => const E621ArtistSection(),
+    DetailsPart.tags: (context) => const DefaultInheritedTagsTile<E621Post>(),
+    DetailsPart.fileDetails: (context) =>
+        const DefaultInheritedFileDetailsSection<E621Post>(
+          uploader: E621UploaderFileDetailTile(),
+        ),
+    DetailsPart.artistPosts: (context) =>
+        const DefaultInheritedArtistPostsSection<E621Post>(),
+    DetailsPart.uploaderPosts: (context) => const E621UploaderPostsSection(),
+    DetailsPart.characterList: (context) =>
+        const DefaultInheritedCharacterPostsSection<E621Post>(),
+  },
+);

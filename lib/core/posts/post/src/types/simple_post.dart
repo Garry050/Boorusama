@@ -2,8 +2,8 @@
 import 'package:equatable/equatable.dart';
 
 // Project imports:
-import '../../../rating/rating.dart';
-import '../../../sources/source.dart';
+import '../../../rating/types.dart';
+import '../../../sources/types.dart';
 import '../mixins/image_info_mixin.dart';
 import '../mixins/media_info_mixin.dart';
 import '../mixins/post_mixin.dart';
@@ -47,6 +47,7 @@ abstract class SimplePost extends Equatable
     this.parentId,
     this.downvotes,
     this.uploaderName,
+    this.status,
   });
 
   @override
@@ -104,6 +105,9 @@ abstract class SimplePost extends Equatable
 
   @override
   final PostMetadata? metadata;
+
+  @override
+  final PostStatus? status;
 
   @override
   List<Object?> get props => [id];

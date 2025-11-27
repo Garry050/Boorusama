@@ -5,49 +5,48 @@ import 'package:rich_text_controller/rich_text_controller.dart';
 
 // Project imports:
 import '../../../../foundation/url_launcher.dart';
-import '../../../blacklists/blacklist.dart';
 import '../../../blacklists/providers.dart';
+import '../../../blacklists/types.dart';
 import '../../../comments/providers.dart';
 import '../../../comments/types.dart';
-import '../../../configs/config.dart';
 import '../../../configs/config/providers.dart';
+import '../../../configs/config/types.dart';
 import '../../../configs/create/create.dart';
-import '../../../configs/gesture/gesture.dart';
+import '../../../configs/gesture/types.dart';
 import '../../../downloads/downloader/providers.dart';
 import '../../../downloads/filename/providers.dart';
 import '../../../downloads/urls/providers.dart';
 import '../../../downloads/urls/types.dart';
 import '../../../errors/providers.dart';
 import '../../../errors/types.dart';
-import '../../../http/providers.dart';
+import '../../../http/client/providers.dart';
 import '../../../images/providers.dart';
 import '../../../notes/note/providers.dart';
 import '../../../notes/note/types.dart';
-import '../../../posts/count/count.dart';
-import '../../../posts/details/details.dart';
+import '../../../posts/count/types.dart';
 import '../../../posts/details/providers.dart';
+import '../../../posts/details/types.dart';
 import '../../../posts/details_parts/widgets.dart';
 import '../../../posts/favorites/providers.dart';
 import '../../../posts/favorites/types.dart';
-import '../../../posts/listing/list.dart';
 import '../../../posts/listing/providers.dart';
-import '../../../posts/post/post.dart';
+import '../../../posts/listing/types.dart';
 import '../../../posts/post/routes.dart';
-import '../../../posts/rating/rating.dart';
+import '../../../posts/post/types.dart';
+import '../../../posts/rating/types.dart';
 import '../../../posts/shares/providers.dart';
-import '../../../posts/sources/source.dart';
+import '../../../posts/sources/types.dart';
 import '../../../search/queries/providers.dart';
 import '../../../search/queries/tag_query_composer.dart';
 import '../../../settings/providers.dart';
 import '../../../tags/autocompletes/autocomplete_repository.dart';
-import '../../../tags/configs/configs.dart';
 import '../../../tags/local/providers.dart';
-import '../../../tags/metatag/metatag.dart';
+import '../../../tags/metatag/types.dart';
 import '../../../tags/show/routes.dart';
 import '../../../tags/tag/colors.dart';
 import '../../../tags/tag/providers.dart';
-import '../../../tags/tag/tag.dart';
-import '../../engine/engine.dart';
+import '../../../tags/tag/types.dart';
+import '../../engine/types.dart';
 
 abstract class BooruRepositoryDefault implements BooruRepository {
   const BooruRepositoryDefault();
@@ -133,7 +132,7 @@ abstract class BooruRepositoryDefault implements BooruRepository {
   }
 
   @override
-  MetatagExtractor? getMetatagExtractor(TagInfo tagInfo) {
+  MetatagExtractor? getMetatagExtractor(BooruConfigAuth config) {
     return null;
   }
 
@@ -186,6 +185,11 @@ abstract class BooruRepositoryDefault implements BooruRepository {
     String? action,
     Post post,
   ) => const PostGestureHandler().handle(ref, action, post);
+
+  @override
+  CommentExtractor commentExtractor(BooruConfigAuth config) {
+    return ref.watch(unsupportedCommentExtractor);
+  }
 }
 
 class PostGestureHandler {
@@ -204,6 +208,8 @@ class PostGestureHandler {
       onViewTags: () => handleViewTags(ref, post),
       onViewOriginal: () => handleViewOriginal(ref, post),
       onOpenSource: () => handleOpenSource(ref, post),
+      onStartSlideshow: () =>
+          PostDetailsPageViewScope.maybeOf(ref.context)?.startSlideshow(),
     );
 
     if (handled) return true;
@@ -221,7 +227,18 @@ class PostGestureHandler {
   }
 
   void handleDownload(WidgetRef ref, Post post) {
-    ref.download(post);
+    ref
+        .read(
+          downloadNotifierProvider(
+            ref.read(
+              downloadNotifierParamsProvider((
+                ref.readConfigAuth,
+                ref.readConfigDownload,
+              )),
+            ),
+          ).notifier,
+        )
+        .download(post);
   }
 
   void handleShare(WidgetRef ref, Post post) {

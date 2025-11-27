@@ -6,13 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:selection_mode/selection_mode.dart';
 
 // Project imports:
-import '../../../configs/config.dart';
+import '../../../configs/config/types.dart';
 import '../../../configs/create/create.dart';
+import '../../../images/types.dart';
 import '../../../posts/details/routes.dart';
 import '../../../posts/listing/providers.dart';
-import '../../../posts/post/post.dart';
-import '../../../search/search/src/pages/search_page.dart';
-import '../../../settings/settings.dart';
+import '../../../posts/post/types.dart';
+import '../../../search/search/routes.dart';
 import '../../../tags/autocompletes/types.dart';
 import '../../../tags/tag/colors.dart';
 
@@ -82,7 +82,7 @@ typedef CommentPageBuilder =
     Widget Function(
       BuildContext context,
       bool useAppBar,
-      int postId,
+      Post post,
     );
 
 typedef GranularRatingFilterer =
@@ -156,5 +156,7 @@ typedef CreateUnknownBooruWidgetsBuilder =
 typedef VideoQualitySelectionBuilder =
     Widget? Function(
       BuildContext context,
-      Post post,
-    );
+      Post post, {
+      void Function(Widget page)? onPushPage,
+      void Function()? onPopPage,
+    });

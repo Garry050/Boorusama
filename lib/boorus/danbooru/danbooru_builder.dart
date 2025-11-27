@@ -1,5 +1,3 @@
-// Dart imports:
-
 // Flutter imports:
 import 'package:flutter/material.dart';
 
@@ -8,28 +6,28 @@ import 'package:foundation/foundation.dart';
 
 // Project imports:
 import '../../core/boorus/defaults/widgets.dart';
-import '../../core/boorus/engine/engine.dart';
-import '../../core/configs/config.dart';
+import '../../core/boorus/engine/types.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/widgets.dart';
 import '../../core/configs/manage/widgets.dart';
 import '../../core/downloads/filename/types.dart';
-import '../../core/home/custom_home.dart';
-import '../../core/home/user_custom_home_builder.dart';
+import '../../core/home/types.dart';
+import '../../core/home/widgets.dart';
 import '../../core/posts/details/widgets.dart';
 import '../../core/posts/listing/providers.dart';
 import '../../core/posts/listing/widgets.dart';
-import '../../core/posts/statistics/stats.dart';
+import '../../core/posts/statistics/types.dart';
 import '../../core/posts/statistics/widgets.dart';
 import 'artists/artist/widgets.dart';
 import 'autocompletes/widgets.dart';
 import 'comments/listing/widgets.dart';
 import 'configs/widgets.dart';
-import 'home/src/custom_home.dart';
+import 'home/types.dart';
 import 'home/widgets.dart';
 import 'posts/details/widgets.dart';
 import 'posts/favorites/widgets.dart';
 import 'posts/listing/widgets.dart';
-import 'posts/post/post.dart';
+import 'posts/post/types.dart';
 import 'posts/search/widgets.dart';
 import 'posts/statistics/widgets.dart';
 import 'tags/details/widgets.dart';
@@ -110,8 +108,8 @@ class DanbooruBuilder extends BaseBooruBuilder {
 
   @override
   CommentPageBuilder? get commentPageBuilder =>
-      (context, useAppBar, postId) => CommentPage(
-        postId: postId,
+      (context, useAppBar, post) => CommentPage(
+        postId: post.id,
         useAppBar: useAppBar,
       );
 

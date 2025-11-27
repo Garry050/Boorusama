@@ -5,8 +5,8 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 
 // Package imports:
+import 'package:coreutils/coreutils.dart';
 import 'package:foundation/foundation.dart';
-import 'package:version/version.dart';
 
 // Project imports:
 import '../types/types.dart';
@@ -72,10 +72,7 @@ ExportDataPayload decodeData({required String data, BuildContext? uiContext}) =>
               final String dateStr => DateTime.tryParse(dateStr),
               _ => null,
             },
-            exportVersion: switch (json['exportVersion']) {
-              final String verStr => Version.parse(verStr),
-              _ => null,
-            },
+            exportVersion: Version.tryParse(json['exportVersion']),
             data: payload,
           ),
         final List<dynamic> legacyList => ExportDataPayload.legacy(

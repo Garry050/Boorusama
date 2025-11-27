@@ -9,11 +9,10 @@ import 'package:sliver_masonry_grid/sliver_masonry_grid.dart';
 // Project imports:
 import '../../../../../foundation/error_monitor.dart';
 import '../../../../errors/types.dart';
-import '../../../../settings/settings.dart';
 import '../../../../widgets/widgets.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 import '../../widgets.dart';
-import '../utils/grid_utils.dart';
+import '../types/image_list_type.dart';
 import '../widgets/post_grid_controller.dart';
 import 'raw_post_grid.dart';
 
@@ -25,7 +24,6 @@ class SliverPostGrid<T extends Post> extends StatelessWidget {
     super.key,
     this.padding,
     this.listType,
-    this.size,
     this.spacing,
     this.aspectRatio,
     this.borderRadius,
@@ -36,7 +34,6 @@ class SliverPostGrid<T extends Post> extends StatelessWidget {
   final PostGridController<T> postController;
   final EdgeInsetsGeometry? padding;
   final ImageListType? listType;
-  final GridSize? size;
   final double? spacing;
   final double? aspectRatio;
   final BorderRadius? borderRadius;
@@ -139,7 +136,6 @@ class SliverPostGrid<T extends Post> extends StatelessWidget {
                   ? SliverPostGridPlaceHolder(
                       padding: padding,
                       listType: listType,
-                      size: size,
                       spacing: spacing,
                       aspectRatio: aspectRatio,
                       borderRadius: borderRadius,
@@ -165,10 +161,7 @@ class SliverPostGrid<T extends Post> extends StatelessWidget {
       sliver: ValueListenableBuilder(
         valueListenable: postController.itemsNotifier,
         builder: (_, data, _) {
-          final crossAxisCount = calculateGridCount(
-            constraints?.maxWidth ?? MediaQuery.sizeOf(context).width,
-            size ?? GridSize.normal,
-          );
+          final crossAxisCount = constraints?.crossAxisCount ?? 3;
           final imageListType = listType ?? ImageListType.standard;
 
           return data.isNotEmpty

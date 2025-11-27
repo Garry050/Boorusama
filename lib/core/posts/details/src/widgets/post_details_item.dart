@@ -11,13 +11,15 @@ import '../../../../../foundation/display.dart';
 import '../../../../../foundation/platform.dart';
 import '../../../../boorus/engine/providers.dart';
 import '../../../../configs/config/types.dart';
-import '../../../../configs/gesture/gesture.dart';
+import '../../../../configs/gesture/types.dart';
 import '../../../../videos/player/widgets.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../details_pageview/widgets.dart';
-import '../../../post/post.dart';
-import '../../details.dart';
+import '../../../post/types.dart';
+import '../providers/note_overlay_provider.dart';
+import 'play_pause_animation_overlay.dart';
 import 'post_details_controller.dart';
+import 'post_details_page_view_scope.dart';
 import 'post_media.dart';
 import 'seek_animation_overlay.dart';
 
@@ -69,9 +71,9 @@ class _PostDetailsItemState<T extends Post>
       if (isDesktopPlatform()) {
         if (controller.currentPost.value.isVideo) {
           if (controller.isVideoPlaying.value) {
-            controller.pauseCurrentVideo();
+            controller.pauseCurrentVideo(showAnimation: true);
           } else {
-            controller.playCurrentVideo();
+            controller.playCurrentVideo(showAnimation: true);
           }
         } else {
           if (pageViewController.isExpanded) return;
@@ -107,9 +109,15 @@ class _PostDetailsItemState<T extends Post>
           key: _videoKey,
           contentSize: Size(post.width, post.height),
           controller: widget.transformController,
-          enable: switch (state.isExpanded) {
-            true => context.isLargeScreen,
-            false => true,
+          enable: switch (ref.watch(
+            noteOverlayProvider((widget.authConfig, post)),
+          )) {
+            // If the note overlay is shown, disable all interactions to prevent gesture conflicts
+            true => false,
+            false => switch (state.isExpanded) {
+              true => context.isLargeScreen,
+              false => true,
+            },
           },
           onTransformationChanged: pageViewController.onTransformationChanged,
           onTap: onItemTap,
@@ -139,18 +147,27 @@ class _PostDetailsItemState<T extends Post>
               ValueListenableBuilder(
                 valueListenable: widget.isInitPageListenable,
                 builder: (_, isInitPage, _) {
-                  return PostMedia<T>(
-                    post: post,
-                    config: widget.authConfig,
-                    viewer: widget.viewerConfig,
-                    imageUrlBuilder: widget.imageUrlBuilder,
-                    imageCacheManager: widget.imageCacheManager,
-                    // This is used to make sure we have a thumbnail to show instead of a black placeholder
-                    thumbnailUrlBuilder:
-                        isInitPage && initialThumbnailUrl != null
-                        ? (_) => initialThumbnailUrl
-                        : null,
-                    controller: pageViewController,
+                  return ValueListenableBuilder(
+                    valueListenable:
+                        widget.detailsController.currentSettledPage,
+                    builder: (_, currentSettledPage, _) {
+                      final isPageSettled = currentSettledPage == widget.index;
+
+                      return PostMedia<T>(
+                        post: post,
+                        config: widget.authConfig,
+                        viewer: widget.viewerConfig,
+                        imageUrlBuilder: widget.imageUrlBuilder,
+                        imageCacheManager: widget.imageCacheManager,
+                        // This is used to make sure we have a thumbnail to show instead of a black placeholder
+                        thumbnailUrlBuilder:
+                            isInitPage && initialThumbnailUrl != null
+                            ? (_) => initialThumbnailUrl
+                            : null,
+                        controller: pageViewController,
+                        isPageSettled: isPageSettled,
+                      );
+                    },
                   );
                 },
               ),
@@ -170,9 +187,13 @@ class _PostDetailsItemState<T extends Post>
                                   if (value) {
                                     widget.detailsController.pauseVideo(
                                       post.id,
+                                      showAnimation: true,
                                     );
                                   } else if (!value) {
-                                    widget.detailsController.playVideo(post.id);
+                                    widget.detailsController.playVideo(
+                                      post.id,
+                                      showAnimation: true,
+                                    );
                                   } else {
                                     // do nothing
                                   }
@@ -188,6 +209,10 @@ class _PostDetailsItemState<T extends Post>
                 ),
               if (post.isVideo)
                 SeekAnimationOverlay(
+                  controller: widget.detailsController,
+                ),
+              if (post.isVideo)
+                PlayPauseAnimationOverlay(
                   controller: widget.detailsController,
                 ),
             ],

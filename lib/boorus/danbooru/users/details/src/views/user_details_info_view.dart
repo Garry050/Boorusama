@@ -8,9 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
-import '../../../../../../core/theme.dart';
+import '../../../../../../core/themes/theme/types.dart';
 import '../../../feedbacks/routes.dart';
-import '../../../user/user.dart';
+import '../../../user/types.dart';
 import '../widgets/user_details_section_card.dart';
 
 class UserDetailsInfoView extends ConsumerWidget {
@@ -32,21 +32,28 @@ class UserDetailsInfoView extends ConsumerWidget {
     final hasFeedback = user.hasFeedbacks;
 
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 12),
-          UserDetailsSectionCard.text(
-            title: context.t.profile.activity.title,
-            child: UserStatsGroup(user: user),
-          ),
-          const SizedBox(height: 24),
-          _buildFeedbacks(hasFeedback, ref),
-          if (previousNames.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 24),
-              child: _buildPrevNames(context),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Column(
+              children: [
+                const SizedBox(height: 12),
+                UserDetailsSectionCard.text(
+                  title: context.t.profile.activity.title,
+                  child: UserStatsGroup(user: user),
+                ),
+                const SizedBox(height: 24),
+                _buildFeedbacks(hasFeedback, ref),
+                if (previousNames.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 24),
+                    child: _buildPrevNames(context),
+                  ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }

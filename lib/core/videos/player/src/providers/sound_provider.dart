@@ -8,7 +8,9 @@ class GlobalSoundNotifier extends Notifier<bool> {
   @override
   bool build() {
     final isMuteByDefault = ref.watch(
-      imageViewerSettingsProvider.select((s) => s.muteAudioByDefault),
+      imageViewerSettingsProvider.select(
+        (s) => s.videoAudioDefaultState.muteByDefault,
+      ),
     );
 
     return !isMuteByDefault;
@@ -18,7 +20,6 @@ class GlobalSoundNotifier extends Notifier<bool> {
     state = !state;
   }
 
-  // ignore: use_setters_to_change_properties
   void setState(bool value) {
     state = value;
   }

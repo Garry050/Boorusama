@@ -43,7 +43,7 @@ class SettingsTile<T> extends StatelessWidget {
           if (newValue != null) onChanged(newValue);
         },
         items: items
-            .map<DropdownMenuItem<T>>(
+            .map(
               (value) => DropdownMenuItem<T>(
                 value: value,
                 child: optionBuilder(value),

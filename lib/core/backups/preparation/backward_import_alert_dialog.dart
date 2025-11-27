@@ -2,13 +2,13 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
+import 'package:coreutils/coreutils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
-import 'package:version/version.dart';
 
 // Project imports:
 import '../../../foundation/info/package_info.dart';
-import '../../theme/app_theme.dart';
+import '../../themes/theme/types.dart';
 
 Future<bool?> showBackwardImportAlertDialog({
   required BuildContext context,

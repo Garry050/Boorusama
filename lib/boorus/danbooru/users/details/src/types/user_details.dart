@@ -2,8 +2,8 @@
 import 'package:equatable/equatable.dart';
 
 // Project imports:
-import '../../../creator/creator.dart';
-import '../../../user/user.dart';
+import '../../../creator/types.dart';
+import '../../../user/types.dart';
 
 class UserDetails extends Equatable {
   const UserDetails({
@@ -43,10 +43,7 @@ class UserDetails extends Equatable {
     return UserDetails(
       id: id,
       name: queryParameters['name'],
-      level: switch (queryParameters['level']) {
-        null => null,
-        final String level => stringToUserLevel(level),
-      },
+      level: UserLevel.parse(queryParameters['level']),
     );
   }
 

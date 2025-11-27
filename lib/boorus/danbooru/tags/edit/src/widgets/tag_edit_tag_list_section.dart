@@ -7,15 +7,15 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 // Project imports:
-import '../../../../../../core/configs/config.dart';
-import '../../../../../../core/configs/ref.dart';
+import '../../../../../../core/configs/config/providers.dart';
+import '../../../../../../core/configs/config/types.dart';
 import '../../../../../../core/search/search/widgets.dart';
 import '../../../../../../core/settings/providers.dart';
 import '../../../../../../core/tags/categories/providers.dart';
 import '../../../../../../core/tags/tag/providers.dart';
-import '../../../../../../core/theme.dart';
-import '../../../../../../core/theme/providers.dart';
-import '../../../../../../core/theme/utils.dart';
+import '../../../../../../core/themes/colors/providers.dart';
+import '../../../../../../core/themes/colors/types.dart';
+import '../../../../../../core/themes/theme/types.dart';
 import '../../../../../../core/widgets/widgets.dart';
 import '../providers/tag_edit_notifier.dart';
 import 'tag_edit_tag_tile.dart';
@@ -305,15 +305,12 @@ class TagEditFilterHeader extends ConsumerWidget {
           if (!filterOn) const Spacer(),
           if (!filterOn)
             BooruPopupMenuButton(
-              itemBuilder: const {
-                'fetch_category': Text('Fetch tag category'),
-              },
-              onSelected: (value) async {
-                switch (value) {
-                  case 'fetch_category':
-                    await _fetch(ref);
-                }
-              },
+              items: [
+                BooruPopupMenuItem(
+                  title: const Text('Fetch tag category'),
+                  onTap: () => _fetch(ref),
+                ),
+              ],
             ),
         ],
       ),

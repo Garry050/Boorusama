@@ -6,21 +6,23 @@ import 'package:rich_text_controller/rich_text_controller.dart';
 // Project imports:
 import '../../core/boorus/defaults/types.dart';
 import '../../core/comments/types.dart';
-import '../../core/configs/config.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/create.dart';
-import '../../core/configs/gesture/gesture.dart';
+import '../../core/configs/gesture/types.dart';
 import '../../core/downloads/filename/types.dart';
-import '../../core/http/providers.dart';
+import '../../core/http/client/providers.dart';
 import '../../core/notes/note/types.dart';
 import '../../core/posts/favorites/types.dart';
 import '../../core/posts/favorites/widgets.dart';
-import '../../core/posts/listing/list.dart';
 import '../../core/posts/listing/providers.dart';
-import '../../core/posts/post/post.dart';
+import '../../core/posts/listing/types.dart';
 import '../../core/posts/post/providers.dart';
-import '../../core/search/queries/query.dart';
+import '../../core/posts/post/types.dart';
+import '../../core/search/queries/types.dart';
 import '../../core/tags/autocompletes/types.dart';
-import '../../core/tags/tag/tag.dart';
+import '../../core/tags/metatag/types.dart';
+import '../../core/tags/tag/types.dart';
+import '../gelbooru/tags/providers.dart';
 import 'comments/providers.dart';
 import 'configs/providers.dart';
 import 'favorites/providers.dart';
@@ -124,12 +126,7 @@ class GelbooruV2Repository extends BooruRepositoryDefault {
         false;
 
     return thumbnailOnly
-        ? DefaultGridThumbnailUrlGenerator(
-            imageQualityMapper: (post, imageQuality, gridSize) =>
-                post.thumbnailImageUrl,
-            gifImageQualityMapper: (post, imageQuality) =>
-                post.thumbnailImageUrl,
-          )
+        ? const DefaultGridThumbnailUrlGenerator.thumbnailOnly()
         : const DefaultGridThumbnailUrlGenerator();
   }
 
@@ -154,4 +151,9 @@ class GelbooruV2Repository extends BooruRepositoryDefault {
           },
         },
       ).handle(ref, action, post);
+
+  @override
+  MetatagExtractor getMetatagExtractor(BooruConfigAuth config) {
+    return ref.watch(gelbooruMetatagExtractorProvider(config));
+  }
 }

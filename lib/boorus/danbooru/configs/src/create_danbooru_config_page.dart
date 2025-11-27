@@ -7,18 +7,35 @@ import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../core/configs/auth/widgets.dart';
-import '../../../../core/configs/config.dart';
+import '../../../../core/configs/config/types.dart';
 import '../../../../core/configs/create/create.dart';
 import '../../../../core/configs/create/providers.dart';
 import '../../../../core/configs/create/widgets.dart';
-import '../../../../core/configs/gesture/gesture.dart';
+import '../../../../core/configs/gesture/types.dart';
 import '../../../../core/configs/gesture/widgets.dart';
 import '../../../../core/configs/search/widgets.dart';
 import '../../../../core/configs/viewer/widgets.dart';
 import '../../../../foundation/url_launcher.dart';
-import '../../users/user/user.dart';
+import '../../users/user/types.dart';
 import 'hide_deleted_switch.dart';
 import 'providers.dart';
+
+const _kDanbooruSpecificGestureActions = {
+  kToggleFavoriteAction,
+  kUpvoteAction,
+  kDownvoteAction,
+  kEditAction,
+};
+
+const _kDanbooruPreviewGestureActions = {
+  ...kDefaultGestureActions,
+  ..._kDanbooruSpecificGestureActions,
+};
+
+const _kDanbooruFullviewGestureActions = {
+  ...kDefaultFullviewActions,
+  ..._kDanbooruSpecificGestureActions,
+};
 
 class CreateDanbooruConfigPage extends ConsumerWidget {
   const CreateDanbooruConfigPage({
@@ -48,13 +65,8 @@ class CreateDanbooruConfigPage extends ConsumerWidget {
         ),
       ),
       gestureTab: BooruConfigGesturesView(
-        postDetailsGestureActions: const {
-          ...kDefaultGestureActions,
-          kToggleFavoriteAction,
-          kUpvoteAction,
-          kDownvoteAction,
-          kEditAction,
-        },
+        previewGestureActions: _kDanbooruPreviewGestureActions,
+        fullviewGestureActions: _kDanbooruFullviewGestureActions,
         describePostDetailsAction: (action) => switch (action) {
           kToggleFavoriteAction => context.t.post.action.toggle_favorite,
           kUpvoteAction => context.t.post.action.upvote,

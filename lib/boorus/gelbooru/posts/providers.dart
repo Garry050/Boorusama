@@ -3,9 +3,10 @@ import 'package:booru_clients/gelbooru.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../core/configs/config.dart';
-import '../../../core/posts/post/post.dart';
+import '../../../core/configs/config/types.dart';
+import '../../../core/posts/details/types.dart';
 import '../../../core/posts/post/providers.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../core/settings/providers.dart';
 import '../client_provider.dart';
 import '../tags/providers.dart';
@@ -71,3 +72,11 @@ extension GelbooruClientX on GelbooruClient {
             .toResult(total: value.count),
       );
 }
+
+final gelbooruUploaderQueryProvider =
+    Provider.family<UploaderQuery?, GelbooruPost>((ref, post) {
+      return switch (post.uploaderName) {
+        final uploader? => UserColonUploaderQuery(uploader),
+        _ => null,
+      };
+    });

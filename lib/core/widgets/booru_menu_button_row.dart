@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../settings/providers.dart';
-import '../settings/settings.dart';
 import 'adaptive_button_row.dart';
 
 class BooruMenuButtonRow extends ConsumerWidget {
@@ -43,17 +42,22 @@ class BooruMenuButtonRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hapticLevel = ref.watch(hapticFeedbackLevelProvider);
+    final reduceAnimation = ref.watch(
+      settingsProvider.select(
+        (value) => value.reduceAnimations,
+      ),
+    );
 
     return AdaptiveButtonRow.menu(
       buttons: buttons,
       buttonWidth: buttonWidth,
       spacing: spacing,
       overflowIcon: overflowIcon,
-      overflowButtonBuilder: overflowButtonBuilder,
       onOverflow: onOverflow,
       maxVisibleButtons: maxVisibleButtons,
       alignment: alignment,
       padding: padding,
+      reduceAnimation: reduceAnimation,
       onOpened: () {
         if (hapticLevel.isFull) {
           HapticFeedback.selectionClick();

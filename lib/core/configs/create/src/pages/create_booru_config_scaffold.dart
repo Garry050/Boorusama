@@ -9,11 +9,11 @@ import 'package:i18n/i18n.dart';
 // Project imports:
 import '../../../../../foundation/display.dart';
 import '../../../../analytics/providers.dart';
-import '../../../../boorus/booru/booru.dart';
+import '../../../../boorus/booru/types.dart';
 import '../../../../config_widgets/website_logo.dart';
-import '../../../../posts/sources/source.dart';
+import '../../../../posts/sources/types.dart';
 import '../../../../premiums/providers.dart';
-import '../../../../theme.dart';
+import '../../../../themes/theme/types.dart';
 import '../../../appearance/widgets.dart';
 import '../../../config/data.dart';
 import '../../../config/types.dart';
@@ -44,6 +44,7 @@ class CreateBooruConfigScaffold extends ConsumerWidget {
     this.networkTab,
     this.canSubmit,
     this.footer,
+    this.version,
   });
 
   final Color? backgroundColor;
@@ -60,6 +61,7 @@ class CreateBooruConfigScaffold extends ConsumerWidget {
   final String? initialTab;
 
   final Widget? footer;
+  final Widget? version;
 
   final bool Function(BooruConfigData config)? canSubmit;
   @override
@@ -92,6 +94,7 @@ class CreateBooruConfigScaffold extends ConsumerWidget {
         title: SelectedBooruChip(
           booruType: editId.booruType,
           url: editId.url,
+          version: version,
         ),
         actions: [
           CreateOrUpdateBooruConfigButton(canSubmit: canSubmit),
@@ -150,7 +153,7 @@ class CreateBooruConfigScaffold extends ConsumerWidget {
                         child: Column(
                           children: [
                             Text(
-                              'Not sure? Leave it as it is, you can change it later.',
+                              context.t.booru.new_profile_leave_as_empty_tips,
                               style: Theme.of(context).textTheme.titleSmall
                                   ?.copyWith(
                                     color: Theme.of(
@@ -355,10 +358,12 @@ class SelectedBooruChip extends StatelessWidget {
   const SelectedBooruChip({
     required this.booruType,
     required this.url,
+    this.version,
     super.key,
   });
 
   final BooruType booruType;
+  final Widget? version;
   final String url;
 
   @override
@@ -381,8 +386,15 @@ class SelectedBooruChip extends StatelessWidget {
         softWrap: false,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text(
-        context.t.booru.using_status(booru: booruType.displayName),
+      subtitle: Row(
+        children: [
+          Flexible(
+            child: Text(
+              context.t.booru.using_status(booru: booruType.displayName),
+            ),
+          ),
+          ?version,
+        ],
       ),
     );
   }

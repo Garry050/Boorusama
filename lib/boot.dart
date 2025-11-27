@@ -1,10 +1,8 @@
 // Dart imports:
 import 'dart:async';
-import 'dart:io';
 
 // Flutter imports:
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 // Package imports:
 import 'package:device_info_plus/device_info_plus.dart';
@@ -20,17 +18,17 @@ import 'core/app.dart';
 import 'core/boorus/booru/providers.dart';
 import 'core/boorus/engine/providers.dart';
 import 'core/cache/providers.dart';
-import 'core/configs/config.dart';
 import 'core/configs/config/data.dart';
+import 'core/configs/config/types.dart';
 import 'core/configs/manage/providers.dart';
 import 'core/hive/hive_registrar.g.dart';
-import 'core/http/http.dart';
-import 'core/http/providers.dart';
+import 'core/http/client/types.dart';
 import 'core/settings/providers.dart';
-import 'core/settings/settings.dart';
+import 'core/settings/types.dart';
 import 'core/tags/configs/providers.dart';
 import 'core/widgets/widgets.dart';
-import 'foundation/app_rating/src/providers.dart';
+import 'core/window/providers.dart' as window;
+import 'foundation/app_rating/providers.dart';
 import 'foundation/app_update/providers.dart';
 import 'foundation/boot.dart';
 import 'foundation/boot/providers.dart';
@@ -44,7 +42,6 @@ import 'foundation/path.dart';
 import 'foundation/platform.dart';
 import 'foundation/utils/file_utils.dart';
 import 'foundation/vendors/google/providers.dart';
-import 'foundation/windows.dart' as window;
 
 Future<void> boot(BootData bootData) async {
   final logger = bootData.logger;
@@ -58,11 +55,11 @@ Future<void> boot(BootData bootData) async {
   }
 
   logger.debugBoot("Load database's directory");
-  final dbDirectory = await _initDbDirectory();
+  final dbDirectoryPath = await initDbDirectory();
 
   logger.debugBoot('Initialize Hive');
   Hive
-    ..init(dbDirectory.path)
+    ..init(dbDirectoryPath)
     ..registerAdapters();
 
   logger.debugBoot('Load app info');
@@ -70,14 +67,14 @@ Future<void> boot(BootData bootData) async {
 
   final booruRegistry = createBooruRegistry();
 
-  logger.debugBoot('Load boorus from assets');
-  final boorus = await loadBoorusFromAssets(booruRegistry);
+  logger.debugBoot('Load boorus');
+  final boorus = loadBoorus(booruRegistry);
 
   logger.debugBoot('Initialize settings repository');
   final settingRepository = await createSettingsRepo(logger: logger);
 
-  logger.debugBoot('Set certificate to trusted certificates');
-  await _initCert();
+  logger.debugBoot('Initialize platform-specific stuff');
+  await initPlatform();
 
   final booruUserRepo = await createBooruConfigsRepo(
     logger: logger,
@@ -115,12 +112,12 @@ Future<void> boot(BootData bootData) async {
   logger.debugBoot('Load all configs');
   final allConfigs = await booruUserRepo.getAll();
 
-  final tempPath = await getAppTemporaryDirectory();
+  final tempPath = await getAppTemporaryPath();
 
   logger.debugBoot('Initialize misc data box');
   final miscDataBox = await Hive.openBox<String>(
     'misc_data_v1',
-    path: tempPath.path,
+    path: tempPath,
   );
 
   logger.debugBoot('Initialize package info');
@@ -151,7 +148,7 @@ Future<void> boot(BootData bootData) async {
     await clearImageCache(null);
   }
 
-  HttpOverrides.global = AppHttpOverrides();
+  setupHttpOverrides();
 
   // Prepare for Android 15
   unawaited(showSystemStatus());
@@ -206,7 +203,6 @@ Future<void> boot(BootData bootData) async {
               ),
             ),
             initialSettingsBooruConfigProvider.overrideWithValue(data.config),
-            httpCacheDirProvider.overrideWithValue(tempPath),
             loggerProvider.overrideWithValue(logger),
             deviceInfoProvider.overrideWithValue(deviceInfo),
             packageInfoProvider.overrideWithValue(packageInfo),
@@ -223,29 +219,3 @@ Future<void> boot(BootData bootData) async {
     ),
   );
 }
-
-Future<Directory> _initDbDirectory() async {
-  return isAndroid()
-      ? await getApplicationDocumentsDirectory()
-      : await getApplicationSupportDirectory();
-}
-
-Future<void> _initCert() async {
-  try {
-    // https://stackoverflow.com/questions/69511057/flutter-on-android-7-certificate-verify-failed-with-letsencrypt-ssl-cert-after-s
-    // On Android 7 and below, the Let's Encrypt certificate is not trusted by default and needs to be added manually.
-    final cert = await rootBundle.load('assets/ca/isrgrootx1.pem');
-
-    SecurityContext.defaultContext.setTrustedCertificatesBytes(
-      cert.buffer.asUint8List(),
-    );
-  } catch (e) {
-    // ignore errors here, maybe it's already trusted
-  }
-}
-
-final dbPathProvider = FutureProvider<String>((ref) async {
-  final dbDirectory = await _initDbDirectory();
-
-  return dbDirectory.path;
-});

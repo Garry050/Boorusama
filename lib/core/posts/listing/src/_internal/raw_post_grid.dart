@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // Package imports:
+import 'package:auto_scrolling/auto_scrolling.dart';
 import 'package:context_menus/context_menus.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter_improved_scrolling/flutter_improved_scrolling.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:foundation/widgets.dart';
+import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:oktoast/oktoast.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:selection_mode/selection_mode.dart';
 import 'package:sliver_tools/sliver_tools.dart';
@@ -16,13 +18,16 @@ import 'package:sliver_tools/sliver_tools.dart';
 // Project imports:
 import '../../../../../foundation/display.dart';
 import '../../../../../foundation/keyboard.dart';
-import '../../../../settings/settings.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../haptics/types.dart';
+import '../../../../themes/theme/types.dart';
 import '../../../../widgets/animated_footer.dart';
 import '../../../../widgets/default_selection_bar.dart';
 import '../../../../widgets/widgets.dart';
-import '../../../post/post.dart';
-import '../utils/conditional_value_listenable_builder.dart';
+import '../../../post/types.dart';
+import '../types/grid_size.dart';
+import '../types/grid_utils.dart';
+import '../types/page_mode.dart';
+import '../widgets/conditional_value_listenable_builder.dart';
 import '../widgets/post_controller_event_listener.dart';
 import '../widgets/post_grid_controller.dart';
 import 'highres_preview_on_mobile_data_warning_banner.dart';
@@ -42,8 +47,6 @@ class RawPostGrid<T extends Post> extends StatefulWidget {
     required this.selectionModeController,
     required this.selectionOptions,
     super.key,
-    this.onLoadMore,
-    this.onRefresh,
     this.sliverHeaders,
     this.scrollController,
     this.footer,
@@ -54,8 +57,6 @@ class RawPostGrid<T extends Post> extends StatefulWidget {
     this.options = const PostGridOptions(),
   });
 
-  final VoidCallback? onLoadMore;
-  final void Function()? onRefresh;
   final void Function() onNextPage;
   final void Function() onPreviousPage;
   final List<Widget>? sliverHeaders;
@@ -135,7 +136,6 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
 
   bool _handleKeyEvent(KeyEvent event) {
     if (isKeyPressed(LogicalKeyboardKey.f5, event: event)) {
-      widget.onRefresh?.call();
       controller.refresh();
     }
 
@@ -217,7 +217,6 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
                     ? (_) => true
                     : (_) => false,
                 onRefresh: () async {
-                  widget.onRefresh?.call();
                   _selectionModeController.deselectAll();
                   await controller.refresh(
                     maintainPage: true,
@@ -225,131 +224,189 @@ class _RawPostGridState<T extends Post> extends State<RawPostGrid<T>>
                 },
                 child: child,
               ),
-              child: ImprovedScrolling(
-                scrollController: _autoScrollController,
-                // https://github.com/adrianflutur/flutter_improved_scrolling/issues/5
-                // ignore: avoid_redundant_argument_values
-                enableKeyboardScrolling: false,
-                enableMMBScrolling: true,
-                child: ValueListenableBuilder(
-                  valueListenable: refreshing,
-                  builder: (_, refreshing, child) => _SwipeTo(
-                    pageMode: pageMode,
-                    controller: controller,
-                    refreshing: refreshing,
-                    onNextPage: widget.onNextPage,
-                    onPreviousPage: widget.onPreviousPage,
-                    options: _options,
-                    child: child!,
-                  ),
-                  child: PostGridOptionsProvider(
-                    options: _options,
-                    child: _CustomScrollView(
-                      controller: _autoScrollController,
-                      slivers: [
-                        if (widget.sliverHeaders != null)
-                          ...widget.sliverHeaders!.map(
-                            (e) => ListenableBuilder(
-                              listenable: _selectionModeController,
-                              builder: (_, _) {
-                                final multiSelect =
-                                    _selectionModeController.isActive;
+              child: ValueListenableBuilder(
+                valueListenable: refreshing,
+                builder: (_, refreshing, child) => _SwipeTo(
+                  pageMode: pageMode,
+                  controller: controller,
+                  refreshing: refreshing,
+                  onNextPage: widget.onNextPage,
+                  onPreviousPage: widget.onPreviousPage,
+                  options: _options,
+                  child: child!,
+                ),
+                child: PostGridOptionsProvider(
+                  options: _options,
+                  child: _CustomScrollView(
+                    controller: _autoScrollController,
+                    slivers: [
+                      if (widget.sliverHeaders != null)
+                        ...widget.sliverHeaders!.map(
+                          (e) => ListenableBuilder(
+                            listenable: _selectionModeController,
+                            builder: (_, _) {
+                              final multiSelect =
+                                  _selectionModeController.isActive;
 
-                                return SliverOffstage(
-                                  offstage: multiSelect,
-                                  sliver: e,
-                                );
-                              },
-                            ),
-                          ),
-                        SliverToBoxAdapter(
-                          child: PostControllerEventListener(
-                            controller: controller,
-                            onEvent: (event) {
-                              if (event is PostControllerRefreshStarted) {
-                                context.contextMenuOverlay.hide();
-                              }
+                              return SliverOffstage(
+                                offstage: multiSelect,
+                                sliver: e,
+                              );
                             },
-                            child: const SizedBox.shrink(),
                           ),
                         ),
+                      SliverToBoxAdapter(
+                        child: PostControllerEventListener(
+                          controller: controller,
+                          onEvent: (event) {
+                            if (event is PostControllerRefreshStarted) {
+                              context.contextMenuOverlay.hide();
+                            }
+                          },
+                          child: const SizedBox.shrink(),
+                        ),
+                      ),
+                      ConditionalValueListenableBuilder(
+                        valueListenable: refreshing,
+                        useFalseChildAsCache: true,
+                        trueChild: const SliverSizedBox.shrink(),
+                        falseChild: SliverPinnedHeader(
+                          child: widget.gridHeader,
+                        ),
+                      ),
+                      ConditionalValueListenableBuilder(
+                        valueListenable: refreshing,
+                        useFalseChildAsCache: true,
+                        trueChild: const SliverSizedBox.shrink(),
+                        falseChild: const SliverToBoxAdapter(
+                          child: HighresPreviewOnMobileDataWarningBanner(),
+                        ),
+                      ),
+                      ConditionalValueListenableBuilder(
+                        valueListenable: refreshing,
+                        useFalseChildAsCache: true,
+                        trueChild: const SliverSizedBox.shrink(),
+                        falseChild: const SliverToBoxAdapter(
+                          child: TooMuchCachedImagesWarningBanner(
+                            threshold: _kImageCacheThreshold,
+                          ),
+                        ),
+                      ),
+                      if (pageMode == PageMode.paginated)
+                        ConditionalValueListenableBuilder(
+                          valueListenable: refreshing,
+                          useFalseChildAsCache: true,
+                          falseChild: SliverToBoxAdapter(
+                            child: widget.topPageIndicator,
+                          ),
+                          trueChild: const SliverSizedBox.shrink(),
+                        ),
+                      widget.body,
+                      if (pageMode == PageMode.infinite)
+                        _buildLoadMore(colorScheme),
+                      if (pageMode == PageMode.paginated)
                         ConditionalValueListenableBuilder(
                           valueListenable: refreshing,
                           useFalseChildAsCache: true,
                           trueChild: const SliverSizedBox.shrink(),
-                          falseChild: SliverPinnedHeader(
-                            child: widget.gridHeader,
-                          ),
-                        ),
-                        ConditionalValueListenableBuilder(
-                          valueListenable: refreshing,
-                          useFalseChildAsCache: true,
-                          trueChild: const SliverSizedBox.shrink(),
-                          falseChild: const SliverToBoxAdapter(
-                            child: HighresPreviewOnMobileDataWarningBanner(),
-                          ),
-                        ),
-                        ConditionalValueListenableBuilder(
-                          valueListenable: refreshing,
-                          useFalseChildAsCache: true,
-                          trueChild: const SliverSizedBox.shrink(),
-                          falseChild: const SliverToBoxAdapter(
-                            child: TooMuchCachedImagesWarningBanner(
-                              threshold: _kImageCacheThreshold,
-                            ),
-                          ),
-                        ),
-                        if (pageMode == PageMode.paginated)
-                          ConditionalValueListenableBuilder(
-                            valueListenable: refreshing,
-                            useFalseChildAsCache: true,
-                            falseChild: SliverToBoxAdapter(
-                              child: widget.topPageIndicator,
-                            ),
-                            trueChild: const SliverSizedBox.shrink(),
-                          ),
-                        widget.body,
-                        if (pageMode == PageMode.infinite)
-                          ConditionalValueListenableBuilder(
-                            valueListenable: loading,
-                            falseChild: const SliverSizedBox.shrink(),
-                            trueChild: SliverPadding(
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              sliver: SliverToBoxAdapter(
-                                child: Center(
-                                  child: SpinKitPulse(
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
+                          falseChild: SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                top: 40,
+                                bottom: 20,
                               ),
+                              child: widget.bottomPageIndicator,
                             ),
                           ),
-                        if (pageMode == PageMode.paginated)
-                          ConditionalValueListenableBuilder(
-                            valueListenable: refreshing,
-                            useFalseChildAsCache: true,
-                            trueChild: const SliverSizedBox.shrink(),
-                            falseChild: SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 40,
-                                  bottom: 20,
-                                ),
-                                child: widget.bottomPageIndicator,
-                              ),
-                            ),
-                          ),
-                        _SliverBottomGridPadding(
-                          selectionModeController: _selectionModeController,
-                          pageMode: pageMode,
                         ),
-                      ],
-                    ),
+                      _SliverBottomGridPadding(
+                        selectionModeController: _selectionModeController,
+                        pageMode: pageMode,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
             floatingActionButton: widget.scrollToTopButton,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadMore(ColorScheme colorScheme) {
+    void showNoMoreDataMessage() {
+      showToast(
+        context.t.infinite_scroll.nore_more_data,
+        position: ToastPosition.bottom,
+        margin: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 60,
+        ),
+        textPadding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 4,
+        ),
+        duration: const Duration(seconds: 2),
+        backgroundColor: colorScheme.surfaceContainerHigh,
+        textStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+    }
+
+    return ValueListenableBuilder(
+      valueListenable: refreshing,
+      builder: (context, refresh, child) => ConditionalValueListenableBuilder(
+        valueListenable: loading,
+        falseChild: switch ((refreshing: refresh, hasMore: hasMore)) {
+          (refreshing: false, hasMore: true) => SliverLayoutBuilder(
+            builder: (context, constraints) {
+              final canScroll =
+                  constraints.precedingScrollExtent >
+                  constraints.viewportMainAxisExtent;
+
+              return switch (canScroll) {
+                true => const SliverSizedBox.shrink(),
+                false => SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: 16,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: Center(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(120, 40),
+                        ),
+                        onPressed: () => controller.fetchMore(
+                          onNoMoreData: () {
+                            showNoMoreDataMessage();
+                          },
+                        ),
+                        child: Text(
+                          context.t.infinite_scroll.load_more,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              };
+            },
+          ),
+          _ => const SliverSizedBox.shrink(),
+        },
+        trueChild: SliverPadding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          sliver: SliverToBoxAdapter(
+            child: Center(
+              child: SpinKitPulse(
+                color: colorScheme.onSurface,
+              ),
+            ),
           ),
         ),
       ),
@@ -402,7 +459,9 @@ class _SwipeTo extends StatelessWidget {
             const SizedBox(width: 4),
             ValueListenableBuilder(
               valueListenable: controller.pageNotifier,
-              builder: (_, page, _) => Text('Page ${page - 1}'),
+              builder: (_, page, _) => Text(
+                context.t.infinite_scroll.page_label(page: page - 1),
+              ),
             ),
           ],
         ),
@@ -417,7 +476,9 @@ class _SwipeTo extends StatelessWidget {
           children: [
             ValueListenableBuilder(
               valueListenable: controller.pageNotifier,
-              builder: (_, page, _) => Text('Page ${page + 1}'),
+              builder: (_, page, _) => Text(
+                context.t.infinite_scroll.page_label(page: page + 1),
+              ),
             ),
             const SizedBox(width: 4),
             Icon(
@@ -461,7 +522,7 @@ class _Scaffold extends StatelessWidget {
 
 class PostGridConstraints extends InheritedWidget {
   const PostGridConstraints({
-    required this.maxWidth,
+    required this.crossAxisCount,
     required super.child,
     super.key,
   });
@@ -470,11 +531,11 @@ class PostGridConstraints extends InheritedWidget {
     return context.dependOnInheritedWidgetOfExactType<PostGridConstraints>();
   }
 
-  final double? maxWidth;
+  final int? crossAxisCount;
 
   @override
   bool updateShouldNotify(covariant PostGridConstraints oldWidget) {
-    return maxWidth != oldWidget.maxWidth;
+    return crossAxisCount != oldWidget.crossAxisCount;
   }
 }
 
@@ -557,15 +618,13 @@ class _CustomScrollView extends StatefulWidget {
   });
 
   final List<Widget> slivers;
-  final ScrollController? controller;
+  final ScrollController controller;
 
   @override
   State<_CustomScrollView> createState() => _CustomScrollViewState();
 }
 
 class _CustomScrollViewState extends State<_CustomScrollView> {
-  final _gridWidth = ValueNotifier<double?>(null);
-
   @override
   Widget build(BuildContext context) {
     final options = PostGridOptionsProvider.of(context);
@@ -573,38 +632,29 @@ class _CustomScrollViewState extends State<_CustomScrollView> {
     return ScrollConfiguration(
       // Material scroll make it easier to pull to refresh
       behavior: const MaterialScrollBehavior(),
-      child: Column(
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth != _gridWidth.value) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _gridWidth.value = constraints.maxWidth;
-                });
-              }
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = calculateGridCount(
+            constraints.maxWidth,
+            options.gridSize ?? GridSize.normal,
+          );
 
-              return const SizedBox.shrink();
-            },
-          ),
-          Expanded(
-            child: ValueListenableBuilder(
-              valueListenable: _gridWidth,
-              builder: (_, width, _) {
-                return PostGridConstraints(
-                  maxWidth: width,
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: ClampingScrollPhysics(),
-                    ),
-                    controller: widget.controller,
-                    cacheExtent: options.cacheExtent,
-                    slivers: widget.slivers,
-                  ),
-                );
-              },
+          return PostGridConstraints(
+            crossAxisCount: crossAxisCount,
+            child: AutoScroll(
+              controller: widget.controller,
+              anchorBuilder: (context) => const SingleDirectionAnchor(),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: ClampingScrollPhysics(),
+                ),
+                controller: widget.controller,
+                cacheExtent: options.cacheExtent,
+                slivers: widget.slivers,
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -646,14 +696,17 @@ class PostGridOptions extends Equatable {
   const PostGridOptions({
     this.cacheExtent,
     this.hapticFeedbackLevel,
+    this.gridSize,
   });
 
   final double? cacheExtent;
   final HapticFeedbackLevel? hapticFeedbackLevel;
+  final GridSize? gridSize;
 
   @override
   List<Object?> get props => [
     cacheExtent,
     hapticFeedbackLevel,
+    gridSize,
   ];
 }

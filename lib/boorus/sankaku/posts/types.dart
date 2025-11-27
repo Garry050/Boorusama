@@ -2,10 +2,10 @@
 import 'package:equatable/equatable.dart';
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
-import '../../../core/tags/tag/tag.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
+import '../../../core/tags/tag/types.dart';
 
 class SankakuPost extends Equatable
     with MediaInfoMixin, TranslatedMixin, ImageInfoMixin, VideoInfoMixin
@@ -40,6 +40,7 @@ class SankakuPost extends Equatable
     required this.uploaderId,
     required this.uploaderName,
     required this.metadata,
+    required this.status,
     this.createdAt,
     this.parentId,
     this.downvotes,
@@ -132,6 +133,9 @@ class SankakuPost extends Equatable
 
   @override
   final PostMetadata? metadata;
+
+  @override
+  final PostStatus? status;
 }
 
 class SankakuPostLinkGenerator implements PostLinkGenerator<SankakuPost> {

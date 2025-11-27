@@ -7,20 +7,20 @@ import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../../core/configs/config/providers.dart';
-import '../../../../../../core/posts/details/details.dart';
+import '../../../../../../core/posts/details/types.dart';
 import '../../../../../../core/posts/details_parts/widgets.dart';
 import '../../../../../../core/posts/favorites/providers.dart';
 import '../../../../../../core/posts/favorites/widgets.dart';
 import '../../../../../../core/posts/shares/widgets.dart';
-import '../../../../../../core/posts/votes/vote.dart';
+import '../../../../../../core/posts/votes/types.dart';
 import '../../../../../../core/posts/votes/widgets.dart';
 import '../../../../../../core/router.dart';
 import '../../../../../../core/widgets/adaptive_button_row.dart';
 import '../../../../../../core/widgets/booru_menu_button_row.dart';
 import '../../../../configs/providers.dart';
+import '../../../../favgroups/favgroups/routes.dart';
 import '../../../../versions/routes.dart';
-import '../../../favgroups/favgroups/routes.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 import '../../../votes/providers.dart';
 
 class DanbooruInheritedPostActionToolbar extends ConsumerWidget {
@@ -62,6 +62,7 @@ class DanbooruPostActionToolbar extends ConsumerWidget {
     final notifier = ref.watch(favoritesProvider(config).notifier);
     final loginDetails = ref.watch(danbooruLoginDetailsProvider(config));
     final hasLogin = loginDetails.hasLogin();
+    final voteId = postVote?.voteId;
 
     return SliverToBoxAdapter(
       child: CommonPostButtonsBuilder(
@@ -90,7 +91,9 @@ class DanbooruPostActionToolbar extends ConsumerWidget {
                   widget: UpvotePostButton(
                     voteState: voteState,
                     onUpvote: () => ref.danbooruUpvote(post.id),
-                    onRemoveUpvote: () => ref.danbooruRemoveVote(post.id),
+                    onRemoveUpvote: voteId != null
+                        ? () => ref.danbooruRemoveVote(post.id, voteId)
+                        : null,
                   ),
                   title: context.t.post.action.upvote,
                 ),
@@ -100,7 +103,9 @@ class DanbooruPostActionToolbar extends ConsumerWidget {
                   widget: DownvotePostButton(
                     voteState: voteState,
                     onDownvote: () => ref.danbooruDownvote(post.id),
-                    onRemoveDownvote: () => ref.danbooruRemoveVote(post.id),
+                    onRemoveDownvote: voteId != null
+                        ? () => ref.danbooruRemoveVote(post.id, voteId)
+                        : null,
                   ),
                   title: context.t.post.action.downvote,
                 ),
@@ -127,10 +132,10 @@ class DanbooruPostActionToolbar extends ConsumerWidget {
               ),
               ButtonData(
                 widget: CommentPostButton(
-                  onPressed: () => goToCommentPage(context, ref, post.id),
+                  onPressed: () => goToCommentPage(context, ref, post),
                 ),
                 title: context.t.comment.comments,
-                onTap: () => goToCommentPage(context, ref, post.id),
+                onTap: () => goToCommentPage(context, ref, post),
               ),
               if (hasLogin)
                 SimpleButtonData(

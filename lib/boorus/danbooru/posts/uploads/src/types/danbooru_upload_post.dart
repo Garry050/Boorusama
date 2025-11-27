@@ -1,6 +1,6 @@
 // Project imports:
-import '../../../../users/user/user.dart';
-import '../../../post/post.dart';
+import '../../../../users/user/types.dart';
+import '../../../post/types.dart';
 
 class DanbooruUploadPost extends DanbooruPost {
   DanbooruUploadPost({
@@ -29,7 +29,6 @@ class DanbooruUploadPost extends DanbooruPost {
     required super.approverId,
     required super.rating,
     required super.fileSize,
-    required super.isBanned,
     required super.hasChildren,
     required super.parentId,
     required super.hasLarge,
@@ -45,6 +44,7 @@ class DanbooruUploadPost extends DanbooruPost {
     required this.pageUrl,
     required this.sourceRaw,
     required super.metadata,
+    required super.status,
   });
 
   final DanbooruUser? uploader;

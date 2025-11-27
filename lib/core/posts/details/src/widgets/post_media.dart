@@ -6,22 +6,20 @@ import 'package:cache_manager/cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../../foundation/display.dart';
 import '../../../../../foundation/loggers.dart';
 import '../../../../configs/config/types.dart';
-import '../../../../http/providers.dart';
+import '../../../../http/client/providers.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/routes.dart';
 import '../../../../videos/cache/providers.dart';
 import '../../../../videos/player/providers.dart';
 import '../../../../videos/player/widgets.dart';
 import '../../../details_pageview/widgets.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 import '../providers/video_url_provider.dart';
 import '../types/post_details.dart';
 import '../types/utils.dart';
 import 'post_details_image.dart';
-import 'video_controls.dart';
 
 class PostMedia<T extends Post> extends ConsumerWidget {
   const PostMedia({
@@ -33,6 +31,7 @@ class PostMedia<T extends Post> extends ConsumerWidget {
     required this.controller,
     required this.imageCacheManager,
     super.key,
+    this.isPageSettled = false,
   });
 
   final T post;
@@ -42,6 +41,7 @@ class PostMedia<T extends Post> extends ConsumerWidget {
   final String Function(T post)? imageUrlBuilder;
   final String Function(T post)? thumbnailUrlBuilder;
   final ImageCacheManager? imageCacheManager;
+  final bool isPageSettled;
 
   void _openSettings(WidgetRef ref) {
     openImageViewerSettingsPage(ref);
@@ -100,22 +100,11 @@ class PostMedia<T extends Post> extends ConsumerWidget {
                       cacheManager: ref.watch(videoCacheManagerProvider),
                       cacheDelay: createVideoCacheDelayCallback(post),
                       fileSize: post.fileSize > 0 ? post.fileSize : null,
+                      shouldInitialize: isPageSettled,
                     );
                   },
                 ),
               ),
-              if (context.isLargeScreen)
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: ValueListenableBuilder(
-                    valueListenable: controller.overlay,
-                    builder: (context, overlay, child) =>
-                        overlay ? child! : const SizedBox.shrink(),
-                    child: PostDetailsVideoControls(
-                      controller: details.controller,
-                    ),
-                  ),
-                ),
             ],
           )
         : PostDetailsImage(

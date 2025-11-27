@@ -6,14 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../core/boorus/defaults/widgets.dart';
-import '../../core/boorus/engine/engine.dart';
-import '../../core/configs/config.dart';
+import '../../core/boorus/engine/types.dart';
 import '../../core/configs/config/providers.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/widgets.dart';
 import '../../core/configs/manage/widgets.dart';
 import '../../core/downloads/filename/types.dart';
 import '../../core/posts/details_parts/types.dart';
 import '../../core/posts/post/providers.dart';
+import '../../core/search/search/routes.dart';
 import '../../core/search/search/widgets.dart';
 import '../../core/widgets/widgets.dart';
 import '../../foundation/html.dart';
@@ -83,10 +84,13 @@ class GelbooruV1SearchPage extends ConsumerWidget {
     final postRepo = ref.watch(postRepoProvider(ref.watchConfigSearch));
 
     return SearchPageScaffold(
-      noticeBuilder: (context) => InfoContainer(
-        contentBuilder: (context) => const AppHtml(
-          data: 'The app will use <b>Gelbooru</b> for tag completion.',
+      landingViewBuilder: (controller) => DefaultMobileSearchLandingView(
+        notice: InfoContainer(
+          contentBuilder: (context) => const AppHtml(
+            data: 'The app will use <b>Gelbooru</b> for tag completion.',
+          ),
         ),
+        controller: controller,
       ),
       params: params,
       fetcher: (page, controller) => postRepo.getPostsFromController(

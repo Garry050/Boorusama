@@ -2,11 +2,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../core/configs/config.dart';
+import '../../../core/configs/config/types.dart';
 import '../../../core/tags/autocompletes/types.dart';
 import '../../../core/tags/local/providers.dart';
 import '../../../core/tags/tag/providers.dart';
-import '../../../core/tags/tag/tag.dart';
+import '../../../core/tags/tag/types.dart';
 import '../client_provider.dart';
 import '../posts/types.dart';
 import 'parser.dart';
@@ -61,6 +61,8 @@ final e621TagExtractorProvider = Provider.family<TagExtractor, BooruConfigAuth>(
       siteHost: config.url,
       tagCache: ref.watch(tagCacheRepositoryProvider.future),
       sorter: TagSorter.defaults(),
+      artistCategory: e621ArtistTagCategory,
+      characterCategory: e621CharacterTagCategory,
       fetcher: (post, options) {
         final tagResolver = ref.read(e621TagResolverProvider(config));
 

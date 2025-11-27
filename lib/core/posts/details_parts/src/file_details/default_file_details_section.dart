@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 
 // Project imports:
-import '../../../details/details.dart';
-import '../../../post/post.dart';
+import '../../../details/types.dart';
+import '../../../post/types.dart';
 import 'file_details_section.dart';
 
 class DefaultInheritedFileDetailsSection<T extends Post>
@@ -11,9 +11,11 @@ class DefaultInheritedFileDetailsSection<T extends Post>
   const DefaultInheritedFileDetailsSection({
     super.key,
     this.initialExpanded = false,
+    this.uploader,
   });
 
   final bool initialExpanded;
+  final Widget? uploader;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +25,14 @@ class DefaultInheritedFileDetailsSection<T extends Post>
       child: DefaultFileDetailsSection(
         post: post,
         initialExpanded: initialExpanded,
+        uploader:
+            uploader ??
+            switch (post.uploaderName) {
+              null => null,
+              final name => UploaderFileDetailTile(
+                uploaderName: name,
+              ),
+            },
       ),
     );
   }
@@ -32,15 +42,15 @@ class DefaultFileDetailsSection extends StatelessWidget {
   const DefaultFileDetailsSection({
     required this.post,
     super.key,
-    this.uploaderName,
+    this.uploader,
     this.customDetails,
     this.initialExpanded = false,
   });
 
   final Post post;
   final bool initialExpanded;
-  final String? uploaderName;
-  final Map<String, Widget>? customDetails;
+  final Widget? uploader;
+  final List<Widget>? customDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -48,15 +58,7 @@ class DefaultFileDetailsSection extends StatelessWidget {
       initialExpanded: initialExpanded,
       post: post,
       rating: post.rating,
-      uploader: uploaderName != null
-          ? Text(
-              uploaderName!.replaceAll('_', ' '),
-              maxLines: 1,
-              style: const TextStyle(
-                fontSize: 14,
-              ),
-            )
-          : null,
+      uploader: uploader,
       customDetails: customDetails,
     );
   }

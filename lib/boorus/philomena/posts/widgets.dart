@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../core/artists/types.dart';
-import '../../../core/posts/details/details.dart';
+import '../../../core/posts/details/types.dart';
+import '../../../core/posts/details_parts/types.dart';
 import '../../../core/posts/details_parts/widgets.dart';
+import '../../../core/search/search/routes.dart';
+import 'providers.dart';
 import 'types.dart';
 
 class PhilomenaStatsTileSection extends ConsumerWidget {
@@ -48,3 +51,69 @@ class PhilomenaArtistInfoSection extends ConsumerWidget {
     );
   }
 }
+
+class PhilomenaUploaderFileDetailTile extends ConsumerWidget {
+  const PhilomenaUploaderFileDetailTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final post = InheritedPost.of<PhilomenaPost>(context);
+    final uploaderName = post.uploaderName;
+
+    return switch (uploaderName) {
+      null => const SizedBox.shrink(),
+      final name => UploaderFileDetailTile(
+        uploaderName: name,
+        onSearch: switch (ref.watch(philomenaUploaderQueryProvider(post))) {
+          final query? => () => goToSearchPage(
+            ref,
+            tag: query.resolveTag(),
+          ),
+          _ => null,
+        },
+      ),
+    };
+  }
+}
+
+class PhilomenaUploaderPostsSection extends ConsumerWidget {
+  const PhilomenaUploaderPostsSection({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final post = InheritedPost.of<PhilomenaPost>(context);
+
+    return UploaderPostsSection<PhilomenaPost>(
+      query: ref.watch(
+        philomenaUploaderQueryProvider(post),
+      ),
+    );
+  }
+}
+
+final kPhilomenaPostDetailsUIBuilder = PostDetailsUIBuilder(
+  preview: {
+    DetailsPart.info: (context) =>
+        const DefaultInheritedInformationSection<PhilomenaPost>(),
+    DetailsPart.toolbar: (context) =>
+        const DefaultInheritedPostActionToolbar<PhilomenaPost>(),
+  },
+  full: {
+    DetailsPart.info: (context) =>
+        const DefaultInheritedInformationSection<PhilomenaPost>(),
+    DetailsPart.toolbar: (context) =>
+        const DefaultInheritedPostActionToolbar<PhilomenaPost>(),
+    DetailsPart.artistInfo: (context) => const PhilomenaArtistInfoSection(),
+    DetailsPart.stats: (context) => const PhilomenaStatsTileSection(),
+    DetailsPart.source: (context) =>
+        const DefaultInheritedSourceSection<PhilomenaPost>(),
+    DetailsPart.tags: (context) =>
+        const DefaultInheritedBasicTagsTile<PhilomenaPost>(),
+    DetailsPart.fileDetails: (context) =>
+        const DefaultInheritedFileDetailsSection<PhilomenaPost>(
+          uploader: PhilomenaUploaderFileDetailTile(),
+        ),
+    DetailsPart.uploaderPosts: (context) =>
+        const PhilomenaUploaderPostsSection(),
+  },
+);

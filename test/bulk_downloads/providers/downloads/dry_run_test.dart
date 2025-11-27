@@ -9,13 +9,13 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 // Project imports:
-import 'package:boorusama/core/bulk_downloads/src/data/download_repository_sqlite.dart';
+import 'package:boorusama/core/bulk_downloads/src/data/repo_sqlite.dart';
 import 'package:boorusama/core/bulk_downloads/src/providers/bulk_download_notifier.dart';
 import 'package:boorusama/core/bulk_downloads/src/providers/dry_run.dart';
 import 'package:boorusama/core/bulk_downloads/src/providers/dry_run_state.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_session.dart';
 import 'package:boorusama/core/downloads/filename/types.dart';
-import 'package:boorusama/core/search/selected_tags/tag.dart';
+import 'package:boorusama/core/search/selected_tags/types.dart';
 import 'common.dart';
 
 void main() {

@@ -1,23 +1,21 @@
 // Project imports:
-import '../../../configs/config.dart';
+import '../../../configs/config/types.dart';
 import '../../../configs/create/widgets.dart';
 import '../../../configs/manage/widgets.dart';
 import '../../../downloads/filename/types.dart';
-import '../../../home/custom_home.dart';
-import '../../../home/home_page_scaffold.dart';
-import '../../../home/mobile_home_page_scaffold.dart';
-import '../../../home/user_custom_home_builder.dart';
+import '../../../home/types.dart';
+import '../../../home/widgets.dart';
 import '../../../posts/details/widgets.dart';
 import '../../../posts/details_parts/types.dart';
 import '../../../posts/details_parts/widgets.dart';
 import '../../../posts/favorites/widgets.dart';
 import '../../../posts/listing/widgets.dart';
-import '../../../posts/statistics/stats.dart';
+import '../../../posts/statistics/types.dart';
 import '../../../posts/statistics/widgets.dart';
 import '../../../search/search/widgets.dart';
 import '../../../search/suggestions/widgets.dart';
 import '../../../tags/show/widgets.dart';
-import '../../engine/engine.dart';
+import '../../engine/types.dart';
 
 class BaseBooruBuilder implements BooruBuilder {
   @override

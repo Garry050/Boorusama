@@ -8,12 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../settings/settings.dart';
+import '../../../../settings/types.dart';
 import '../../../../settings/widgets.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../config/types.dart';
 import '../../../create/providers.dart';
-import '../../../gesture/gesture.dart';
+import '../../../gesture/types.dart';
+import '../widgets/tooltip_toggle.dart';
 
 const kDefaultPreviewImageButtonAction = {
   '',
@@ -24,12 +25,19 @@ const kDefaultPreviewImageButtonAction = {
 };
 
 class DefaultBooruConfigListingView extends ConsumerWidget {
-  const DefaultBooruConfigListingView({super.key});
+  const DefaultBooruConfigListingView({
+    super.key,
+    this.tooltipToggle,
+  });
+
+  final Widget? tooltipToggle;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const BooruConfigListingView(
+    return BooruConfigListingView(
       postPreviewQuickActionButtonActions: kDefaultPreviewImageButtonAction,
       describePostPreviewQuickAction: null,
+      tooltipToggle: tooltipToggle ?? const ListingTooltipToggle(),
     );
   }
 }
@@ -38,11 +46,13 @@ class BooruConfigListingView extends ConsumerWidget {
   const BooruConfigListingView({
     required this.postPreviewQuickActionButtonActions,
     required this.describePostPreviewQuickAction,
+    this.tooltipToggle,
     super.key,
   });
 
   final Set<String?> postPreviewQuickActionButtonActions;
   final String Function(String? action)? describePostPreviewQuickAction;
+  final Widget? tooltipToggle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -75,6 +85,7 @@ class BooruConfigListingView extends ConsumerWidget {
                 context.t.booru.listing.thumbnail_button_description,
               ),
               trailing: OptionDropDownButton(
+                backgroundColor: Colors.transparent,
                 alignment: AlignmentDirectional.centerStart,
                 value: ref.watch(
                   editBooruConfigProvider(
@@ -123,6 +134,10 @@ class BooruConfigListingView extends ConsumerWidget {
                 ),
               ),
             ),
+            if (tooltipToggle case final toggle?) ...[
+              const Divider(),
+              toggle,
+            ],
           ],
         ),
       ),

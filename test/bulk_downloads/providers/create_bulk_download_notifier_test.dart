@@ -8,8 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 // Project imports:
 import 'package:boorusama/core/bulk_downloads/src/providers/create_download_options_notifier.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_options.dart';
-import 'package:boorusama/core/search/histories/history.dart';
-import 'package:boorusama/core/search/selected_tags/tag.dart';
+import 'package:boorusama/core/search/histories/types.dart';
+import 'package:boorusama/core/search/selected_tags/types.dart';
 
 void main() {
   late ProviderContainer container;
@@ -29,7 +29,7 @@ void main() {
   test('tag operations should work correctly', () {
     final notifier = container.read(
       createDownloadOptionsProvider(initial).notifier,
-    )..addTag('tag1');
+    )..addTag(TagSearchItem.fromString('tag1'));
 
     expect(
       listEquals(
@@ -61,7 +61,7 @@ void main() {
     );
 
     // Remove tag
-    notifier.removeTag('tag2');
+    notifier.removeTag(const TagSearchItem.raw(tag: 'tag2'));
     expect(
       listEquals(
         container.read(createDownloadOptionsProvider(initial)).tags.list,
@@ -76,12 +76,12 @@ void main() {
       createDownloadOptionsProvider(initial).notifier,
     );
 
-    expect(notifier.state.valid(android: false), isFalse); // Initially invalid
+    expect(notifier.state.valid(), isFalse); // Initially invalid
 
     notifier
-      ..setPath('/test/path')
-      ..addTag('test_tag');
+      ..setPath('/storage/emulated/0/Download')
+      ..addTag(TagSearchItem.fromString('test_tag'));
 
-    expect(notifier.state.valid(android: false), isTrue); // Valid
+    expect(notifier.state.valid(), isTrue); // Valid
   });
 }

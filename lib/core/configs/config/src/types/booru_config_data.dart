@@ -3,15 +3,16 @@ import 'package:equatable/equatable.dart';
 
 // Project imports:
 import '../../../../../foundation/utils/int_utils.dart';
-import '../../../../boorus/booru/booru.dart';
-import '../../../../posts/rating/rating.dart';
-import '../../../../proxy/proxy.dart';
-import '../../../../settings/settings.dart';
-import '../../../../theme/theme_configs.dart';
-import '../../../gesture/gesture.dart';
-import '../../../search/search.dart';
+import '../../../../boorus/booru/types.dart';
+import '../../../../posts/listing/types.dart';
+import '../../../../posts/rating/types.dart';
+import '../../../../proxy/types.dart';
+import '../../../../settings/types.dart';
+import '../../../../themes/configs/types.dart';
+import '../../../gesture/types.dart';
+import '../../../search/types.dart';
 import 'booru_config.dart';
-import 'rating_parser.dart';
+import 'granular_rating_filter.dart';
 
 class BooruConfigData extends Equatable {
   const BooruConfigData({
@@ -41,6 +42,7 @@ class BooruConfigData extends Equatable {
     required this.layout,
     required this.proxySettings,
     required this.viewerNotesFetchBehavior,
+    required this.tooltipDisplayMode,
   });
 
   factory BooruConfigData.anonymous({
@@ -80,6 +82,7 @@ class BooruConfigData extends Equatable {
     layout: null,
     proxySettings: null,
     viewerNotesFetchBehavior: null,
+    tooltipDisplayMode: null,
   );
 
   static BooruConfigData? fromJson(Map<String, dynamic> json) {
@@ -117,6 +120,7 @@ class BooruConfigData extends Equatable {
         layout: json['layout'] as String?,
         proxySettings: json['proxySettings'] as String?,
         viewerNotesFetchBehavior: json['viewerNotesFetchBehavior'] as int?,
+        tooltipDisplayMode: json['tooltipDisplayMode'] as int?,
       );
     } catch (e) {
       return null;
@@ -151,6 +155,7 @@ class BooruConfigData extends Equatable {
       'layout': layout,
       'proxySettings': proxySettings,
       'viewerNotesFetchBehavior': viewerNotesFetchBehavior,
+      'tooltipDisplayMode': tooltipDisplayMode,
     };
   }
 
@@ -180,6 +185,7 @@ class BooruConfigData extends Equatable {
   final String? layout;
   final String? proxySettings;
   final int? viewerNotesFetchBehavior;
+  final int? tooltipDisplayMode;
 
   @override
   List<Object?> get props => [
@@ -209,6 +215,7 @@ class BooruConfigData extends Equatable {
     layout,
     proxySettings,
     viewerNotesFetchBehavior,
+    tooltipDisplayMode,
   ];
 }
 
@@ -234,54 +241,19 @@ extension BooruConfigDataX on BooruConfigData {
   }
 
   BlacklistConfigs? get blacklistConfigsTyped {
-    return BlacklistConfigs.fromJsonString(blacklistConfigs);
+    return BlacklistConfigs.tryParse(blacklistConfigs);
   }
 
   Set<Rating>? get granularRatingFilterTyped {
-    return parseGranularRatingFilters(granularRatingFilterString);
-  }
-
-  BooruConfigRatingFilter? get ratingFilterTyped {
-    if (ratingFilter < 0 ||
-        ratingFilter >= BooruConfigRatingFilter.values.length) {
-      return null;
-    }
-
-    return BooruConfigRatingFilter.values[ratingFilter];
-  }
-
-  BooruConfigBannedPostVisibility? get bannedPostVisibilityTyped {
-    if (bannedPostVisibility < 0 ||
-        bannedPostVisibility >= BooruConfigBannedPostVisibility.values.length) {
-      return null;
-    }
-
-    return BooruConfigBannedPostVisibility.values[bannedPostVisibility];
-  }
-
-  BooruConfigDeletedItemBehavior get deletedItemBehaviorTyped {
-    if (deletedItemBehavior < 0 ||
-        deletedItemBehavior >= BooruConfigDeletedItemBehavior.values.length) {
-      return BooruConfigDeletedItemBehavior.show;
-    }
-
-    return BooruConfigDeletedItemBehavior.values[deletedItemBehavior];
+    return GranularRatingFilter.parse(granularRatingFilterString)?.ratings;
   }
 
   ProxySettings? get proxySettingsTyped {
     return ProxySettings.fromJsonString(proxySettings);
   }
 
-  BooruConfigViewerNotesFetchBehavior? get viewerNotesFetchBehaviorTyped {
-    final behavior = viewerNotesFetchBehavior;
-
-    if (behavior == null ||
-        behavior < 0 ||
-        behavior >= BooruConfigViewerNotesFetchBehavior.values.length) {
-      return null;
-    }
-
-    return BooruConfigViewerNotesFetchBehavior.values[behavior];
+  TooltipDisplayMode? get tooltipDisplayModeTyped {
+    return TooltipDisplayMode.tryParse(tooltipDisplayMode);
   }
 }
 
@@ -313,6 +285,7 @@ extension BooruConfigDataCopyWith on BooruConfigData {
     LayoutConfigs? Function()? layout,
     ProxySettings? Function()? proxySettings,
     BooruConfigViewerNotesFetchBehavior? Function()? viewerNotesFetchBehavior,
+    TooltipDisplayMode? Function()? tooltipDisplayMode,
   }) {
     return BooruConfigData(
       booruId: booruId ?? this.booruId,
@@ -345,7 +318,7 @@ extension BooruConfigDataCopyWith on BooruConfigData {
           : this.imageDetaisQuality,
       videoQuality: videoQuality != null ? videoQuality() : this.videoQuality,
       granularRatingFilterString: granularRatingFilter != null
-          ? granularRatingFilterToString(granularRatingFilter())
+          ? GranularRatingFilter.parse(granularRatingFilter())?.toFilterString()
           : granularRatingFilterString,
       postGestures: postGestures != null
           ? postGestures()?.toJsonString() ??
@@ -372,6 +345,9 @@ extension BooruConfigDataCopyWith on BooruConfigData {
       viewerNotesFetchBehavior: viewerNotesFetchBehavior != null
           ? viewerNotesFetchBehavior()?.index
           : this.viewerNotesFetchBehavior,
+      tooltipDisplayMode: tooltipDisplayMode != null
+          ? tooltipDisplayMode()?.toData()
+          : this.tooltipDisplayMode,
     );
   }
 }

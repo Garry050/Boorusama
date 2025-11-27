@@ -6,3 +6,7 @@ export 'src/widgets/desktop_search_bar.dart';
 export 'src/widgets/search_controller.dart';
 export 'src/pages/search_page.dart';
 export 'src/pages/default_search_page.dart';
+export 'src/views/search_landing_view.dart';
+export 'src/widgets/selected_tag_list_with_data.dart';
+export 'src/widgets/raw_search_region.dart';
+export 'src/widgets/raw_search_page_scaffold.dart';

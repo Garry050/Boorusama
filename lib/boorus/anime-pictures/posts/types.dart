@@ -1,5 +1,5 @@
 // Project imports:
-import '../../../core/posts/post/post.dart';
+import '../../../core/posts/post/types.dart';
 
 class AnimePicturesPost extends SimplePost {
   AnimePicturesPost({
@@ -27,8 +27,36 @@ class AnimePicturesPost extends SimplePost {
     required super.createdAt,
     required super.uploaderName,
     required super.metadata,
+    required super.status,
     required this.tagsCount,
   });
 
   final int tagsCount;
+}
+
+class AnimePicturesPostStatus implements PostStatus {
+  AnimePicturesPostStatus._({
+    required this.value,
+    required this.type,
+  });
+
+  static AnimePicturesPostStatus? from({
+    required int? value,
+    required int? type,
+  }) => switch ((value, type)) {
+    (final v?, final t?) => AnimePicturesPostStatus._(
+      value: v,
+      type: t,
+    ),
+    _ => null,
+  };
+
+  final int value;
+  final int type;
+
+  @override
+  bool matches(String status) {
+    // AnimePictures uses numeric status, try to match by string representation
+    return value.toString() == status;
+  }
 }

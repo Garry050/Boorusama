@@ -7,10 +7,13 @@ import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../core/configs/config/types.dart';
-import '../../../core/posts/details/details.dart';
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/details/types.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
+import 'status.dart';
+
+export 'status.dart';
 
 class E621Post extends Equatable
     with MediaInfoMixin, TranslatedMixin, ImageInfoMixin, VideoInfoMixin
@@ -50,8 +53,10 @@ class E621Post extends Equatable
     required this.videoUrl,
     required this.parentId,
     required this.uploaderId,
+    required this.uploaderName,
     required this.metadata,
     required this.videoVariants,
+    required this.status,
   });
 
   @override
@@ -140,10 +145,13 @@ class E621Post extends Equatable
   final int? uploaderId;
 
   @override
-  String? get uploaderName => null;
+  final String? uploaderName;
 
   @override
   final PostMetadata? metadata;
+
+  @override
+  final E621PostStatus? status;
 
   final Map<E621VideoVariantType, E621VideoVariant> videoVariants;
 }

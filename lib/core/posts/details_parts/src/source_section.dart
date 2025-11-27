@@ -8,10 +8,10 @@ import 'package:material_symbols_icons/symbols.dart';
 // Project imports:
 import '../../../../foundation/url_launcher.dart';
 import '../../../config_widgets/website_logo.dart';
-import '../../../theme.dart';
-import '../../details/details.dart';
-import '../../post/post.dart';
-import '../../sources/source.dart';
+import '../../../themes/theme/types.dart';
+import '../../details/types.dart';
+import '../../post/types.dart';
+import '../../sources/types.dart';
 
 class DefaultInheritedSourceSection<T extends Post> extends StatelessWidget {
   const DefaultInheritedSourceSection({

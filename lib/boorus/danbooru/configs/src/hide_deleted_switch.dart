@@ -11,7 +11,7 @@ import '../../../../core/configs/create/providers.dart';
 import '../../../../core/configs/search/widgets.dart';
 import '../../../../core/configs/viewer/widgets.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../posts/post/post.dart';
+import '../../posts/post/types.dart';
 
 class DanbooruHideDeletedSwitch extends ConsumerWidget {
   const DanbooruHideDeletedSwitch({
@@ -22,9 +22,9 @@ class DanbooruHideDeletedSwitch extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hideDeleted = ref.watch(
       editBooruConfigProvider(ref.watch(editBooruConfigIdProvider)).select(
-        (value) =>
-            value.deletedItemBehaviorTyped ==
-            BooruConfigDeletedItemBehavior.hide,
+        (value) => BooruConfigDeletedItemBehavior.parse(
+          value.deletedItemBehavior,
+        ).isHidden,
       ),
     );
 
@@ -48,13 +48,16 @@ class DanbooruHideBannedSwitch extends ConsumerWidget {
     final bannedVis = ref.watch(
       editBooruConfigProvider(
         ref.watch(editBooruConfigIdProvider),
-      ).select((value) => value.bannedPostVisibilityTyped),
+      ).select(
+        (value) =>
+            BooruConfigBannedPostVisibility.parse(value.bannedPostVisibility),
+      ),
     );
 
     return BooruSwitchListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(context.t.booru.hide_banned_label),
-      value: bannedVis == BooruConfigBannedPostVisibility.hide,
+      value: bannedVis.isHidden,
       onChanged: (value) => ref.editNotifier.updateBannedPostVisibility(value),
       subtitle: Text(
         context.t.booru.hide_banned_description,

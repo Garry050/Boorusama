@@ -2,10 +2,10 @@
 import 'package:booru_clients/moebooru.dart';
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
 import '../../../core/posts/post/tags.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 import 'types.dart';
 
 MoebooruPost postDtoToPostNoMetadata(PostDto postDto) {
@@ -25,7 +25,7 @@ MoebooruPost postDtoToPost(PostDto postDto, PostMetadata? metadata) {
     originalImageUrl: postDto.fileUrl ?? '',
     tags: postDto.tags.splitTagString(),
     source: PostSource.from(postDto.source),
-    rating: mapStringToRating(postDto.rating ?? ''),
+    rating: Rating.parse(postDto.rating ?? ''),
     hasComment: false,
     isTranslated: false,
     hasParentOrChildren: hasParentOrChildren,
@@ -42,5 +42,6 @@ MoebooruPost postDtoToPost(PostDto postDto, PostMetadata? metadata) {
     uploaderId: postDto.creatorId,
     uploaderName: postDto.author,
     metadata: metadata,
+    status: StringPostStatus.tryParse(postDto.status),
   );
 }

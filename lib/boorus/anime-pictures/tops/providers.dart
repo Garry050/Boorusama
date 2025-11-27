@@ -10,6 +10,19 @@ import '../posts/types.dart';
 
 typedef TopParams = ({BooruConfigAuth config, bool erotic});
 
+class EroticModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void updateValue(bool value) {
+    state = value;
+  }
+}
+
+final eroticOnProvider = NotifierProvider<EroticModeNotifier, bool>(
+  EroticModeNotifier.new,
+);
+
 final animePicturesDailyPopularProvider = FutureProvider.autoDispose
     .family<List<AnimePicturesPost>, TopParams>((ref, params) {
       final config = params.config;

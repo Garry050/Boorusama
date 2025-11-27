@@ -6,13 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../../configs/config/types.dart';
-import '../../../../http/providers.dart';
+import '../../../../http/client/providers.dart';
 import '../../../details_pageview/widgets.dart';
 import '../../../listing/providers.dart';
 import '../../../media_preload/providers.dart';
 import '../../../media_preload/types.dart';
-import '../../../post/post.dart';
-import '../../details.dart';
+import '../../../post/types.dart';
+import 'post_details_page_view_scope.dart';
 
 class PostDetailsImagePreloader<T extends Post> extends ConsumerStatefulWidget {
   const PostDetailsImagePreloader({

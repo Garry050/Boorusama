@@ -1,5 +1,5 @@
 // Project imports:
-import '../../../rating/rating.dart';
+import '../../../rating/types.dart';
 import '../tag_expression_type.dart';
 import '../tag_filter_data.dart';
 
@@ -11,7 +11,7 @@ class RatingTypeParser implements TagExpressionTypeParser {
 
   @override
   TagExpressionType parse(String exp, String value) =>
-      RatingType(exp, mapStringToRating(value));
+      RatingType(exp, Rating.parse(value));
 }
 
 class RatingType extends TagExpressionType {

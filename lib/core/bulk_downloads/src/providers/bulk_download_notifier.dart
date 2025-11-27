@@ -12,12 +12,14 @@ import '../../../../foundation/permissions.dart';
 import '../../../../foundation/platform.dart';
 import '../../../../foundation/utils/duration_utils.dart';
 import '../../../analytics/providers.dart';
-import '../../../configs/ref.dart';
+import '../../../configs/config/providers.dart';
 import '../../../download_manager/providers.dart';
 import '../../../downloads/downloader/providers.dart';
-import '../../../downloads/downloader/types.dart';
-import '../../../posts/sources/source.dart';
+import '../../../downloads/downloader/types.dart' as d;
+import '../../../posts/sources/types.dart';
 import '../../../premiums/providers.dart';
+import '../data/filesystem.dart';
+import '../data/providers.dart';
 import '../notifications/providers.dart';
 import '../types/bulk_download_error.dart';
 import '../types/bulk_download_session.dart';
@@ -33,8 +35,6 @@ import '../types/saved_download_task.dart';
 import 'bulk_progress.dart';
 import 'dry_run.dart';
 import 'dry_run_state.dart';
-import 'file_system_exist_checker.dart';
-import 'providers.dart';
 import 'saved_task_lock_notifier.dart';
 import 'session_cancellation_provider.dart';
 
@@ -377,9 +377,9 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     DownloadConfigs? downloadConfigs,
   }) async {
     final path = task.path;
+    final fallbackChecker = ref.read(defaultDirectoryExistCheckerProvider);
     final directoryChecker =
-        downloadConfigs?.directoryExistChecker ??
-        const FileSystemDirectoryExistChecker();
+        downloadConfigs?.directoryExistChecker ?? fallbackChecker;
 
     // Check if directory exists
     if (!directoryChecker.exists(path)) {
@@ -1356,7 +1356,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     String sessionId,
     DownloadTask task,
     int currentPage,
-    DownloadService downloader,
+    d.DownloadService downloader,
     DownloadConfigs? downloadConfigs,
   ) async {
     final records = await _withRepo(
@@ -1379,24 +1379,24 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         break;
       }
 
-      final result = await downloader
-          .downloadCustomLocation(
-            url: record.url,
-            path: task.path,
-            filename: record.fileName,
-            skipIfExists: false, // We already handled this in the dry run
-            headers: record.headers,
-            metadata: DownloaderMetadata(
-              thumbnailUrl: record.thumbnailImageUrl,
-              fileSize: record.fileSize,
-              siteUrl: PostSource.from(record.thumbnailImageUrl).url,
-              group: sessionId,
-            ),
-          )
-          .run();
+      final result = await downloader.download(
+        d.DownloadOptions(
+          url: record.url,
+          path: task.path,
+          filename: record.fileName,
+          skipIfExists: false, // We already handled this in the dry run
+          headers: record.headers,
+          metadata: d.DownloaderMetadata(
+            thumbnailUrl: record.thumbnailImageUrl,
+            fileSize: record.fileSize,
+            siteUrl: PostSource.from(record.thumbnailImageUrl).url,
+            group: sessionId,
+          ),
+        ),
+      );
 
-      await result.fold(
-        (error) async {
+      switch (result) {
+        case d.DownloadFailure(:final error):
           await _withRepo(
             (repo) => repo.updateRecord(
               url: record.url,
@@ -1405,8 +1405,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
               status: DownloadRecordStatus.failed,
             ),
           );
-        },
-        (info) async {
+        case d.DownloadSuccess(:final info):
           await _withRepo(
             (repo) => repo.updateRecord(
               url: record.url,
@@ -1415,8 +1414,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
               status: DownloadRecordStatus.downloading,
             ),
           );
-        },
-      );
+      }
 
       // Delay to prevent too many requests
       final delay = downloadConfigs?.delayBetweenDownloads;

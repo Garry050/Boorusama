@@ -6,13 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
+import '../../../../posts/details/types.dart';
+import '../../../../posts/slideshow/types.dart';
 import '../../../../videos/engines/providers.dart';
 import '../../../../videos/engines/types.dart';
+import '../../../../videos/player/types.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../routes.dart';
 import '../../types/settings.dart';
-import '../../types/types.dart';
-import '../../types/types_l10n.dart';
 import '../../widgets/settings_header.dart';
 import '../../widgets/settings_radio_card.dart';
 import '../../widgets/settings_tile.dart';
@@ -111,7 +112,7 @@ class ImageViewerSettingsSection extends ConsumerWidget {
         ),
         BooruSwitchListTile(
           title: Text(context.t.settings.image_viewer.slideshow_skip),
-          value: viewer.skipSlideshowTransition,
+          value: viewer.slideshowTransitionType.isSkip,
           onChanged: (value) => onUpdate(
             viewer.copyWith(
               slideshowTransitionType: value
@@ -119,6 +120,64 @@ class ImageViewerSettingsSection extends ConsumerWidget {
                   : SlideshowTransitionType.natural,
             ),
           ),
+        ),
+        SettingsRadioCard(
+          title: context.t.settings.image_viewer.slideshow_video_behavior,
+          subtitle: context
+              .t
+              .settings
+              .image_viewer
+              .slideshow_video_behavior_explanation,
+          entries: [
+            SettingsRadioCardEntry(
+              title: context
+                  .t
+                  .settings
+                  .image_viewer
+                  .slideshow_video_behaviors
+                  .wait_for_completion,
+              value: SlideshowVideoBehavior.waitForCompletion,
+              groupValue: viewer.slideshowVideoBehavior,
+              subtitle: context
+                  .t
+                  .settings
+                  .image_viewer
+                  .slideshow_video_behaviors
+                  .wait_for_completion_description,
+              onSelected: (value) {
+                onUpdate(
+                  viewer.copyWith(
+                    slideshowVideoBehavior:
+                        SlideshowVideoBehavior.waitForCompletion,
+                  ),
+                );
+              },
+            ),
+            SettingsRadioCardEntry(
+              title: context
+                  .t
+                  .settings
+                  .image_viewer
+                  .slideshow_video_behaviors
+                  .fixed_interval,
+              value: SlideshowVideoBehavior.fixedInterval,
+              groupValue: viewer.slideshowVideoBehavior,
+              subtitle: context
+                  .t
+                  .settings
+                  .image_viewer
+                  .slideshow_video_behaviors
+                  .fixed_interval_description,
+              onSelected: (value) {
+                onUpdate(
+                  viewer.copyWith(
+                    slideshowVideoBehavior:
+                        SlideshowVideoBehavior.fixedInterval,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         const Divider(thickness: 1),
         SettingsHeader(
@@ -146,7 +205,7 @@ class ImageViewerSettingsSection extends ConsumerWidget {
         ),
         BooruSwitchListTile(
           title: Text(context.t.settings.image_viewer.mute_video),
-          value: viewer.muteAudioByDefault,
+          value: viewer.videoAudioDefaultState.muteByDefault,
           onChanged: (value) => onUpdate(
             viewer.copyWith(
               videoAudioDefaultState: value

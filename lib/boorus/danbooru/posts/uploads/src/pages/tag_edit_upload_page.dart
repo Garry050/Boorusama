@@ -7,21 +7,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../../../core/configs/ref.dart';
-import '../../../../../../core/posts/sources/source.dart';
+import '../../../../../../core/configs/config/providers.dart';
+import '../../../../../../core/posts/sources/types.dart';
 import '../../../../../../core/search/suggestions/providers.dart';
 import '../../../../../../core/widgets/widgets.dart';
 import '../../../../../../foundation/animations/constants.dart';
 import '../../../../../../foundation/toast.dart';
 import '../../../../sources/providers.dart';
 import '../../../../tags/edit/widgets.dart';
-import '../../../post/post.dart';
 import '../../../post/providers.dart';
+import '../../../post/types.dart';
 import '../internal_widgets/similar_tab.dart';
 import '../internal_widgets/source_tab.dart';
 import '../internal_widgets/tag_tab.dart';
 import '../providers/providers.dart';
-import '../providers/upload_notifier.dart';
+import '../providers/upload_provider.dart';
 import '../types/danbooru_upload_post.dart';
 import '../types/utils.dart';
 import 'tag_edit_scaffold.dart';

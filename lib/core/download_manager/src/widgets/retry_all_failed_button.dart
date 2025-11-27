@@ -2,16 +2,16 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../configs/config.dart';
 import '../../../configs/config/providers.dart';
-import '../../../downloads/downloader/providers.dart';
-import '../../../http/providers.dart';
+import '../../../configs/config/types.dart';
+import '../../../ddos/handler/providers.dart';
+import '../../../downloads/background/types.dart';
+import '../../../http/client/providers.dart';
 import '../../types.dart';
 import '../providers/download_task_updates_notifier.dart';
 import '../providers/internal_providers.dart';

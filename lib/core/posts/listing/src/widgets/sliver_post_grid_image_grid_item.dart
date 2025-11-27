@@ -9,13 +9,13 @@ import 'package:selection_mode/selection_mode.dart';
 
 // Project imports:
 import '../../../../boorus/engine/providers.dart';
-import '../../../../configs/gesture/gesture.dart';
-import '../../../../configs/ref.dart';
+import '../../../../configs/config/providers.dart';
+import '../../../../configs/gesture/types.dart';
 import '../../../../settings/providers.dart';
-import '../../../../settings/settings.dart';
-import '../../../post/post.dart';
 import '../../../post/tags.dart';
+import '../../../post/types.dart';
 import '../../../post/widgets.dart';
+import '../types/image_list_type.dart';
 
 class BlockOverlayItem {
   const BlockOverlayItem({

@@ -3,9 +3,9 @@ import 'package:booru_clients/philomena.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 import 'types.dart';
 
 PhilomenaPost postDtoToPost(ImageDto e, PostMetadata? metadata) {
@@ -52,6 +52,7 @@ PhilomenaPost postDtoToPost(ImageDto e, PostMetadata? metadata) {
     uploaderId: e.uploaderId,
     uploaderName: e.uploader,
     metadata: metadata,
+    status: null,
   );
 }
 

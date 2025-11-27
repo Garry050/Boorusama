@@ -13,21 +13,14 @@ import '../../../../foundation/utils/file_utils.dart';
 import '../../../bookmarks/providers.dart';
 import '../../../cache/cache_notifier.dart';
 import '../../../cache/providers.dart';
+import '../../../widgets/settings_card.dart';
 import '../../../widgets/widgets.dart';
 import '../providers/settings_notifier.dart';
 import '../providers/settings_provider.dart';
 import '../types/settings.dart';
-import '../widgets/settings_card.dart';
 import '../widgets/settings_page_scaffold.dart';
 import '../widgets/settings_tile.dart';
 import '../widgets/storage_segment_bar.dart';
-
-final bookmarkCacheInfoProvider = FutureProvider.autoDispose<(int, int)>((
-  ref,
-) {
-  final cacheManager = ref.watch(bookmarkImageCacheManagerProvider);
-  return cacheManager.getCacheStats();
-});
 
 final diskSpaceProvider = Provider.autoDispose<(CacheSizeInfo, int)>((
   ref,
@@ -38,6 +31,7 @@ final diskSpaceProvider = Provider.autoDispose<(CacheSizeInfo, int)>((
   final diskSpace = ref.watch(diskSpaceInfoProvider);
   final videoCache = ref.watch(videoCacheSizeProvider);
   final bookmarkCache = ref.watch(bookmarkCacheInfoProvider);
+  final persistentCache = ref.watch(persistentCacheSizeProvider);
 
   final cacheInfo = CacheSizeInfo(
     appCacheSize: appCache.valueOrNull ?? DirectorySizeInfo.zero,
@@ -45,6 +39,7 @@ final diskSpaceProvider = Provider.autoDispose<(CacheSizeInfo, int)>((
     tagCacheSize: tagCache.valueOrNull ?? 0,
     diskSpaceInfo: diskSpace.valueOrNull ?? DiskSpaceInfo.zero,
     videoCacheSize: videoCache.valueOrNull ?? DirectorySizeInfo.zero,
+    persistentCacheSize: persistentCache.valueOrNull ?? 0,
   );
 
   final bookmarkCacheSize = bookmarkCache.valueOrNull?.$1 ?? 0;

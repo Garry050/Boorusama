@@ -3,9 +3,9 @@ import 'package:booru_clients/e621.dart';
 import 'package:path/path.dart' show extension;
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/src/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 import 'types.dart';
 
 E621Post? postDtoToPostNoMetadata(PostDto dto) {
@@ -38,7 +38,7 @@ E621Post? postDtoToPost(PostDto dto, PostMetadata? metadata) {
     thumbnailImageUrl: previewUrl,
     sampleImageUrl: isGif ? originalUrl : sampleUrl ?? originalUrl,
     originalImageUrl: originalUrl,
-    rating: mapStringToRating(dto.rating),
+    rating: Rating.parse(dto.rating),
     hasComment: dto.commentCount != null && dto.commentCount! > 0,
     isTranslated: dto.hasNotes ?? false,
     hasParentOrChildren:
@@ -69,8 +69,14 @@ E621Post? postDtoToPost(PostDto dto, PostMetadata? metadata) {
     description: dto.description ?? '',
     parentId: dto.relationships?.parentId,
     uploaderId: dto.uploaderId,
+    uploaderName: dto.uploaderName,
     metadata: metadata,
     videoVariants: videoVariants,
+    status: E621PostStatus.from(
+      isPending: dto.flags?.pending,
+      isFlagged: dto.flags?.flagged,
+      isDeleted: dto.flags?.deleted,
+    ),
   );
 }
 

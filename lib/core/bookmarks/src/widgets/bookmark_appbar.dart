@@ -8,7 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
 import '../../../../core/widgets/widgets.dart';
-import '../../../configs/ref.dart';
+import '../../../configs/config/providers.dart';
 import '../../../posts/listing/providers.dart';
 import '../data/bookmark_convert.dart';
 import '../providers/bookmark_provider.dart';
@@ -27,16 +27,6 @@ class BookmarkAppBar extends ConsumerWidget {
     final edit = ref.watch(bookmarkEditProvider);
     final auth = ref.watchConfigAuth;
     final download = ref.watchConfigDownload;
-
-    final itemBuilder = {
-      'edit': Text(context.t.generic.action.edit),
-      'download_all': ValueListenableBuilder(
-        valueListenable: controller.itemsNotifier,
-        builder: (_, posts, _) => Text(
-          'Download ${posts.length} bookmarks'.hc,
-        ),
-      ),
-    };
 
     return AppBar(
       title: Text(context.t.bookmark.title),
@@ -57,19 +47,24 @@ class BookmarkAppBar extends ConsumerWidget {
             valueListenable: controller.itemsNotifier,
             builder: (context, posts, child) => posts.isNotEmpty
                 ? BooruPopupMenuButton(
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'edit':
+                    items: [
+                      BooruPopupMenuItem(
+                        title: Text(context.t.generic.action.edit),
+                        onTap: () {
                           ref.read(bookmarkEditProvider.notifier).state = true;
-                        case 'download_all':
+                        },
+                      ),
+                      BooruPopupMenuItem(
+                        title: Text('Download ${posts.length} bookmarks'.hc),
+                        onTap: () {
                           ref.bookmarks.downloadBookmarks(
                             auth,
                             download,
                             controller.items.map((e) => e.bookmark).toList(),
                           );
-                      }
-                    },
-                    itemBuilder: itemBuilder,
+                        },
+                      ),
+                    ],
                   )
                 : const SizedBox.shrink(),
           ),

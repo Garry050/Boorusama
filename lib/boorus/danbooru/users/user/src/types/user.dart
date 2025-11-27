@@ -3,13 +3,13 @@ import 'package:equatable/equatable.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../../../core/users/user.dart';
+import '../../../../../../core/users/types.dart';
 import 'user_level.dart';
 
 String getDanbooruProfileUrl(String url) =>
     url.endsWith('/') ? '${url}profile' : '$url/profile';
 
-class DanbooruUser extends Equatable {
+class DanbooruUser extends Equatable implements User {
   const DanbooruUser({
     required this.id,
     required this.level,
@@ -42,8 +42,10 @@ class DanbooruUser extends Equatable {
     negativeFeedbackCount: 0,
   );
 
+  @override
   final UserId id;
   final UserLevel level;
+  @override
   final Username name;
   final DateTime joinedDate;
   final int uploadCount;
@@ -128,6 +130,7 @@ class UserSelf extends Equatable implements User {
   @override
   final UserId id;
   final UserLevel level;
+  @override
   final Username name;
   final Set<String> blacklistedTags;
 

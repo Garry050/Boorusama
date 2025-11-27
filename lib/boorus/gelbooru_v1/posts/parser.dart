@@ -1,13 +1,12 @@
 // Package imports:
 import 'package:booru_clients/gelbooru.dart';
-import 'package:path/path.dart' show extension;
+import 'package:coreutils/coreutils.dart';
 
 // Project imports:
-import '../../../core/downloads/urls/sanitizer.dart';
-import '../../../core/posts/post/post.dart';
 import '../../../core/posts/post/tags.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 import 'types.dart';
 
 GelbooruV1Post postDtoToPost(
@@ -16,11 +15,11 @@ GelbooruV1Post postDtoToPost(
 ) {
   return GelbooruV1Post(
     id: post.id ?? 0,
-    thumbnailImageUrl: sanitizedUrl(post.previewUrl ?? ''),
-    sampleImageUrl: sanitizedUrl(post.sampleUrl ?? ''),
-    originalImageUrl: sanitizedUrl(post.fileUrl ?? ''),
+    thumbnailImageUrl: normalizeUrl(post.previewUrl),
+    sampleImageUrl: normalizeUrl(post.sampleUrl),
+    originalImageUrl: normalizeUrl(post.fileUrl),
     tags: post.tags.splitTagString(),
-    rating: mapStringToRating(post.rating),
+    rating: Rating.parse(post.rating),
     hasComment: false,
     isTranslated: false,
     hasParentOrChildren: false,
@@ -28,7 +27,7 @@ GelbooruV1Post postDtoToPost(
     score: post.score ?? 0,
     duration: 0,
     fileSize: 0,
-    format: extension(post.fileUrl ?? ''),
+    format: urlExtension(post.fileUrl),
     hasSound: null,
     height: 0,
     md5: post.md5 ?? '',

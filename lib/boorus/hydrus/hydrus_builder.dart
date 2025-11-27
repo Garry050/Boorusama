@@ -7,14 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Project imports:
 import '../../../core/configs/create/widgets.dart';
 import '../../core/boorus/defaults/widgets.dart';
-import '../../core/boorus/engine/engine.dart';
+import '../../core/boorus/engine/types.dart';
 import '../../core/configs/auth/widgets.dart';
-import '../../core/configs/config.dart';
+import '../../core/configs/config/providers.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/manage/widgets.dart';
-import '../../core/configs/ref.dart';
 import '../../core/posts/details/widgets.dart';
-import '../../core/posts/details_parts/types.dart';
-import '../../core/posts/details_parts/widgets.dart';
+import '../../core/search/search/routes.dart';
 import '../../core/search/search/widgets.dart';
 import 'configs/widgets.dart';
 import 'favorites/widgets.dart';
@@ -95,20 +94,7 @@ class HydrusBuilder extends BaseBooruBuilder {
       );
 
   @override
-  final postDetailsUIBuilder = PostDetailsUIBuilder(
-    preview: {
-      DetailsPart.toolbar: (context) => const HydrusPostActionToolbar(),
-    },
-    full: {
-      DetailsPart.toolbar: (context) => const HydrusPostActionToolbar(),
-      DetailsPart.tags: (context) =>
-          const DefaultInheritedBasicTagsTile<HydrusPost>(),
-      DetailsPart.fileDetails: (context) =>
-          const DefaultInheritedFileDetailsSection<HydrusPost>(
-            initialExpanded: true,
-          ),
-    },
-  );
+  final postDetailsUIBuilder = kHydrusPostDetailsUIBuilder;
 
   @override
   CreateUnknownBooruWidgetsBuilder get unknownBooruWidgetsBuilder =>

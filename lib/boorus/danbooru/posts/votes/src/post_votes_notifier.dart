@@ -6,15 +6,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../../core/configs/auth/auth.dart';
-import '../../../../../core/configs/config.dart';
-import '../../../../../core/configs/ref.dart';
+import '../../../../../core/configs/auth/types.dart';
+import '../../../../../core/configs/config/providers.dart';
+import '../../../../../core/configs/config/types.dart';
 import '../../../../../core/posts/votes/providers.dart';
+import '../../../../../core/posts/votes/types.dart';
 import '../../../users/user/providers.dart';
-import '../../post/post.dart';
+import '../../post/types.dart';
 import 'post_vote.dart';
 import 'post_vote_repository.dart';
 import 'providers.dart';
+import 'removable_vote_id.dart';
 
 final danbooruPostVotesProvider =
     NotifierProvider.family<
@@ -34,8 +36,7 @@ final danbooruPostVoteProvider = Provider.autoDispose
     );
 
 class PostVotesNotifier
-    extends FamilyNotifier<IMap<int, DanbooruPostVote?>, BooruConfigAuth>
-    with VotesNotifierMixin<DanbooruPostVote, DanbooruPost> {
+    extends FamilyNotifier<IMap<int, DanbooruPostVote?>, BooruConfigAuth> {
   @override
   IMap<int, DanbooruPostVote?> build(BooruConfigAuth arg) {
     return <int, DanbooruPostVote?>{}.lock;
@@ -43,50 +44,104 @@ class PostVotesNotifier
 
   PostVoteRepository get repo => ref.read(danbooruPostVoteRepoProvider(arg));
 
-  @override
-  Future<DanbooruPostVote?> Function(int postId) get upvoter => repo.upvote;
+  Future<void> upvote(int postId, {bool localOnly = false}) async {
+    final vote = localOnly
+        ? DanbooruPostVote.local(postId: postId, score: 1)
+        : await repo.upvote(postId);
 
-  @override
-  Future<bool> Function(int postId) get voteRemover => repo.removeVote;
+    state = VotesStateHelpers.updateVote(state, vote);
+  }
 
-  @override
-  Future<DanbooruPostVote?> Function(int postId) get downvoter => repo.downvote;
+  Future<void> downvote(int postId, {bool localOnly = false}) async {
+    final vote = localOnly
+        ? DanbooruPostVote.local(postId: postId, score: -1)
+        : await repo.downvote(postId);
 
-  @override
-  DanbooruPostVote Function(int postId, int score) get localVoteBuilder =>
-      (postId, score) => DanbooruPostVote.local(postId: postId, score: score);
+    state = VotesStateHelpers.updateVote(state, vote);
+  }
 
-  @override
-  void Function(IMap<int, DanbooruPostVote?> data) get updateVotes =>
-      (data) => state = data;
+  void removeLocalVote(int postId) {
+    state = VotesStateHelpers.removeVoteFromState(state, postId);
+  }
 
-  @override
-  IMap<int, DanbooruPostVote?> get votes => state;
+  Future<bool> removeVote(
+    int postId,
+    PostVoteId? voteId,
+  ) async {
+    final removableVoteId = switch (voteId) {
+      null => await _lookupVoteId(postId),
+      final id when DanbooruPostVote.isLocalVote(id) => await _lookupVoteId(
+        postId,
+      ),
+      final id => FoundVoteId(id),
+    };
 
-  @override
-  Future<List<DanbooruPostVote>> Function(List<DanbooruPost> posts)
-  get votesFetcher => (posts) async {
+    return switch (removableVoteId) {
+      FoundVoteId(:final voteId) => await _removeVoteAndUpdateState(
+        postId,
+        voteId,
+      ),
+      VoteNotFound() || NoVoteToRemove() => false,
+    };
+  }
+
+  Future<RemovableVoteId> _lookupVoteId(int postId) async {
     final user = await ref.read(danbooruCurrentUserProvider(arg).future);
-    if (user == null) return [];
+    if (user == null) return const NoVoteToRemove();
+
+    final currentVoteState = state[postId]?.voteState;
+    final userVotes = await repo.getPostVotesFromUser([postId], user.id);
+
+    return RemovableVoteId.fromUserVotes(currentVoteState, userVotes);
+  }
+
+  Future<bool> _removeVoteAndUpdateState(int postId, PostVoteId voteId) async {
+    final success = await repo.removeVote(voteId);
+    if (success) {
+      removeLocalVote(postId);
+    }
+    return success;
+  }
+
+  Future<void> getVotes(List<DanbooruPost> posts) async {
+    final user = await ref.read(danbooruCurrentUserProvider(arg).future);
+    if (user == null) return;
 
     final postIds = posts.map((e) => e.id).toList();
+    final postIdsToFetch = VotesStateHelpers.filterPostIdsNeedingFetch(
+      state,
+      postIds,
+    );
 
-    return repo.getPostVotesFromUser(postIds, user.id);
-  };
+    if (postIdsToFetch.isEmpty) return;
+
+    final fetchedVotes = await repo.getPostVotesFromUser(postIds, user.id);
+    state = VotesStateHelpers.mergeVotesIntoState(state, postIds, fetchedVotes);
+  }
 }
 
 extension DanbooruVoteX on WidgetRef {
-  void danbooruRemoveVote(int postId) {
+  void danbooruRemoveVote(
+    int postId,
+    PostVoteId id,
+  ) {
     guardLogin(this, () async {
-      await read(
+      final success = await read(
         danbooruPostVotesProvider(readConfigAuth).notifier,
-      ).removeVote(postId);
+      ).removeVote(postId, id);
 
       if (context.mounted) {
-        showSuccessSnackBar(
-          context,
-          'Vote removed',
-        );
+        if (success) {
+          showSuccessSnackBar(
+            context,
+            'Vote removed',
+          );
+        } else {
+          showSuccessSnackBar(
+            context,
+            'Failed to remove vote',
+          );
+        }
       }
     });
   }

@@ -3,10 +3,9 @@ import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../core/boorus/booru/booru.dart';
 import '../../core/boorus/booru/providers.dart';
-import '../../core/boorus/engine/engine.dart';
-import '../../core/http/http.dart';
+import '../../core/boorus/booru/types.dart';
+import '../../core/boorus/engine/types.dart';
 import 'moebooru_builder.dart';
 import 'moebooru_repository.dart';
 
@@ -18,7 +17,7 @@ BooruComponents createMoebooru() => BooruComponents(
 
 final moebooruProvider = Provider<Moebooru>((ref) {
   final booruDb = ref.watch(booruDbProvider);
-  final booru = booruDb.getBooru<Moebooru>();
+  final booru = booruDb.getBooru(BooruType.moebooru) as Moebooru?;
 
   if (booru == null) {
     throw Exception('Booru not found for type: ${BooruType.moebooru}');
@@ -29,28 +28,29 @@ final moebooruProvider = Provider<Moebooru>((ref) {
 
 typedef MoebooruSite = ({
   String url,
+  String? postRequestUrl,
   String salt,
+  String? version,
   bool? favoriteSupport,
   NetworkProtocol? overrideProtocol,
 });
 
 final class Moebooru extends Booru {
   const Moebooru({
-    required super.name,
-    required super.protocol,
+    required super.config,
     required List<MoebooruSite> sites,
   }) : _sites = sites;
 
   final List<MoebooruSite> _sites;
 
-  @override
-  Iterable<String> get sites => _sites.map((e) => e.url);
-
-  @override
-  BooruType get type => BooruType.moebooru;
-
   String? getSalt(String url) =>
       _sites.firstWhereOrNull((e) => url.contains(e.url))?.salt;
+
+  String? getVersion(String url) =>
+      _sites.firstWhereOrNull((e) => url.contains(e.url))?.version;
+
+  String? getPostRequestUrl(String url) =>
+      _sites.firstWhereOrNull((e) => url.contains(e.url))?.postRequestUrl;
 
   bool supportsFavorite(String url) =>
       _sites.firstWhereOrNull((e) => url.contains(e.url))?.favoriteSupport ??
@@ -59,27 +59,29 @@ final class Moebooru extends Booru {
   @override
   NetworkProtocol? getSiteProtocol(String url) =>
       _sites.firstWhereOrNull((e) => url.contains(e.url))?.overrideProtocol ??
-      protocol;
+      super.getSiteProtocol(url);
 }
 
 class MoebooruParser extends BooruParser {
   @override
-  BooruType get booruType => BooruType.moebooru;
-
-  @override
-  Booru parse(String name, dynamic data) {
+  Booru parse() {
+    const config = BooruYamlConfigs.moebooru;
     final sites = <MoebooruSite>[];
 
-    for (final item in data['sites']) {
-      final url = item['url'] as String;
-      final salt = item['salt'] as String;
-      final favoriteSupport = item['favorite-support'] as bool?;
-      final overrideProtocol = item['protocol'];
+    for (final siteConfig in config.sites) {
+      final url = siteConfig.url;
+      final salt = siteConfig.metadata['salt'] as String;
+      final version = siteConfig.metadata['version'] as String?;
+      final postRequestUrl = siteConfig.metadata['post-request-url'] as String?;
+      final favoriteSupport = siteConfig.metadata['favorite-support'] as bool?;
+      final overrideProtocol = siteConfig.metadata['protocol'];
 
       sites.add(
         (
           url: url,
           salt: salt,
+          postRequestUrl: postRequestUrl,
+          version: version,
           favoriteSupport: favoriteSupport,
           overrideProtocol: overrideProtocol != null
               ? parseProtocol(overrideProtocol)
@@ -89,8 +91,7 @@ class MoebooruParser extends BooruParser {
     }
 
     return Moebooru(
-      name: name,
-      protocol: parseProtocol(data['protocol']),
+      config: config,
       sites: sites,
     );
   }

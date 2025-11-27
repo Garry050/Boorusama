@@ -12,40 +12,38 @@ import 'package:foundation/foundation.dart';
 import 'package:rich_text_controller/rich_text_controller.dart';
 
 // Project imports:
-import '../../core/blacklists/blacklist.dart';
+import '../../core/blacklists/types.dart';
 import '../../core/boorus/defaults/types.dart';
-import '../../core/boorus/engine/engine.dart';
+import '../../core/boorus/engine/types.dart';
 import '../../core/comments/types.dart';
-import '../../core/configs/config.dart';
 import '../../core/configs/config/providers.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/create.dart';
-import '../../core/configs/gesture/gesture.dart';
+import '../../core/configs/gesture/types.dart';
 import '../../core/downloads/downloader/providers.dart';
 import '../../core/downloads/filename/providers.dart';
 import '../../core/downloads/filename/types.dart';
+import '../../core/haptics/types.dart';
 import '../../core/images/providers.dart';
 import '../../core/notes/note/types.dart';
-import '../../core/posts/count/count.dart';
-import '../../core/posts/details/details.dart';
+import '../../core/posts/count/types.dart';
+import '../../core/posts/details/types.dart';
 import '../../core/posts/details_parts/widgets.dart';
 import '../../core/posts/favorites/types.dart';
 import '../../core/posts/favorites/widgets.dart';
-import '../../core/posts/listing/list.dart';
-import '../../core/posts/post/post.dart';
+import '../../core/posts/listing/types.dart';
 import '../../core/posts/post/providers.dart';
 import '../../core/posts/post/routes.dart';
-import '../../core/posts/rating/rating.dart';
+import '../../core/posts/post/types.dart';
+import '../../core/posts/rating/types.dart';
 import '../../core/posts/shares/providers.dart';
-import '../../core/posts/sources/source.dart';
-import '../../core/search/queries/query.dart';
+import '../../core/posts/sources/types.dart';
+import '../../core/search/queries/types.dart';
 import '../../core/settings/providers.dart';
-import '../../core/settings/settings.dart';
 import '../../core/tags/autocompletes/types.dart';
-import '../../core/tags/configs/configs.dart';
-import '../../core/tags/metatag/metatag.dart';
-import '../../core/tags/metatag/providers.dart';
+import '../../core/tags/metatag/types.dart';
 import '../../core/tags/show/routes.dart';
-import '../../core/tags/tag/tag.dart';
+import '../../core/tags/tag/types.dart';
 import '../../foundation/url_launcher.dart';
 import 'autocompletes/providers.dart';
 import 'blacklist/providers.dart';
@@ -57,11 +55,12 @@ import 'posts/details/providers.dart';
 import 'posts/favorites/providers.dart';
 import 'posts/listing/providers.dart';
 import 'posts/listing/types.dart';
-import 'posts/post/post.dart';
 import 'posts/post/providers.dart';
+import 'posts/post/types.dart';
 import 'posts/votes/providers.dart';
 import 'syntax/providers.dart';
 import 'tags/tag/providers.dart';
+import 'tags/user_metatags/providers.dart';
 
 class DanbooruRepository extends BooruRepositoryDefault {
   const DanbooruRepository({
@@ -189,10 +188,8 @@ class DanbooruRepository extends BooruRepositoryDefault {
   }
 
   @override
-  MetatagExtractor? getMetatagExtractor(TagInfo tagInfo) {
-    return DefaultMetatagExtractor(
-      metatags: tagInfo.metatags,
-    );
+  MetatagExtractor? getMetatagExtractor(BooruConfigAuth config) {
+    return ref.watch(danbooruMetatagExtractorProvider(config));
   }
 
   @override
@@ -223,7 +220,18 @@ class DanbooruRepository extends BooruRepositoryDefault {
       handleDanbooruGestureAction(
         action,
         hapticLevel: ref.read(hapticFeedbackLevelProvider),
-        onDownload: () => ref.download(post),
+        onDownload: () => ref
+            .read(
+              downloadNotifierProvider(
+                ref.read(
+                  downloadNotifierParamsProvider((
+                    ref.readConfigAuth,
+                    ref.readConfigDownload,
+                  )),
+                ),
+              ).notifier,
+            )
+            .download(post),
         onShare: () => ref
             .read(shareProvider)
             .sharePost(
@@ -255,6 +263,8 @@ class DanbooruRepository extends BooruRepositoryDefault {
           () => false,
           (post) => ref.danbooruEdit(post),
         ),
+        onStartSlideshow: () =>
+            PostDetailsPageViewScope.maybeOf(ref.context)?.startSlideshow(),
       );
 }
 
@@ -271,6 +281,7 @@ bool handleDanbooruGestureAction(
   void Function()? onUpvote,
   void Function()? onDownvote,
   void Function()? onEdit,
+  void Function()? onStartSlideshow,
 }) {
   switch (action) {
     case kToggleFavoriteAction:
@@ -291,6 +302,7 @@ bool handleDanbooruGestureAction(
         onViewOriginal: onViewOriginal,
         onOpenSource: onOpenSource,
         hapticLevel: hapticLevel,
+        onStartSlideshow: onStartSlideshow,
       );
   }
 

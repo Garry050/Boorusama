@@ -6,12 +6,12 @@ import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../configs/config.dart';
-import '../../../../configs/ref.dart';
+import '../../../../configs/config/providers.dart';
+import '../../../../configs/config/types.dart';
 import '../../../../search/search/routes.dart';
 import '../../../../tags/tag/providers.dart';
-import '../../../details/details.dart';
-import '../../../post/post.dart';
+import '../../../details/types.dart';
+import '../../../post/types.dart';
 import 'raw_tags_tile.dart';
 import 'tag_chip.dart';
 
@@ -48,6 +48,7 @@ class BasicTagsTile extends ConsumerWidget {
     super.key,
     this.unknownCategoryColor,
     this.initialExpanded = true,
+    this.onTagTap,
   });
 
   final Post post;
@@ -55,6 +56,7 @@ class BasicTagsTile extends ConsumerWidget {
   final Color? unknownCategoryColor;
   final BooruConfigAuth auth;
   final bool initialExpanded;
+  final void Function(String tag)? onTagTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,11 +70,12 @@ class BasicTagsTile extends ConsumerWidget {
       ),
       initiallyExpanded: initialExpanded,
       children: [
-        Padding(
+        Container(
           padding: const EdgeInsets.symmetric(
-            vertical: 12,
+            vertical: 4,
             horizontal: 12,
           ),
+          width: double.infinity,
           child: Wrap(
             spacing: 4,
             runSpacing: 4,
@@ -81,10 +84,12 @@ class BasicTagsTile extends ConsumerWidget {
                   (tag) => AutoCategoryTagChip(
                     text: tag,
                     auth: auth,
-                    onTap: () => goToSearchPage(
-                      ref,
-                      tag: tag,
-                    ),
+                    onTap: onTagTap != null
+                        ? () => onTagTap?.call(tag)
+                        : () => goToSearchPage(
+                            ref,
+                            tag: tag,
+                          ),
                     fallbackColor: unknownCategoryColor,
                   ),
                 )

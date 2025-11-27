@@ -2,9 +2,9 @@
 import 'package:flutter/services.dart';
 
 // Package imports:
+import 'package:coreutils/coreutils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:version/version.dart';
 
 final packageInfoProvider = Provider<PackageInfo>(
   (ref) {
@@ -37,15 +37,5 @@ final isDevEnvironmentProvider = Provider<bool>((ref) {
 final appVersionProvider = Provider<Version?>((ref) {
   final packageInfo = ref.watch(packageInfoProvider);
 
-  return packageInfo.parseVersion();
+  return Version.tryParse(packageInfo.version);
 });
-
-extension PackageInfoX on PackageInfo {
-  Version? parseVersion() {
-    try {
-      return Version.parse(version);
-    } catch (e) {
-      return null;
-    }
-  }
-}

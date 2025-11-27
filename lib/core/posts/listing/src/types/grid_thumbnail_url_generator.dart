@@ -2,8 +2,10 @@
 import 'package:equatable/equatable.dart';
 
 // Project imports:
-import '../../../../settings/settings.dart';
-import '../../../post/post.dart';
+import '../../../../images/types.dart';
+import '../../../post/types.dart';
+import 'animated_posts_default_state.dart';
+import 'grid_size.dart';
 
 abstract class GridThumbnailUrlGenerator {
   String generateUrl(
@@ -15,14 +17,13 @@ abstract class GridThumbnailUrlGenerator {
 typedef ImageQualityMapper =
     String Function(
       Post post,
-      ImageQuality imageQuality,
-      GridSize gridSize,
+      GridThumbnailSettings settings,
     );
 
 typedef GifImageQualityMapper =
     String Function(
       Post post,
-      ImageQuality imageQuality,
+      GridThumbnailSettings settings,
     );
 
 class GridThumbnailSettings extends Equatable {

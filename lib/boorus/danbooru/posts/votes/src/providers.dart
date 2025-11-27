@@ -2,7 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../../core/configs/config.dart';
+import '../../../../../core/configs/config/types.dart';
 import '../../../client_provider.dart';
 import 'post_vote_repository.dart';
 import 'post_vote_repository_api.dart';
@@ -12,7 +12,6 @@ final danbooruPostVoteRepoProvider =
       (ref, config) {
         return PostVoteApiRepositoryApi(
           client: ref.watch(danbooruClientProvider(config)),
-          authConfig: config,
         );
       },
     );

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:foundation/foundation.dart';
 import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,26 +13,28 @@ import 'package:url_launcher/url_launcher.dart';
 // Project imports:
 import '../../../../core/widgets/widgets.dart';
 import '../../../../foundation/info/app_info.dart';
+import '../../../../foundation/info/package_info.dart';
 import '../../../../foundation/scrolling.dart';
 import '../../../../foundation/toast.dart';
 import '../../../../foundation/url_launcher.dart';
 import '../../../analytics/providers.dart';
 import '../../../boorus/engine/providers.dart';
+import '../../../build_info/providers.dart';
+import '../../../changelogs/routes.dart';
+import '../../../configs/config/providers.dart';
 import '../../../configs/create/routes.dart';
-import '../../../configs/ref.dart';
-import '../../../premiums/premiums.dart';
+import '../../../debug/routes.dart';
 import '../../../premiums/providers.dart';
 import '../../../premiums/routes.dart';
-import '../../../theme.dart';
+import '../../../premiums/types.dart';
+import '../../../themes/theme/types.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/settings_page_scaffold.dart';
 import 'about_page.dart';
 import 'accessibility_page.dart';
 import 'appearance/appearance_page.dart';
-import 'backup_restore/backup_and_restore_page.dart';
-import 'changelog_page.dart';
+import 'backup_and_restore_page.dart';
 import 'data_and_storage_page.dart';
-import 'debug_logs_page.dart';
 import 'download_page.dart';
 import 'help_us_translate_page.dart';
 import 'image_viewer_page.dart';
@@ -419,7 +422,6 @@ class SettingsPageOtherSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appInfo = ref.watch(appInfoProvider);
     final booruBuilder = ref.watch(booruBuilderProvider(ref.watchConfigAuth));
-    final options = SettingsPageScope.of(context).options;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -489,36 +491,45 @@ class SettingsPageOtherSection extends ConsumerWidget {
           leading: const FaIcon(
             FontAwesomeIcons.solidNoteSticky,
           ),
-          onTap: () => Navigator.of(context).push(
-            CupertinoPageRoute(
-              builder: (_) => const ChangelogPage(),
-            ),
-          ),
+          onTap: () => goToChangelogPage(ref),
         ),
         SettingTile(
           title: context.t.settings.debug_logs.debug_logs,
           leading: const FaIcon(
             FontAwesomeIcons.bug,
           ),
-          onTap: () => Navigator.of(context).push(
-            CupertinoPageRoute(
-              builder: (_) => SettingsPageScope(
-                options: options,
-                child: const DebugLogsPage(),
-              ),
-            ),
-          ),
+          onTap: () => goToDebuglogPage(ref),
         ),
-        SettingTile(
-          title: context.t.settings.information,
-          leading: const FaIcon(
-            Symbols.info,
-            size: 24,
-          ),
-          onTap: () => showDialog(
-            context: context,
-            builder: (context) => const AboutPage(),
-          ),
+        Builder(
+          builder: (context) {
+            final buildInfo = ref.watch(buildInfoProvider);
+            final packageInfo = ref.watch(packageInfoProvider);
+            final versionString = context.t.generic.version(
+              version: packageInfo.version,
+            );
+
+            return SettingTile(
+              title: context.t.settings.information,
+              subtitle: switch (buildInfo) {
+                final info? => info.toInfoString(
+                  versionString,
+                  formatTimestamp: (timestamp) =>
+                      '${context.t.comment.list.last_updated}: ${timestamp.fuzzify(
+                        locale: Localizations.localeOf(context),
+                      )}',
+                ),
+                null => versionString,
+              },
+              leading: const FaIcon(
+                Symbols.info,
+                size: 24,
+              ),
+              onTap: () => showDialog(
+                context: context,
+                builder: (context) => const AboutPage(),
+              ),
+            );
+          },
         ),
         const Divider(),
         _SettingsSection(

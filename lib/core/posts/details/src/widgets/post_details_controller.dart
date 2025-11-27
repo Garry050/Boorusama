@@ -11,11 +11,14 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 // Project imports:
 import '../../../../videos/engines/types.dart';
 import '../../../../videos/player/types.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 
 const kSeekAnimationDuration = Duration(milliseconds: 400);
+const kPlayPauseAnimationDuration = Duration(milliseconds: 700);
 
 enum SeekDirection { forward, backward }
+
+enum PlayPauseAction { play, pause }
 
 class PostDetailsController<T extends Post> extends ChangeNotifier {
   PostDetailsController({
@@ -29,7 +32,8 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
   }) : currentPage = ValueNotifier(initialPage),
        _initialPage = initialPage,
        currentPost = ValueNotifier(posts[initialPage]),
-       _playback = VideoPlaybackManager();
+       _playback = VideoPlaybackManager(),
+       currentSettledPage = ValueNotifier(null);
   final AutoScrollController? scrollController;
   final bool reduceAnimations;
   final List<T> posts;
@@ -38,7 +42,7 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
   final String? dislclaimer;
   final int doubleTapSeekDuration;
 
-  int? currentSettledPage;
+  late ValueNotifier<int?> currentSettledPage;
   late ValueNotifier<int> currentPage;
   late ValueNotifier<T> currentPost;
   final VideoPlaybackManager _playback;
@@ -46,15 +50,14 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
   int get initialPage =>
       currentPage.value != _initialPage ? currentPage.value : _initialPage;
 
-  // ignore: use_setters_to_change_properties
   void setPage(int page) {
     currentPage.value = page;
   }
 
   void onPageSettled(int page) {
-    if (page == currentSettledPage) return;
+    if (page == currentSettledPage.value) return;
 
-    currentSettledPage = page;
+    currentSettledPage.value = page;
 
     final post = posts.getOrNull(page);
 
@@ -79,15 +82,17 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
   }
 
   final _seekDirection = ValueNotifier<SeekDirection?>(null);
+  final _playPauseAction = ValueNotifier<PlayPauseAction?>(null);
 
   ValueNotifier<VideoProgress> get videoProgress => _playback.videoProgress;
   ValueNotifier<bool> get isVideoPlaying => _playback.isVideoPlaying;
   ValueNotifier<SeekDirection?> get seekDirection => _seekDirection;
+  ValueNotifier<PlayPauseAction?> get playPauseAction => _playPauseAction;
   Stream<VideoProgress> get seekStream => _playback.seekStream;
 
   void onCurrentPositionChanged(double current, double total, String id) {
-    if (posts.getOrNull(currentSettledPage ?? -1)?.id case final currentId?
-        when currentId.toString() == id) {
+    if (posts.getOrNull(currentSettledPage.value ?? -1)?.id
+        case final currentId? when currentId.toString() == id) {
       _playback.updateProgress(current, total, currentId);
     }
   }
@@ -96,25 +101,45 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
     _playback.seekVideo(position, id);
   }
 
-  Future<void> playVideo(int id) async {
+  Future<void> playVideo(
+    int id, {
+    bool showAnimation = false,
+  }) async {
+    if (currentPost.value.id == id && showAnimation) {
+      _showPlayPauseAnimation(PlayPauseAction.play);
+    }
     await _playback.playVideo(id);
   }
 
-  Future<void> playCurrentVideo() {
+  Future<void> playCurrentVideo({
+    bool showAnimation = false,
+  }) {
     final post = currentPost.value;
 
-    return playVideo(post.id);
+    return playVideo(
+      post.id,
+      showAnimation: showAnimation,
+    );
   }
 
-  Future<void> pauseCurrentVideo() {
+  Future<void> pauseCurrentVideo({
+    bool showAnimation = false,
+  }) {
     final post = currentPost.value;
 
     return pauseVideo(
       post.id,
+      showAnimation: showAnimation,
     );
   }
 
-  Future<void> pauseVideo(int id) async {
+  Future<void> pauseVideo(
+    int id, {
+    bool showAnimation = false,
+  }) async {
+    if (currentPost.value.id == id && showAnimation) {
+      _showPlayPauseAnimation(PlayPauseAction.pause);
+    }
     await _playback.pauseVideo(id);
   }
 
@@ -149,10 +174,19 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
   void _showSeekAnimation(SeekDirection direction) {
     _seekDirection.value = direction;
 
-    // Hide the animation after a short delay
     Timer(kSeekAnimationDuration, () {
       if (_seekDirection.value == direction) {
         _seekDirection.value = null;
+      }
+    });
+  }
+
+  void _showPlayPauseAnimation(PlayPauseAction action) {
+    _playPauseAction.value = action;
+
+    Timer(kPlayPauseAnimationDuration, () {
+      if (_playPauseAction.value == action) {
+        _playPauseAction.value = null;
       }
     });
   }
@@ -165,13 +199,22 @@ class PostDetailsController<T extends Post> extends ChangeNotifier {
     _playback.unregisterPlayer(id);
   }
 
+  Future<void> waitForVideoCompletion(int id) async {
+    final player = _playback.getPlayer(id);
+    if (player == null) return;
+
+    return player.waitForCompletion();
+  }
+
   @override
   void dispose() {
     _playback.dispose();
     _seekDirection.dispose();
+    _playPauseAction.dispose();
 
     currentPage.dispose();
     currentPost.dispose();
+    currentSettledPage.dispose();
 
     super.dispose();
   }

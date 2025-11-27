@@ -14,31 +14,31 @@ import 'package:rich_text_controller/rich_text_controller.dart';
 // Project imports:
 import 'package:boorusama/core/analytics/providers.dart';
 import 'package:boorusama/core/blacklists/providers.dart';
-import 'package:boorusama/core/boorus/booru/booru.dart';
-import 'package:boorusama/core/boorus/engine/engine.dart';
+import 'package:boorusama/core/boorus/booru/types.dart';
 import 'package:boorusama/core/boorus/engine/providers.dart';
-import 'package:boorusama/core/bulk_downloads/src/data/download_repository_provider.dart';
+import 'package:boorusama/core/boorus/engine/types.dart';
+import 'package:boorusama/core/bulk_downloads/providers.dart';
 import 'package:boorusama/core/bulk_downloads/src/notifications/bulk_download_notification.dart';
 import 'package:boorusama/core/bulk_downloads/src/notifications/providers.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_configs.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_options.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_repository.dart';
-import 'package:boorusama/core/configs/config.dart';
+import 'package:boorusama/core/configs/config/types.dart';
 import 'package:boorusama/core/configs/manage/providers.dart';
+import 'package:boorusama/core/ddos/handler/providers.dart';
 import 'package:boorusama/core/download_manager/providers.dart';
 import 'package:boorusama/core/downloads/downloader/providers.dart';
-import 'package:boorusama/core/downloads/downloader/types.dart';
+import 'package:boorusama/core/downloads/downloader/types.dart' as d;
 import 'package:boorusama/core/downloads/filename/providers.dart';
 import 'package:boorusama/core/downloads/filename/types.dart';
 import 'package:boorusama/core/downloads/urls/providers.dart';
-import 'package:boorusama/core/http/providers.dart';
-import 'package:boorusama/core/posts/post/post.dart';
 import 'package:boorusama/core/posts/post/providers.dart';
+import 'package:boorusama/core/posts/post/types.dart';
 import 'package:boorusama/core/premiums/providers.dart';
-import 'package:boorusama/core/search/queries/query.dart';
-import 'package:boorusama/core/search/selected_tags/tag.dart';
+import 'package:boorusama/core/search/queries/types.dart';
+import 'package:boorusama/core/search/selected_tags/types.dart';
 import 'package:boorusama/core/settings/providers.dart';
-import 'package:boorusama/core/settings/settings.dart';
+import 'package:boorusama/core/settings/types.dart';
 import 'package:boorusama/foundation/info/device_info.dart';
 import 'package:boorusama/foundation/loggers.dart';
 import 'package:boorusama/foundation/permissions.dart';
@@ -48,6 +48,8 @@ class MockMediaPermissionManager extends Mock
     implements MediaPermissionManager {}
 
 class DummyLogger implements Logger {
+  const DummyLogger();
+
   @override
   String getDebugName() => 'Dummy Logger';
 
@@ -242,34 +244,14 @@ class DummyBulkNotification implements BulkDownloadNotifications {
   Stream<String> get tapStream => const Stream.empty();
 }
 
-class DummyDownloadService implements DownloadService {
+class DummyDownloadService implements d.DownloadService {
   @override
-  DownloadTaskInfoOrError download({
-    required String url,
-    required String filename,
-    DownloaderMetadata? metadata,
-    bool? skipIfExists,
-    Map<String, String>? headers,
-  }) {
-    return TaskEither.right(
-      DownloadTaskInfo(
+  Future<d.DownloadResult> download(d.DownloadOptions options) async {
+    return d.DownloadSuccess(
+      d.DownloadTaskInfo(
         path: 'path',
-        id: url,
+        id: options.url,
       ),
-    );
-  }
-
-  @override
-  DownloadTaskInfoOrError downloadCustomLocation({
-    required String url,
-    required String path,
-    required String filename,
-    DownloaderMetadata? metadata,
-    bool? skipIfExists,
-    Map<String, String>? headers,
-  }) {
-    return TaskEither.right(
-      DownloadTaskInfo(path: 'path', id: url),
     );
   }
 
@@ -317,6 +299,9 @@ class AlwaysGrantedPermissionManager implements MediaPermissionManager {
 
 class AlwaysGrantedNotificationPermissionManager
     implements NotificationPermissionManager {
+  @override
+  Logger logger = const DummyLogger();
+
   @override
   Future<PermissionStatus> check() async => PermissionStatus.granted;
 
@@ -389,7 +374,7 @@ List<Override> getTestOverrides({
     downloadFilenameBuilderProvider.overrideWith(
       (_, _) => dummyDownloadFileNameBuilder,
     ),
-    loggerProvider.overrideWithValue(DummyLogger()),
+    loggerProvider.overrideWithValue(const DummyLogger()),
     mediaPermissionManagerProvider.overrideWithValue(
       mediaPermissionManager ?? MockMediaPermissionManager(),
     ),

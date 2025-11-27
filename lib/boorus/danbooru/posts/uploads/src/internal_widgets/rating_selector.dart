@@ -8,12 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../../../core/configs/ref.dart';
-import '../../../../../../core/posts/rating/rating.dart';
+import '../../../../../../core/configs/config/providers.dart';
+import '../../../../../../core/posts/rating/types.dart';
 import '../../../../../../core/widgets/widgets.dart';
 import '../../../../configs/providers.dart';
 import '../../../../tags/edit/widgets.dart';
-import '../providers/upload_notifier.dart';
+import '../providers/upload_provider.dart';
 
 class TagEditUploadRatingSelector extends ConsumerWidget {
   const TagEditUploadRatingSelector({super.key});

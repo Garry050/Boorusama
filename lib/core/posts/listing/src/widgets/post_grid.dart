@@ -14,23 +14,20 @@ import 'package:selection_mode/selection_mode.dart';
 // Project imports:
 import '../../../../../foundation/html.dart';
 import '../../../../boorus/engine/providers.dart';
+import '../../../../configs/config/providers.dart';
 import '../../../../configs/create/routes.dart';
-import '../../../../configs/ref.dart';
-import '../../../../configs/search/search.dart';
+import '../../../../configs/search/types.dart';
 import '../../../../errors/providers.dart';
 import '../../../../settings/providers.dart';
-import '../../../../settings/settings.dart';
 import '../../../../widgets/widgets.dart';
-import '../../../post/post.dart';
-import '../_internal/default_image_grid_item.dart';
-import '../_internal/post_grid_config_icon_button.dart';
+import '../../../post/types.dart';
+import '../../widgets.dart';
 import '../_internal/raw_post_grid.dart';
 import '../_internal/sliver_post_grid.dart';
 import '../providers/internal_providers.dart';
-import 'blacklist_controls.dart';
+import '../types/page_mode.dart';
+import 'infinite_scroll_listener.dart';
 import 'post_grid_controller.dart';
-import 'post_list_configuration_header.dart';
-import 'post_scope.dart';
 
 typedef IndexedSelectableWidgetBuilder<T extends Post> =
     Widget Function(
@@ -111,6 +108,9 @@ class _PostGridState<T extends Post> extends ConsumerState<PostGrid<T>> {
         options: PostGridOptions(
           cacheExtent: ref.watch(gridCacheExtentProvider),
           hapticFeedbackLevel: ref.watch(hapticFeedbackLevelProvider),
+          gridSize: ref.watch(
+            imageListingSettingsProvider.select((v) => v.gridSize),
+          ),
         ),
         sliverHeaders: [
           ...widget.sliverHeaders ?? [],
@@ -140,7 +140,12 @@ class _PostGridState<T extends Post> extends ConsumerState<PostGrid<T>> {
         controller: widget.controller,
         safeArea: widget.safeArea,
         enablePullToRefresh: widget.enablePullToRefresh ?? true,
-        gridHeader: widget.header ?? _GridHeader<T>(),
+        gridHeader: ValueListenableBuilder(
+          valueListenable: widget.controller.errors,
+          builder: (_, errors, _) => errors == null
+              ? widget.header ?? _GridHeader<T>()
+              : const SizedBox.shrink(),
+        ),
         topPageIndicator: Consumer(
           builder: (_, ref, _) {
             final visibleAtTop = ref.watch(
@@ -195,19 +200,24 @@ class _PostGridState<T extends Post> extends ConsumerState<PostGrid<T>> {
               postController: widget.controller,
               itemBuilder: (context, index) => ValueListenableBuilder(
                 valueListenable: _disableHero,
-                builder: (_, disableHero, _) =>
-                    widget.itemBuilder?.call(
-                      context,
-                      index,
-                      _autoScrollController,
-                      !disableHero,
-                    ) ??
-                    DefaultImageGridItem(
-                      index: index,
-                      autoScrollController: _autoScrollController,
-                      controller: widget.controller,
-                      useHero: !disableHero,
-                    ),
+                builder: (_, disableHero, _) => GeneralPostContextMenu(
+                  index: index,
+                  controller: widget.controller,
+                  child:
+                      widget.itemBuilder?.call(
+                        context,
+                        index,
+                        _autoScrollController,
+                        !disableHero,
+                      ) ??
+                      DefaultImageGridItem(
+                        index: index,
+                        autoScrollController: _autoScrollController,
+                        controller: widget.controller,
+                        useHero: !disableHero,
+                        config: ref.watchConfigAuth,
+                      ),
+                ),
               ),
             ),
       ),
@@ -242,7 +252,7 @@ class PostGridScrollToTopButton extends StatelessWidget {
             padding: multiSelect
                 ? EdgeInsets.only(bottom: 60 + effectiveBottomPadding)
                 : EdgeInsets.only(bottom: effectiveBottomPadding),
-            child: ScrollToTop(
+            child: InfiniteScrollListener(
               scrollController: autoScrollController,
               onBottomReached: () {
                 if (controller.pageMode == PageMode.infinite &&
@@ -250,10 +260,13 @@ class PostGridScrollToTopButton extends StatelessWidget {
                   controller.fetchMore();
                 }
               },
-              child: BooruScrollToTopButton(
-                onPressed: () {
-                  autoScrollController.jumpTo(0);
-                },
+              child: ScrollToTop(
+                scrollController: autoScrollController,
+                child: BooruScrollToTopButton(
+                  onPressed: () {
+                    autoScrollController.jumpTo(0);
+                  },
+                ),
               ),
             ),
           );
@@ -493,9 +506,6 @@ class _SliverGrid<T extends Post> extends ConsumerWidget {
     final imageListType = ref.watch(
       imageListingSettingsProvider.select((value) => value.imageListType),
     );
-    final gridSize = ref.watch(
-      imageListingSettingsProvider.select((value) => value.gridSize),
-    );
     final imageGridSpacing = ref.watch(
       imageListingSettingsProvider.select((value) => value.imageGridSpacing),
     );
@@ -524,7 +534,6 @@ class _SliverGrid<T extends Post> extends ConsumerWidget {
         horizontal: imageGridPadding,
       ),
       listType: imageListType,
-      size: gridSize,
       spacing: imageGridSpacing,
       aspectRatio: imageGridAspectRatio,
       postsPerPage: postsPerPage,

@@ -3,9 +3,9 @@ import 'package:booru_clients/shimmie2.dart';
 import 'package:path/path.dart' show extension;
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 import 'types.dart';
 
 Shimmie2Post postDtoToPost(
@@ -18,15 +18,30 @@ Shimmie2Post postDtoToPost(
     sampleImageUrl: e.fileUrl ?? '',
     originalImageUrl: e.fileUrl ?? '',
     tags: e.tags?.toSet() ?? {},
-    rating: mapStringToRating(e.rating),
-    hasComment: false,
-    isTranslated: false,
-    hasParentOrChildren: false,
+    rating: Rating.parse(e.rating),
+    hasComment: switch (e.comments) {
+      final comments? when comments.isNotEmpty => true,
+      _ => false,
+    },
+    comments: e.comments,
+    isTranslated: switch (e.notes) {
+      final notes? when notes > 0 => true,
+      _ => false,
+    },
+    hasParentOrChildren: switch ((e.parentId, e.hasChildren)) {
+      (final int _, _) => true,
+      (_, final hasChildren?) when hasChildren => true,
+      _ => false,
+    },
     source: PostSource.from(e.source),
-    score: e.score ?? 0,
+    score: e.score ?? e.numericScore ?? 0,
     duration: 0,
-    fileSize: 0,
-    format: extension(e.fileName ?? ''),
+    fileSize: e.filesize ?? 0,
+    format: switch ((e.ext, e.fileName)) {
+      (final ext?, _) => ext,
+      (_, final fileName?) => extension(fileName),
+      _ => '',
+    },
     hasSound: null,
     height: e.height?.toDouble() ?? 0,
     md5: e.md5 ?? '',
@@ -35,7 +50,29 @@ Shimmie2Post postDtoToPost(
     width: e.width?.toDouble() ?? 0,
     createdAt: e.date,
     uploaderId: null,
-    uploaderName: e.author,
+    uploaderName: switch ((e.author, e.ownerName)) {
+      (final author?, _) => author,
+      (_, final ownerName?) => ownerName,
+      _ => null,
+    },
     metadata: metadata,
+    parentId: e.parentId,
+    locked: e.locked,
+    ext: e.ext,
+    mime: e.mime,
+    niceName: e.niceName,
+    tooltip: e.tooltip,
+    favorites: e.favorites,
+    numericScore: e.numericScore,
+    notes: e.notes,
+    hasChildren: e.hasChildren,
+    title: e.title,
+    approved: e.approved,
+    approvedById: e.approvedById,
+    private: e.private,
+    trash: e.trash,
+    ownerJoinDate: e.ownerJoinDate,
+    votes: e.votes,
+    myVote: e.myVote,
   );
 }

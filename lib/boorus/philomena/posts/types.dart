@@ -5,11 +5,11 @@ import 'package:foundation/foundation.dart';
 
 // Project imports:
 import '../../../core/configs/config/types.dart';
-import '../../../core/posts/details/details.dart';
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
-import '../../../core/settings/settings.dart';
+import '../../../core/images/types.dart';
+import '../../../core/posts/details/types.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 
 class PhilomenaPost extends Equatable
     with MediaInfoMixin, TranslatedMixin, ImageInfoMixin, VideoInfoMixin
@@ -43,6 +43,7 @@ class PhilomenaPost extends Equatable
     required this.uploaderId,
     required this.uploaderName,
     required this.metadata,
+    required this.status,
     this.createdAt,
     this.parentId,
   });
@@ -121,6 +122,9 @@ class PhilomenaPost extends Equatable
 
   @override
   final PostMetadata? metadata;
+
+  @override
+  final PostStatus? status;
 }
 
 Set<String>? _findArtistFromTags(Set<String> tags) {

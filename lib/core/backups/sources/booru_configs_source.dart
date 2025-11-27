@@ -2,14 +2,14 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
+import 'package:coreutils/coreutils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:version/version.dart';
 
 // Project imports:
 import '../../../foundation/info/package_info.dart';
 import '../../config_widgets/website_logo.dart';
-import '../../configs/config.dart';
+import '../../configs/config/types.dart';
 import '../../configs/manage/providers.dart';
 import '../../settings/providers.dart';
 import '../../widgets/reboot.dart';

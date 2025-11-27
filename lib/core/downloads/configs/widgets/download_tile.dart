@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
+import 'package:coreutils/coreutils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 import 'package:i18n/i18n.dart';
@@ -12,8 +13,7 @@ import '../../../../foundation/utils/flutter_utils.dart';
 import '../../../config_widgets/website_logo.dart';
 import '../../../configs/config/providers.dart';
 import '../../../images/booru_image.dart';
-import '../../../theme.dart';
-import '../../urls/sanitizer.dart';
+import '../../../themes/theme/types.dart';
 
 class DownloadTileBuilder extends StatelessWidget {
   const DownloadTileBuilder({
@@ -58,7 +58,7 @@ class DownloadTileBuilder extends StatelessWidget {
       () => null,
       (t) => _durationToTime(t),
     );
-    final extensionText = sanitizedExtension(url);
+    final extensionText = urlExtension(url);
 
     final infoText = [
       extensionText,

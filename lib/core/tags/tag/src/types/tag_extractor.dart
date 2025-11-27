@@ -2,11 +2,11 @@
 import 'dart:async';
 
 // Project imports:
-import '../../../../posts/post/post.dart';
-import '../../../categories/tag_category.dart';
-import '../../../local/tag_cache_repository.dart';
-import '../../../local/tag_info.dart';
+import '../../../../posts/post/types.dart';
+import '../../../categories/types.dart';
+import '../../../local/types.dart';
 import 'tag.dart';
+import 'tag_display.dart';
 import 'tag_sorter.dart';
 
 abstract class TagExtractor {
@@ -17,6 +17,12 @@ abstract class TagExtractor {
 
   FutureOr<List<Tag>>? extractTagsBatch(
     List<Post> posts, {
+    ExtractOptions options = const ExtractOptions(),
+  });
+
+  FutureOr<({Set<String> characterTags, Set<String> artistTags})>
+  extractArtistCharacterTags(
+    Post post, {
     ExtractOptions options = const ExtractOptions(),
   });
 
@@ -39,6 +45,8 @@ class TagExtractorBuilder implements TagExtractor {
     required this.tagCache,
     this.sorter,
     this.fetcherBatch,
+    this.artistCategory,
+    this.characterCategory,
   });
 
   final String siteHost;
@@ -46,6 +54,8 @@ class TagExtractorBuilder implements TagExtractor {
   final TagFetcherBatch? fetcherBatch;
   final TagSorter? sorter;
   final Future<TagCacheRepository>? tagCache;
+  final TagCategory? artistCategory;
+  final TagCategory? characterCategory;
 
   @override
   FutureOr<List<Tag>> extractTags(
@@ -84,6 +94,32 @@ class TagExtractorBuilder implements TagExtractor {
 
       return sorter?.sortTagsByCategory(allTags) ?? allTags;
     }
+  }
+
+  @override
+  FutureOr<({Set<String> characterTags, Set<String> artistTags})>
+  extractArtistCharacterTags(
+    Post post, {
+    ExtractOptions options = const ExtractOptions(),
+  }) async {
+    final tags = await extractTags(post, options: options);
+
+    final characterTags = <String>{};
+    final artistTags = <String>{};
+
+    final effectiveCharacterCategory =
+        characterCategory ?? TagCategory.character();
+    final effectiveArtistCategory = artistCategory ?? TagCategory.artist();
+
+    for (final tag in tags) {
+      if (tag.category == effectiveCharacterCategory) {
+        characterTags.add(tag.rawName);
+      } else if (tag.category == effectiveArtistCategory) {
+        artistTags.add(tag.rawName);
+      }
+    }
+
+    return (characterTags: characterTags, artistTags: artistTags);
   }
 
   Future<void> _cacheIfNeeded(List<Tag> tags) async {

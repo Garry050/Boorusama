@@ -4,7 +4,7 @@ import 'package:foundation/foundation.dart';
 
 // Project imports:
 import '../../../../../foundation/utils/collection_utils.dart';
-import '../../../categories/tag_category.dart';
+import '../../../categories/types.dart';
 import 'tag.dart';
 import 'tag_display.dart';
 
@@ -23,17 +23,6 @@ class TagGroupItem extends Equatable {
 
   @override
   List<Object?> get props => [category, groupName, tags, order];
-}
-
-extension TagGroupItemX on TagGroupItem {
-  List<String> extractRawTag(TagCategory category) =>
-      tags.where((e) => category == e.category).map((e) => e.rawName).toList();
-
-  List<String> extractArtistTags() => extractRawTag(TagCategory.artist());
-  List<String> extractCharacterTags() => extractRawTag(TagCategory.character());
-  List<String> extractGeneralTags() => extractRawTag(TagCategory.general());
-  List<String> extractMetaTags() => extractRawTag(TagCategory.meta());
-  List<String> extractCopyRightTags() => extractRawTag(TagCategory.copyright());
 }
 
 List<TagGroupItem> createTagGroupItems(List<Tag> tags) {

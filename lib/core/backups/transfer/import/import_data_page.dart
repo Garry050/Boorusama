@@ -2,18 +2,18 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:bonsoir/bonsoir.dart';
+import 'package:coreutils/coreutils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
-import 'package:version/version.dart';
 
 // Project imports:
 import '../../../../foundation/info/package_info.dart';
 import '../../../../foundation/toast.dart';
 import '../../../../foundation/version.dart';
-import '../../../theme/app_theme.dart';
+import '../../../themes/theme/types.dart';
 import '../../preparation/version_mismatch_alert_dialog.dart';
 import '../../servers/discovery_client.dart';
+import '../../types.dart';
 import 'manual_device_input_dialog.dart';
 import 'transfer_data_dialog.dart';
 
@@ -25,7 +25,7 @@ class ImportDataPage extends ConsumerStatefulWidget {
 }
 
 class _ImportDataPageState extends ConsumerState<ImportDataPage> {
-  List<BonsoirService> discoveredServices = [];
+  List<DiscoveredService> discoveredServices = [];
   late final _client = DiscoveryClient(
     onServiceResolved: _handleServiceResolved,
     onServiceLost: _handleServiceLost,
@@ -42,7 +42,7 @@ class _ImportDataPageState extends ConsumerState<ImportDataPage> {
     discoverServers();
   }
 
-  void _handleServiceResolved(BonsoirService service) {
+  void _handleServiceResolved(DiscoveredService service) {
     if (!mounted) return;
     setState(() {
       if (!discoveredServices.any((element) => element.name == service.name)) {
@@ -51,7 +51,7 @@ class _ImportDataPageState extends ConsumerState<ImportDataPage> {
     });
   }
 
-  void _handleServiceLost(BonsoirService service) {
+  void _handleServiceLost(DiscoveredService service) {
     if (!mounted) return;
     setState(() {
       discoveredServices.removeWhere((element) => element.name == service.name);
@@ -120,13 +120,13 @@ class _ImportDataPageState extends ConsumerState<ImportDataPage> {
             if (discoveredServices.isNotEmpty)
               Column(
                 children: discoveredServices.map((service) {
-                  final address = service.attributes['ip'];
-                  final port = service.attributes['port'];
-                  final appVersion = service.attributes['version'];
+                  final appVersion = Version.tryParse(
+                    service.attributes['version'] ?? '',
+                  );
                   final url = Uri(
                     scheme: 'http',
-                    host: address,
-                    port: int.tryParse(port ?? ''),
+                    host: service.host,
+                    port: service.port,
                   );
 
                   return Container(
@@ -157,7 +157,9 @@ class _ImportDataPageState extends ConsumerState<ImportDataPage> {
                           context.t.settings.backup_and_restore.import,
                         ),
                         onPressed: () async {
-                          if (appVersion == null) {
+                          final version = appVersion;
+
+                          if (version == null) {
                             showErrorToast(
                               context,
                               "Couldn't determine this device's version, aborting."
@@ -175,20 +177,19 @@ class _ImportDataPageState extends ConsumerState<ImportDataPage> {
                             return;
                           }
 
-                          final parsedVersion = Version.parse(appVersion);
                           final shouldShowDialog =
                               currentVersion.significantlyLowerThan(
-                                parsedVersion,
+                                appVersion,
                               ) ||
                               currentVersion.significantlyHigherThan(
-                                parsedVersion,
+                                appVersion,
                               );
 
                           if (shouldShowDialog) {
                             final result = await showDialog(
                               context: context,
                               builder: (context) => VersionMismatchAlertDialog(
-                                importVersion: Version.parse(appVersion),
+                                importVersion: version,
                                 currentVersion: currentVersion,
                               ),
                             );

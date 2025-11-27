@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 
 // Project imports:
-import '../../../../../../core/theme.dart';
-import '../../../../../../core/users/user.dart';
+import '../../../../../../core/themes/theme/types.dart';
+import '../../../../../../core/users/types.dart';
 import '../types/user.dart';
 import '../types/user_level.dart';
 
@@ -52,7 +52,6 @@ class DanbooruUserColor implements UserColor {
   Color fromLevel(UserLevel? level) => _color(brightness, level);
   Color fromUser(DanbooruUser? user) => _color(brightness, user?.level);
   @override
-  Color fromString(String? level) =>
-      _color(brightness, stringToUserLevel(level));
-  Color fromInt(int? level) => _color(brightness, intToUserLevel(level ?? 0));
+  Color fromString(String? level) => _color(brightness, UserLevel.parse(level));
+  Color fromInt(int? level) => _color(brightness, UserLevel.parse(level));
 }

@@ -1,12 +1,16 @@
 // Project imports:
 import '../../core/boorus/defaults/widgets.dart';
-import '../../core/boorus/engine/engine.dart';
-import '../../core/configs/config.dart';
+import '../../core/boorus/engine/types.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/widgets.dart';
+import '../../core/configs/manage/widgets.dart';
+import '../../core/home/types.dart';
 import '../../core/posts/details/widgets.dart';
-import '../../core/posts/details_parts/types.dart';
-import '../../core/posts/details_parts/widgets.dart';
+import 'comments/widgets.dart';
 import 'configs/widgets.dart';
+import 'favorites/widgets.dart';
+import 'home/types.dart';
+import 'home/widgets.dart';
 import 'posts/types.dart';
 import 'posts/widgets.dart';
 
@@ -26,8 +30,23 @@ class Shimmie2Builder extends BaseBooruBuilder {
           url: id.url,
           customDownloadFileNameFormat: null,
         ),
-        child: CreateAnonConfigPage(
+        child: CreateShimmie2ConfigPage(
           backgroundColor: backgroundColor,
+        ),
+      );
+
+  @override
+  UpdateConfigPageBuilder get updateConfigPageBuilder =>
+      (
+        context,
+        id, {
+        backgroundColor,
+        initialTab,
+      }) => UpdateBooruConfigScope(
+        id: id,
+        child: CreateShimmie2ConfigPage(
+          backgroundColor: backgroundColor,
+          initialTab: initialTab,
         ),
       );
 
@@ -46,23 +65,36 @@ class Shimmie2Builder extends BaseBooruBuilder {
   };
 
   @override
-  final postDetailsUIBuilder = PostDetailsUIBuilder(
-    preview: {
-      DetailsPart.toolbar: (context) =>
-          const DefaultInheritedPostActionToolbar<Shimmie2Post>(),
-    },
-    full: {
-      DetailsPart.toolbar: (context) =>
-          const DefaultInheritedPostActionToolbar<Shimmie2Post>(),
-      DetailsPart.tags: (context) =>
-          const DefaultInheritedBasicTagsTile<Shimmie2Post>(),
-      DetailsPart.fileDetails: (context) => const Shimmie2FileDetailsSection(),
-    },
-  );
+  final postDetailsUIBuilder = kShimmie2PostDetailsUIBuilder;
+
+  @override
+  HomePageBuilder get homePageBuilder =>
+      (context) => const Shimmie2HomePage();
+
+  @override
+  FavoritesPageBuilder? get favoritesPageBuilder =>
+      (context) => const Shimmie2FavoritesPage();
+
+  @override
+  Map<CustomHomeViewKey, CustomHomeDataBuilder> get customHomeViewBuilders =>
+      kShimmie2AltHomeView;
 
   @override
   CreateUnknownBooruWidgetsBuilder get unknownBooruWidgetsBuilder =>
-      (context) => const UnknownBooruWidgetsBuilder(
-        urlField: Shimmie2BooruUrlField(),
+      (context) => const Shimmie2UnknownBooruWidgetsBuilder();
+
+  @override
+  CommentPageBuilder? get commentPageBuilder =>
+      (context, useAppBar, post) => Shimmie2CommentPage(
+        post: post,
+        useAppBar: useAppBar,
       );
+
+  @override
+  MultiSelectionActionsBuilder? get multiSelectionActionsBuilder =>
+      (context, controller, postController) {
+        return Shimmie2MultiSelectionActions(
+          postController: postController,
+        );
+      };
 }

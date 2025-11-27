@@ -11,9 +11,9 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../../foundation/platform.dart';
 import '../../../../cache/providers.dart';
 import '../../../../router.dart';
-import '../../../../tags/favorites/favorited.dart';
+import '../../../../tags/favorites/types.dart';
 import '../../../../tags/favorites/widgets.dart';
-import '../../../../theme/providers.dart';
+import '../../../../themes/colors/providers.dart';
 import 'constants.dart';
 
 class FavoriteTagsSection extends ConsumerWidget {
@@ -32,17 +32,24 @@ class FavoriteTagsSection extends ConsumerWidget {
       miscDataProvider(kSearchSelectedFavoriteTagLabelKey).notifier,
     );
 
-    return FavoriteTagsFilterScope(
-      initialValue: selectedLabel,
-      sortType: FavoriteTagsSortType.nameAZ,
-      builder: (_, tags, labels, selected) => OptionTagsArenaNoEdit(
-        title: context.t.favorite_tags.favorites,
-        titleTrailing: FavoriteTagLabelSelectorField(
-          selected: selected,
-          labels: labels,
-          onSelect: (value) => notifier.put(value),
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: 8,
+        right: 8,
+        bottom: 8,
+      ),
+      child: FavoriteTagsFilterScope(
+        initialValue: selectedLabel,
+        sortType: FavoriteTagsSortType.nameAZ,
+        builder: (_, tags, labels, selected) => OptionTagsArenaNoEdit(
+          title: context.t.favorite_tags.favorites,
+          titleTrailing: FavoriteTagLabelSelectorField(
+            selected: selected,
+            labels: labels,
+            onSelect: (value) => notifier.put(value),
+          ),
+          children: _buildFavoriteTags(ref, tags),
         ),
-        children: _buildFavoriteTags(ref, tags),
       ),
     );
   }

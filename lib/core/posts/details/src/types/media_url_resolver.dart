@@ -2,9 +2,9 @@
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../configs/config.dart';
-import '../../../../settings/settings.dart';
-import '../../../post/post.dart';
+import '../../../../configs/config/types.dart';
+import '../../../../images/types.dart';
+import '../../../post/types.dart';
 
 abstract class MediaUrlResolver {
   String resolveMediaUrl(

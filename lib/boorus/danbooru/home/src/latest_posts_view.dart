@@ -7,20 +7,21 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 
 // Project imports:
 import '../../../../../core/widgets/widgets.dart';
-import '../../../../core/boorus/engine/providers.dart';
-import '../../../../core/configs/ref.dart';
-import '../../../../core/home/home_search_bar.dart';
+import '../../../../core/configs/config/providers.dart';
+import '../../../../core/home/widgets.dart';
 import '../../../../core/posts/count/widgets.dart';
 import '../../../../core/posts/listing/widgets.dart';
+import '../../../../core/search/search/types.dart';
 import '../../../../core/search/selected_tags/providers.dart';
+import '../../../../core/search/selected_tags/types.dart';
 import '../../../../core/settings/providers.dart';
-import '../../../../core/settings/settings.dart';
-import '../../../../core/tags/configs/providers.dart';
-import '../../../../core/tags/tag/tag.dart';
+import '../../../../core/tags/metatag/providers.dart';
+import '../../../../core/tags/tag/types.dart';
 import '../../../../foundation/display.dart';
 import '../../dmails/widgets.dart';
 import '../../posts/listing/widgets.dart';
 import '../../posts/post/providers.dart';
+import '../../tags/user_metatags/providers.dart';
 import 'most_search_tag_list.dart';
 
 class LatestView extends ConsumerStatefulWidget {
@@ -42,9 +43,8 @@ class _LatestViewState extends ConsumerState<LatestView> {
     super.initState();
     final auth = ref.readConfigAuth;
 
-    selectedTagController = SelectedTagController.fromBooruRepository(
-      repository: ref.read(booruRepoProvider(auth)),
-      tagInfo: ref.read(tagInfoProvider),
+    selectedTagController = SelectedTagController(
+      metatagExtractor: ref.read(metatagExtractorProvider(auth)),
     );
   }
 
@@ -61,6 +61,9 @@ class _LatestViewState extends ConsumerState<LatestView> {
     final config = ref.watchConfigSearch;
     final postRepo = ref.watch(danbooruPostRepoProvider(config));
     final searchBarPosition = ref.watch(searchBarPositionProvider);
+    final metatagExtractor = ref.watch(
+      danbooruMetatagExtractorProvider(config.auth),
+    );
 
     return PostScope(
       fetcher: (page) {
@@ -81,10 +84,14 @@ class _LatestViewState extends ConsumerState<LatestView> {
               controller: controller,
               scrollController: _autoScrollController,
               itemBuilder: (context, index, scrollController, hero) =>
-                  DefaultDanbooruImageGridItem(
+                  DanbooruPostListingContextMenu(
                     index: index,
-                    autoScrollController: scrollController,
                     controller: controller,
+                    child: DefaultDanbooruImageGridItem(
+                      index: index,
+                      autoScrollController: scrollController,
+                      controller: controller,
+                    ),
                   ),
               sliverHeaders: [
                 if (context.isLargeScreen ||
@@ -117,7 +124,12 @@ class _LatestViewState extends ConsumerState<LatestView> {
                           if (sel) {
                             selectedTagController
                               ..clear()
-                              ..addTag(search.rawName);
+                              ..addTag(
+                                TagSearchItem.fromString(
+                                  search.rawName,
+                                  extractor: metatagExtractor,
+                                ),
+                              );
                           } else {
                             selectedTagController.clear();
                           }
@@ -142,7 +154,7 @@ class _LatestViewState extends ConsumerState<LatestView> {
 
                 return SafeArea(
                   top: false,
-                  bottom: position != BooruConfigSelectorPosition.bottom,
+                  bottom: !position.isBottom,
                   child: SizedBox(
                     height: kToolbarHeight,
                     child: CustomScrollView(

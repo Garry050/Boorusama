@@ -7,9 +7,9 @@ import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
-import '../../../boorus/booru/booru.dart';
-import '../../../configs/ref.dart';
-import '../../../theme/app_theme.dart';
+import '../../../boorus/booru/types.dart';
+import '../../../configs/config/providers.dart';
+import '../../../themes/theme/types.dart';
 import '../../../widgets/widgets.dart';
 import '../providers/bulk_download_notifier.dart';
 import '../providers/saved_download_task_provider.dart';
@@ -24,7 +24,8 @@ class BulkDownloadPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watchConfigAuth;
 
-    return config.booruType == BooruType.zerochan
+    return config.booruType == BooruType.zerochan ||
+            config.booruType == BooruType.eshuushuu
         ? Scaffold(
             appBar: AppBar(
               title: Text(context.t.sideMenu.bulk_download),

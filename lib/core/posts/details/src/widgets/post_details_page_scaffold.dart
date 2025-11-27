@@ -13,25 +13,25 @@ import 'package:visibility_detector/visibility_detector.dart';
 import '../../../../../foundation/display.dart';
 import '../../../../../foundation/platform.dart';
 import '../../../../analytics/providers.dart';
-import '../../../../boorus/engine/engine.dart';
+import '../../../../boorus/engine/types.dart';
 import '../../../../cache/providers.dart';
-import '../../../../configs/config.dart';
-import '../../../../configs/gesture/gesture.dart';
+import '../../../../configs/config/types.dart';
+import '../../../../configs/gesture/types.dart';
 import '../../../../premiums/providers.dart';
 import '../../../../router.dart';
 import '../../../../settings/providers.dart';
-import '../../../../settings/settings.dart';
-import '../../../../theme.dart';
+import '../../../../themes/theme/types.dart';
 import '../../../../videos/lock/widgets.dart';
 import '../../../../widgets/widgets.dart';
-import '../../../details_manager/types.dart';
 import '../../../details_pageview/widgets.dart';
 import '../../../details_parts/types.dart';
-import '../../../post/post.dart';
 import '../../../post/routes.dart';
-import '../../details.dart';
+import '../../../post/types.dart';
+import '../types/post_details.dart';
+import '../types/post_details_swipe_mode.dart';
 import 'post_details_controller.dart';
 import 'post_details_full_info_sheet.dart';
+import 'post_details_page_view_scope.dart';
 import 'video_controls.dart';
 import 'volume_key_page_navigator.dart';
 
@@ -133,6 +133,30 @@ class _PostDetailPageScaffoldState<T extends Post>
 
   var _previouslyPlaying = false;
 
+  Set<DetailsPart> _resolveFullDetailsParts({
+    required bool hasPremium,
+  }) {
+    return widget.preferredParts ??
+        getLayoutParsedParts(
+          details: widget.layoutConfig?.details,
+          hasPremium: hasPremium,
+        ) ??
+        widget.uiBuilder?.buildableFullParts ??
+        <DetailsPart>{};
+  }
+
+  Set<DetailsPart> _resolvePreviewDetailsParts({
+    required bool hasPremium,
+  }) {
+    return widget.preferredPreviewParts ??
+        getLayoutPreviewParsedParts(
+          previewDetails: widget.layoutConfig?.previewDetails,
+          hasPremium: hasPremium,
+        ) ??
+        widget.uiBuilder?.preview.keys.toSet() ??
+        <DetailsPart>{};
+  }
+
   void _isVideoPlayingChanged() {
     if (context.isLargeScreen && isDesktopPlatform()) {
       // force overlay to be on when video is not playing
@@ -154,6 +178,29 @@ class _PostDetailPageScaffoldState<T extends Post>
       if ((page - precisePage).abs() == 0) {
         widget.controller.onPageSettled(page);
       }
+    }
+  }
+
+  void _onHover({
+    required bool value,
+    required bool disableAnimation,
+  }) {
+    if (!_controller.hoverToControlOverlay.value) {
+      return;
+    }
+
+    if (disableAnimation) {
+      return;
+    }
+
+    if (value) {
+      _controller.showOverlay(
+        includeSystemStatus: false,
+      );
+    } else {
+      _controller.hideOverlay(
+        includeSystemStatus: false,
+      );
     }
   }
 
@@ -221,8 +268,6 @@ class _PostDetailPageScaffoldState<T extends Post>
   Widget _build() {
     final postGesturesHandler = widget.postGestureHandlerBuilder;
     final gestures = widget.gestureConfig?.fullview;
-
-    final uiBuilder = widget.uiBuilder;
 
     final reduceAnimations = ref.watch(
       settingsProvider.select((value) => value.reduceAnimations),
@@ -304,39 +349,62 @@ class _PostDetailPageScaffoldState<T extends Post>
         sheetBuilder: (context, scrollController) {
           return Consumer(
             builder: (_, ref, _) {
-              final layoutDetails = widget.layoutConfig?.details;
-
-              final preferredParts =
-                  widget.preferredParts ??
-                  getLayoutParsedParts(
-                    details: layoutDetails,
-                    hasPremium: ref.watch(hasPremiumLayoutProvider),
-                  ) ??
-                  uiBuilder?.full.keys.toSet();
-
               return ValueListenableBuilder(
                 valueListenable: _controller.sheetState,
                 builder: (context, state, _) => PostDetailsFullInfoSheet(
                   scrollController: scrollController,
                   sheetState: state,
-                  uiBuilder: uiBuilder,
-                  preferredParts: preferredParts,
+                  uiBuilder: widget.uiBuilder,
+                  preferredParts: _resolveFullDetailsParts(
+                    hasPremium: ref.watch(hasPremiumLayoutProvider),
+                  ),
                   canCustomize: ref.watch(showPremiumFeatsProvider),
                 ),
               );
             },
           );
         },
+        mainContentBuilder: (context, child) => MouseRegion(
+          onEnter: (_) => _onHover(
+            value: true,
+            disableAnimation: reduceAnimations,
+          ),
+          onExit: (_) => _onHover(
+            value: false,
+            disableAnimation: reduceAnimations,
+          ),
+          child: Stack(
+            children: [
+              child,
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: ValueListenableBuilder(
+                  valueListenable: widget.controller.currentPost,
+                  builder: (context, post, child) {
+                    return post.isVideo && context.isLargeScreen
+                        ? PostDetailsVideoControlsDesktop(
+                            controller: widget.controller,
+                            pageViewController: _controller,
+                          )
+                        : const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
         itemBuilder: widget.itemBuilder,
         bottomSheet: Consumer(
           builder: (_, ref, _) {
-            final layoutPreviewDetails = widget.layoutConfig?.previewDetails;
-
-            return widget.uiBuilder != null
-                ? _buildCustomPreview(widget.uiBuilder!, layoutPreviewDetails)
-                : uiBuilder != null && uiBuilder.preview.isNotEmpty
-                ? _buildCustomPreview(uiBuilder, layoutPreviewDetails)
-                : _buildFallbackPreview();
+            return switch (widget.uiBuilder) {
+              null => _buildFallbackPreview(),
+              final uiBuilder when uiBuilder.preview.isNotEmpty =>
+                _buildCustomPreview(
+                  uiBuilder: uiBuilder,
+                  hasPremium: ref.watch(hasPremiumLayoutProvider),
+                ),
+              _ => const SizedBox.shrink(),
+            };
           },
         ),
         actions: widget.actions,
@@ -364,17 +432,13 @@ class _PostDetailPageScaffoldState<T extends Post>
     );
   }
 
-  Widget _buildCustomPreview(
-    PostDetailsUIBuilder uiBuilder,
-    List<CustomDetailsPartKey>? layoutPreviewDetails,
-  ) {
-    final preferredPreviewParts =
-        widget.preferredPreviewParts ??
-        getLayoutPreviewParsedParts(
-          previewDetails: layoutPreviewDetails,
-          hasPremium: ref.watch(hasPremiumLayoutProvider),
-        ) ??
-        uiBuilder.preview.keys.toSet();
+  Widget _buildCustomPreview({
+    required bool hasPremium,
+    required PostDetailsUIBuilder uiBuilder,
+  }) {
+    final preferredPreviewParts = _resolvePreviewDetailsParts(
+      hasPremium: hasPremium,
+    );
 
     final colorScheme = Theme.of(context).colorScheme;
     final decoration = BoxDecoration(
@@ -396,7 +460,7 @@ class _PostDetailPageScaffoldState<T extends Post>
               ? SliverToBoxAdapter(
                   child: DecoratedBox(
                     decoration: decoration,
-                    child: PostDetailsVideoControls(
+                    child: PostDetailsVideoControlsMobile(
                       controller: widget.controller,
                     ),
                   ),
@@ -445,7 +509,7 @@ class _PostDetailPageScaffoldState<T extends Post>
     return ValueListenableBuilder(
       valueListenable: widget.controller.currentPost,
       builder: (context, post, _) => post.isVideo
-          ? PostDetailsVideoControls(
+          ? PostDetailsVideoControlsMobile(
               controller: widget.controller,
             )
           : const SizedBox.shrink(),

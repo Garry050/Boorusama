@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:context_menus/context_menus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:foundation/foundation.dart';
@@ -12,18 +11,20 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 // Project imports:
 import '../../../../../../core/config_widgets/website_logo.dart';
 import '../../../../../../core/configs/auth/widgets.dart';
-import '../../../../../../core/configs/ref.dart';
+import '../../../../../../core/configs/config/providers.dart';
 import '../../../../../../core/posts/listing/providers.dart';
 import '../../../../../../core/posts/listing/widgets.dart';
-import '../../../../../../core/posts/post/post.dart';
-import '../../../../../../core/posts/sources/source.dart';
+import '../../../../../../core/posts/post/types.dart';
+import '../../../../../../core/posts/sources/types.dart';
 import '../../../../../../core/widgets/widgets.dart';
 import '../../../../users/user/providers.dart';
 import '../../../listing/widgets.dart';
 import '../providers/providers.dart';
+import '../providers/upload_hide_provider.dart';
 import '../routes/route_utils.dart';
 import '../types/danbooru_upload.dart';
 import '../types/danbooru_upload_post.dart';
+import '../widgets/danbooru_upload_post_context_menu.dart';
 
 enum UploadTabType {
   posted,
@@ -75,10 +76,6 @@ class DanbooruMyUploadsPageInternal extends ConsumerStatefulWidget {
       _DanbooruMyUploadsPageState();
 }
 
-final _danbooruShowUploadHiddenProvider = StateProvider.autoDispose<bool>(
-  (ref) => false,
-);
-
 class _DanbooruMyUploadsPageState
     extends ConsumerState<DanbooruMyUploadsPageInternal>
     with SingleTickerProviderStateMixin {
@@ -92,29 +89,35 @@ class _DanbooruMyUploadsPageState
 
   @override
   Widget build(BuildContext context) {
+    final config = ref.watchConfigAuth;
+    final hideNofifier = ref.watch(
+      danbooruUploadHideProvider(config).notifier,
+    );
+
     return CustomContextMenuOverlay(
       child: Scaffold(
         appBar: AppBar(
           title: Text('My Uploads'.hc),
           actions: [
-            BooruPopupMenuButton(
-              onSelected: (value) {
-                switch (value) {
-                  case 'show_hidden':
-                    ref.read(_danbooruShowUploadHiddenProvider.notifier).state =
-                        true;
-                  case 'hide_hidden':
-                    ref.read(_danbooruShowUploadHiddenProvider.notifier).state =
-                        false;
-                }
-              },
-              itemBuilder: {
-                if (!ref.watch(_danbooruShowUploadHiddenProvider))
-                  'show_hidden': Text('Show hidden'.hc)
-                else
-                  'hide_hidden': Text('Hide hidden'.hc),
-              },
-            ),
+            ref
+                .watch(danbooruUploadHideProvider(config))
+                .maybeWhen(
+                  data: (state) => BooruPopupMenuButton(
+                    items: [
+                      BooruPopupMenuItem(
+                        title: Text(
+                          state.showHiddenUploads
+                              ? 'Hide hidden'.hc
+                              : 'Show hidden'.hc,
+                        ),
+                        onTap: () {
+                          hideNofifier.toggleShowHidden();
+                        },
+                      ),
+                    ],
+                  ),
+                  orElse: () => const SizedBox.shrink(),
+                ),
           ],
         ),
         body: SafeArea(
@@ -204,12 +207,12 @@ class _DanbooruUploadGridState extends ConsumerState<DanbooruUploadGrid> {
       ),
       builder: (context, controller) => LayoutBuilder(
         builder: (context, constraints) => ref
-            .watch(danbooruUploadHideMapProvider)
+            .watch(danbooruUploadHideProvider(config))
             .maybeWhen(
-              data: (data) => _buildGrid(
+              data: (state) => _buildGrid(
                 controller,
                 constraints,
-                data,
+                state,
               ),
               orElse: () => const SizedBox.shrink(),
             ),
@@ -219,14 +222,14 @@ class _DanbooruUploadGridState extends ConsumerState<DanbooruUploadGrid> {
 
   void _changeVisibility(int id, bool visible) {
     ref
-        .read(danbooruUploadHideMapProvider.notifier)
+        .read(danbooruUploadHideProvider(ref.watchConfigAuth).notifier)
         .changeVisibility(id, visible);
   }
 
   Widget _buildGrid(
     PostGridController<DanbooruUploadPost> controller,
     BoxConstraints constraints,
-    Map<int, bool> hideMap,
+    DanbooruUploadHideState hideState,
   ) {
     return PostGrid(
       controller: controller,
@@ -235,47 +238,49 @@ class _DanbooruUploadGridState extends ConsumerState<DanbooruUploadGrid> {
             valueListenable: controller.itemsNotifier,
             builder: (_, posts, _) {
               final post = posts[index];
-              final isHidden = hideMap[post.id] ?? false;
+
+              // Filter out hidden posts when showHiddenUploads is false
+              if (!hideState.shouldShowInList(post.id)) {
+                return const SizedBox.shrink();
+              }
+
+              final shouldShowOverlay = hideState.shouldShowOverlay(post.id);
 
               return Stack(
                 children: [
-                  DefaultDanbooruImageGridItem(
-                    index: index,
-                    autoScrollController: scrollController,
-                    controller: controller,
-                    useHero: useHero,
-                    quickActionButton: const SizedBox.shrink(),
-                    contextMenu: GenericContextMenu(
-                      buttonConfigs: [
-                        ContextMenuButtonConfig(
-                          'Hide',
-                          onPressed: () {
-                            _changeVisibility(posts[index].id, false);
-                          },
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      if (widget.type == UploadTabType.unposted) {
-                        goToTagEditUploadPage(
-                          ref,
-                          post: post,
-                          uploadId: post.uploadId,
-                          //TODO: Refresh later
-                          // onSubmitted: () => controller.refresh(),
-                        );
-                      }
+                  DanbooruUploadPostContextMenu(
+                    post: post,
+                    onVisibilityChanged: (visible) {
+                      _changeVisibility(post.id, visible);
                     },
-                    blockOverlay: isHidden
-                        ? BlockOverlayItem(
-                            overlay: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: Container(
-                                    color: Colors.black.withValues(alpha: 0.8),
+                    child: DefaultDanbooruImageGridItem(
+                      index: index,
+                      autoScrollController: scrollController,
+                      controller: controller,
+                      useHero: useHero,
+                      quickActionButton: const SizedBox.shrink(),
+                      onTap: () {
+                        if (widget.type == UploadTabType.unposted) {
+                          goToTagEditUploadPage(
+                            ref,
+                            post: post,
+                            uploadId: post.uploadId,
+                            //TODO: Refresh later
+                            // onSubmitted: () => controller.refresh(),
+                          );
+                        }
+                      },
+                      blockOverlay: shouldShowOverlay
+                          ? BlockOverlayItem(
+                              overlay: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: Container(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                if (isHidden)
                                   Positioned(
                                     top: 0,
                                     right: 0,
@@ -286,10 +291,11 @@ class _DanbooruUploadGridState extends ConsumerState<DanbooruUploadGrid> {
                                       icon: const Icon(Icons.visibility),
                                     ),
                                   ),
-                              ],
-                            ),
-                          )
-                        : null,
+                                ],
+                              ),
+                            )
+                          : null,
+                    ),
                   ),
                   if (widget.type == UploadTabType.unposted)
                     _buildUnpostedChip(post),

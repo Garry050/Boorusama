@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 import 'package:i18n/i18n.dart';
@@ -13,10 +12,11 @@ import 'package:share_plus/share_plus.dart';
 
 // Project imports:
 import '../../../../foundation/toast.dart';
-import '../../../configs/config.dart';
-import '../../../configs/ref.dart';
-import '../../../downloads/downloader/providers.dart';
-import '../../../http/providers.dart';
+import '../../../configs/config/providers.dart';
+import '../../../configs/config/types.dart';
+import '../../../ddos/handler/providers.dart';
+import '../../../downloads/background/types.dart';
+import '../../../http/client/providers.dart';
 import '../../../settings/routes.dart';
 import '../../../widgets/default_selection_bar.dart';
 import '../../../widgets/widgets.dart';
@@ -126,11 +126,16 @@ class _DownloadManagerPageState extends ConsumerState<DownloadManagerPage> {
                   },
                 ),
               BooruPopupMenuButton(
-                onSelected: (value) {
-                  switch (value) {
-                    case 'select':
+                items: [
+                  BooruPopupMenuItem(
+                    title: Text(context.t.generic.action.select),
+                    onTap: () {
                       _selectionModeController.enable();
-                    case 'clear':
+                    },
+                  ),
+                  BooruPopupMenuItem(
+                    title: Text(context.t.generic.action.clear),
+                    onTap: () {
                       // clear default group only
                       ref
                           .read(downloadTaskUpdatesProvider.notifier)
@@ -146,12 +151,9 @@ class _DownloadManagerPageState extends ConsumerState<DownloadManagerPage> {
                               );
                             },
                           );
-                  }
-                },
-                itemBuilder: {
-                  'select': Text(context.t.generic.action.select),
-                  'clear': Text(context.t.generic.action.clear),
-                },
+                    },
+                  ),
+                ],
               ),
             ],
           ),

@@ -9,13 +9,27 @@ import 'package:i18n/i18n.dart';
 import '../../../core/configs/auth/widgets.dart';
 import '../../../core/configs/create/providers.dart';
 import '../../../core/configs/create/widgets.dart';
-import '../../../core/configs/gesture/gesture.dart';
+import '../../../core/configs/gesture/types.dart';
 import '../../../core/configs/gesture/widgets.dart';
 import '../../../core/configs/search/widgets.dart';
 import '../../../core/configs/viewer/widgets.dart';
 import '../gelbooru.dart';
 import '_internal_widgets.dart';
 import 'api_key_verify_dialog.dart';
+
+const _kGelbooruSpecificGestureActions = {
+  kToggleFavoriteAction,
+};
+
+const _kGelbooruPreviewGestureActions = {
+  ...kDefaultGestureActions,
+  ..._kGelbooruSpecificGestureActions,
+};
+
+const _kGelbooruFullviewGestureActions = {
+  ...kDefaultFullviewActions,
+  ..._kGelbooruSpecificGestureActions,
+};
 
 class CreateGelbooruConfigPage extends ConsumerWidget {
   const CreateGelbooruConfigPage({
@@ -34,10 +48,8 @@ class CreateGelbooruConfigPage extends ConsumerWidget {
       initialTab: initialTab,
       authTab: const GelbooruAuthView(),
       gestureTab: BooruConfigGesturesView(
-        postDetailsGestureActions: const {
-          ...kDefaultGestureActions,
-          kToggleFavoriteAction,
-        },
+        previewGestureActions: _kGelbooruPreviewGestureActions,
+        fullviewGestureActions: _kGelbooruFullviewGestureActions,
         describePostDetailsAction: (action) => switch (action) {
           kToggleFavoriteAction => 'Toggle favorite',
           _ => describeDefaultGestureAction(action, context),

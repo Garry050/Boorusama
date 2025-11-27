@@ -2,20 +2,21 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
+import 'package:anchor_ui/anchor_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../../foundation/display.dart';
-import '../../../../theme.dart';
+import '../../../../themes/theme/types.dart';
 import '../../../../videos/player/providers.dart';
 import '../../../../videos/player/widgets.dart';
 import '../../../../widgets/widgets.dart';
-import '../../../post/post.dart';
+import '../../../details_pageview/widgets.dart';
+import '../../../post/types.dart';
 import 'post_details_controller.dart';
 
-class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
-  const PostDetailsVideoControls({
+class PostDetailsVideoControlsMobile<T extends Post> extends ConsumerWidget {
+  const PostDetailsVideoControlsMobile({
     required this.controller,
     super.key,
   });
@@ -24,7 +25,87 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLarge = context.isLargeScreen;
+    return _VideoControls(
+      child: LayoutBuilder(
+        builder: (context, constraints) => _VideoControlsContent(
+          controller: controller,
+          constraints: constraints,
+          playPausePadding: const EdgeInsets.all(8),
+          popoverController: null,
+        ),
+      ),
+    );
+  }
+}
+
+class PostDetailsVideoControlsDesktop<T extends Post> extends StatefulWidget {
+  const PostDetailsVideoControlsDesktop({
+    required this.controller,
+    required this.pageViewController,
+    super.key,
+  });
+
+  final PostDetailsController<T> controller;
+  final PostDetailsPageViewController pageViewController;
+
+  @override
+  State<PostDetailsVideoControlsDesktop<T>> createState() =>
+      _PostDetailsVideoControlsDesktopState<T>();
+}
+
+class _PostDetailsVideoControlsDesktopState<T extends Post>
+    extends State<PostDetailsVideoControlsDesktop<T>> {
+  final _popoverController = AnchorController();
+
+  @override
+  void dispose() {
+    _popoverController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: widget.pageViewController.overlay,
+      builder: (context, overlay, child) => ListenableBuilder(
+        listenable: _popoverController,
+        builder: (context, _) => switch ((
+          overlay: overlay,
+          optionShowing: _popoverController.isShowing,
+        )) {
+          (overlay: true, optionShowing: _) ||
+          (overlay: false, optionShowing: true) => _VideoControls(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SafeArea(
+                top: false,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: _VideoControlsContent(
+                    popoverController: _popoverController,
+                    controller: widget.controller,
+                    constraints: constraints,
+                    playPausePadding: null,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _ => const SizedBox.shrink(),
+        },
+      ),
+    );
+  }
+}
+
+class _VideoControls extends StatelessWidget {
+  const _VideoControls({
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
     final surfaceColor = Theme.of(context).colorScheme.surface;
 
     return Stack(
@@ -38,51 +119,50 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
             ),
           ),
         ),
-        LayoutBuilder(
-          builder: (context, constraints) => SafeArea(
-            top: false,
-            left: isLarge,
-            right: isLarge,
-            bottom: isLarge,
-            child: Container(
-              padding: isLarge ? const EdgeInsets.all(8) : null,
-              child: _buildControls(
-                isLarge,
-                constraints,
-                [
-                  const SoundControlButton(),
-                  const SizedBox(width: 8),
-                  ValueListenableBuilder(
-                    valueListenable: controller.currentPost,
-                    builder: (context, post, child) => MoreOptionsControlButton(
-                      post: post,
-                      speed: ref.watch(
-                        playbackSpeedProvider(
-                          post.videoUrl,
-                        ),
-                      ),
-                      onSpeedChanged: (speed) => ref
-                          .read(
-                            playbackSpeedProvider(post.videoUrl).notifier,
-                          )
-                          .setSpeed(speed),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ),
-            ),
-          ),
-        ),
+        child,
       ],
     );
   }
+}
 
-  Widget _buildControls(
-    bool isLarge,
-    BoxConstraints constraints,
-    List<Widget> rightControls,
-  ) {
+class _VideoControlsContent<T extends Post> extends ConsumerWidget {
+  const _VideoControlsContent({
+    required this.controller,
+    required this.constraints,
+    required this.playPausePadding,
+    required this.popoverController,
+  });
+
+  final PostDetailsController<T> controller;
+  final BoxConstraints constraints;
+  final EdgeInsets? playPausePadding;
+  final AnchorController? popoverController;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rightControls = [
+      const SoundControlButton(),
+      const SizedBox(width: 8),
+      ValueListenableBuilder(
+        valueListenable: controller.currentPost,
+        builder: (context, post, child) => MoreOptionsControlButton(
+          post: post,
+          popoverController: popoverController,
+          speed: ref.watch(
+            playbackSpeedProvider(
+              post.videoUrl,
+            ),
+          ),
+          onSpeedChanged: (speed) => ref
+              .read(
+                playbackSpeedProvider(post.videoUrl).notifier,
+              )
+              .setSpeed(speed),
+        ),
+      ),
+      const SizedBox(width: 8),
+    ];
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -93,23 +173,19 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 4),
-        Consumer(
-          builder: (context, ref, child) {
-            return Row(
-              children: [
-                const SizedBox(width: 4),
-                _buildPlayPauseButton(isLarge),
-                _buildLeftTime(),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: _buildBar(),
-                ),
-                const SizedBox(width: 4),
-                _buildRightTime(),
-                if (constraints.maxWidth >= _kMinWidth) ...rightControls,
-              ],
-            );
-          },
+        Row(
+          children: [
+            const SizedBox(width: 4),
+            _buildPlayPauseButton(),
+            _buildLeftTime(),
+            const SizedBox(width: 4),
+            Expanded(
+              child: _buildBar(),
+            ),
+            const SizedBox(width: 4),
+            _buildRightTime(),
+            if (constraints.maxWidth >= _kMinWidth) ...rightControls,
+          ],
         ),
       ],
     );
@@ -135,17 +211,17 @@ class PostDetailsVideoControls<T extends Post> extends ConsumerWidget {
     );
   }
 
-  Widget _buildPlayPauseButton(bool isLarge) {
+  Widget _buildPlayPauseButton() {
     return ValueListenableBuilder(
       valueListenable: controller.currentPost,
       builder: (_, post, _) => PlayPauseButton(
-        padding: !isLarge ? const EdgeInsets.all(8) : null,
+        padding: playPausePadding,
         isPlaying: controller.isVideoPlaying,
         onPlayingChanged: (value) {
           if (value) {
-            controller.pauseVideo(post.id);
+            controller.pauseVideo(post.id, showAnimation: true);
           } else if (!value) {
-            controller.playVideo(post.id);
+            controller.playVideo(post.id, showAnimation: true);
           } else {
             // do nothing
           }
