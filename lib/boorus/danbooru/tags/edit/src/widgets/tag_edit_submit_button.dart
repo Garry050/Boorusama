@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../../../core/configs/ref.dart';
+import '../../../../../../core/configs/config/providers.dart';
 import '../../../_shared/tag_list_notifier.dart';
 import '../providers/providers.dart';
 import '../providers/tag_edit_notifier.dart';
@@ -16,14 +16,14 @@ class TagEditSubmitButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.watch(tagEditProvider.notifier);
-    final initialRating = notifier.initialRating;
-    final postId = notifier.postId;
+    final params = TagEditParamsProvider.of(context);
+    final initialRating = params.initialRating;
+    final postId = params.postId;
     final addedTags = ref.watch(
-      tagEditProvider.select((value) => value.toBeAdded),
+      tagEditProvider(params).select((value) => value.toBeAdded),
     );
     final removedTags = ref.watch(
-      tagEditProvider.select((value) => value.toBeRemoved),
+      tagEditProvider(params).select((value) => value.toBeRemoved),
     );
     final rating = ref.watch(selectedTagEditRatingProvider(initialRating));
 

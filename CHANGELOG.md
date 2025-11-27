@@ -1,7 +1,13 @@
-# Prereleased-2025.9.21
-- [Gelbooru 0.2] Add login support for favorites, you will need to provide additional information in the profile for it to work
+# Prereleased-2025.11.02
+- [Gelbooru 0.2, Shimmie2] Add login and favorite support
 - Add random sort option for bookmark
-- Add WebView and MPV as options for video player engine, each has its own quirks
+- Add a button to lock screen when viewing video, also keep screen awake during video playback
+- Double tap on the left/right side of the screen to seek backward/forward in video player
+- Cache video by default for smoother playback, can be turned off in global/profile settings
+- Add WebView and MPV as alternative video player engines
+- Add a button to browse uploads from a specific uploader in post details
+- Add support for Eshuushuu  
+- Support override image viewer settings with profile-specific settings
 
 # 4.2.0
 - TikTok swiping support in image viewer

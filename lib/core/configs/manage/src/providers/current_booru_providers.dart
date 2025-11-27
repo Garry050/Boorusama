@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Project imports:
 import '../../../../../foundation/loggers.dart';
 import '../../../../settings/providers.dart';
-import '../../../../theme/theme_configs.dart';
+import '../../../../themes/configs/types.dart';
 import '../../../config/types.dart';
-import '../../../gesture/gesture.dart';
+import '../../../gesture/types.dart';
 
 final currentBooruConfigProvider =
     NotifierProvider<CurrentBooruConfigNotifier, BooruConfig>(
@@ -86,7 +86,7 @@ class CurrentBooruConfigNotifier extends Notifier<BooruConfig> {
     return config;
   }
 
-  Future<void> setEmpty() async {
+  Future<void> setEmpty() {
     return update(BooruConfig.empty);
   }
 

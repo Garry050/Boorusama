@@ -6,8 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/widgets.dart';
 
 // Project imports:
-import '../../../../../../core/configs/ref.dart';
-import '../../../../versions/version.dart';
+import '../../../../../../core/configs/config/providers.dart';
+import '../../../../versions/providers.dart';
+import '../../../../versions/types.dart';
 import '../../../../versions/widgets.dart';
 
 class UserDetailsTagChanges extends ConsumerStatefulWidget {
@@ -24,10 +25,10 @@ class UserDetailsTagChanges extends ConsumerStatefulWidget {
 }
 
 class _UserDetailsTagChangesState extends ConsumerState<UserDetailsTagChanges> {
-  static const int itemsPerPage = 20;
-  int currentPage = 1;
+  static const itemsPerPage = 20;
+  var currentPage = 1;
   List<DanbooruPostVersion> versions = [];
-  bool isLoading = false;
+  var isLoading = false;
 
   @override
   void initState() {

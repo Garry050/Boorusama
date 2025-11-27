@@ -8,28 +8,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../foundation/utils/file_utils.dart';
 import '../images/providers.dart';
 import '../tags/local/providers.dart';
+import '../videos/cache/providers.dart';
+import 'persistent/providers.dart';
 
-final appCacheSizeProvider = FutureProvider.autoDispose<DirectorySizeInfo>((
-  ref,
-) async {
-  return getCacheSize().catchError((_) => DirectorySizeInfo.zero);
-});
+final appCacheSizeProvider = FutureProvider.autoDispose<DirectorySizeInfo>(
+  (
+    ref,
+  ) => getCacheSize().catchError((_) => DirectorySizeInfo.zero),
+);
 
-final imageCacheSizeProvider = FutureProvider.autoDispose<DirectorySizeInfo>((
-  ref,
-) async {
-  return getImageCacheSize().catchError((_) => DirectorySizeInfo.zero);
-});
+final imageCacheSizeProvider = FutureProvider.autoDispose<DirectorySizeInfo>(
+  (
+    ref,
+  ) => getImageCacheSize().catchError((_) => DirectorySizeInfo.zero),
+);
 
-final tagCacheSizeProvider = FutureProvider.autoDispose<int>((ref) async {
-  return _getTagCacheSize().catchError((_) => 0);
-});
+final tagCacheSizeProvider = FutureProvider.autoDispose<int>(
+  (ref) => _getTagCacheSize().catchError((_) => 0),
+);
 
-final diskSpaceInfoProvider = FutureProvider.autoDispose<DiskSpaceInfo>((
-  ref,
-) async {
-  return DiskSpaceInfo.fromTempDir().catchError((_) => DiskSpaceInfo.zero);
-});
+final diskSpaceInfoProvider = FutureProvider.autoDispose<DiskSpaceInfo>(
+  (
+    ref,
+  ) => DiskSpaceInfo.fromTempDir().catchError((_) => DiskSpaceInfo.zero),
+);
+
+final videoCacheSizeProvider = FutureProvider.autoDispose<DirectorySizeInfo>(
+  (ref) => getVideoCacheSize().catchError((_) => DirectorySizeInfo.zero),
+);
+
+final persistentCacheSizeProvider = FutureProvider.autoDispose<int>(
+  (ref) => _getPersistentCacheSize(ref).catchError((_) => 0),
+);
 
 final cacheSizeProvider =
     AsyncNotifierProvider.autoDispose<CacheSizeNotifier, CacheSizeInfo>(
@@ -39,6 +49,7 @@ final cacheSizeProvider =
 enum StorageType {
   systemData,
   imageCache,
+  videoCache,
   bookmarkImages,
   tagCache,
   appCache,
@@ -59,23 +70,34 @@ class CacheSizeInfo {
   const CacheSizeInfo({
     required this.appCacheSize,
     required this.imageCacheSize,
+    required this.videoCacheSize,
     required this.tagCacheSize,
+    required this.persistentCacheSize,
     required this.diskSpaceInfo,
   });
 
   final DirectorySizeInfo appCacheSize;
   final DirectorySizeInfo imageCacheSize;
+  final DirectorySizeInfo videoCacheSize;
   final int tagCacheSize;
+  final int persistentCacheSize;
   final DiskSpaceInfo diskSpaceInfo;
 
   static final zero = CacheSizeInfo(
     appCacheSize: DirectorySizeInfo.zero,
     imageCacheSize: DirectorySizeInfo.zero,
+    videoCacheSize: DirectorySizeInfo.zero,
     tagCacheSize: 0,
+    persistentCacheSize: 0,
     diskSpaceInfo: DiskSpaceInfo.zero,
   );
 
-  int get totalSize => appCacheSize.size + imageCacheSize.size + tagCacheSize;
+  int get totalSize =>
+      appCacheSize.size +
+      imageCacheSize.size +
+      videoCacheSize.size +
+      tagCacheSize +
+      persistentCacheSize;
 
   List<StorageInfo> getStorageBreakdown({
     int bookmarkCacheSize = 0,
@@ -94,6 +116,11 @@ class CacheSizeInfo {
           type: StorageType.imageCache,
           size: imageCacheSize.size,
         ),
+      if (videoCacheSize.size > 0)
+        StorageInfo(
+          type: StorageType.videoCache,
+          size: videoCacheSize.size,
+        ),
       if (bookmarkCacheSize > 0)
         StorageInfo(
           type: StorageType.bookmarkImages,
@@ -104,10 +131,10 @@ class CacheSizeInfo {
           type: StorageType.tagCache,
           size: tagCacheSize,
         ),
-      if (appCacheSize.size > 0)
+      if (appCacheSize.size > 0 || persistentCacheSize > 0)
         StorageInfo(
           type: StorageType.appCache,
-          size: appCacheSize.size,
+          size: appCacheSize.size + persistentCacheSize,
         ),
       if (diskSpaceInfo.freeSpace > 0)
         StorageInfo(
@@ -125,12 +152,16 @@ class CacheSizeNotifier extends AutoDisposeAsyncNotifier<CacheSizeInfo> {
     final imageCache = ref.watch(imageCacheSizeProvider);
     final tagCache = ref.watch(tagCacheSizeProvider);
     final diskSpace = ref.watch(diskSpaceInfoProvider);
+    final videoCache = ref.watch(videoCacheSizeProvider);
+    final persistentCache = ref.watch(persistentCacheSizeProvider);
 
     return CacheSizeInfo(
       appCacheSize: appCache.valueOrNull ?? DirectorySizeInfo.zero,
       imageCacheSize: imageCache.valueOrNull ?? DirectorySizeInfo.zero,
       tagCacheSize: tagCache.valueOrNull ?? 0,
       diskSpaceInfo: diskSpace.valueOrNull ?? DiskSpaceInfo.zero,
+      videoCacheSize: videoCache.valueOrNull ?? DirectorySizeInfo.zero,
+      persistentCacheSize: persistentCache.valueOrNull ?? 0,
     );
   }
 
@@ -140,6 +171,8 @@ class CacheSizeNotifier extends AutoDisposeAsyncNotifier<CacheSizeInfo> {
       ..invalidate(imageCacheSizeProvider)
       ..invalidate(tagCacheSizeProvider)
       ..invalidate(diskSpaceInfoProvider)
+      ..invalidate(videoCacheSizeProvider)
+      ..invalidate(persistentCacheSizeProvider)
       ..invalidateSelf();
   }
 
@@ -150,6 +183,8 @@ class CacheSizeNotifier extends AutoDisposeAsyncNotifier<CacheSizeInfo> {
       await clearImageCache(cacheManager);
       await clearCache();
       await clearTagCacheDatabase(ref);
+      await clearVideoCache(ref);
+      await clearPersistentCache(ref);
     });
     refreshCacheSize();
   }
@@ -167,6 +202,14 @@ class CacheSizeNotifier extends AutoDisposeAsyncNotifier<CacheSizeInfo> {
     state = const AsyncValue.loading();
     await _withMinimumDelay(() async {
       await clearTagCacheDatabase(ref);
+    });
+    refreshCacheSize();
+  }
+
+  Future<void> clearAppVideoCache() async {
+    state = const AsyncValue.loading();
+    await _withMinimumDelay(() async {
+      await clearVideoCache(ref);
     });
     refreshCacheSize();
   }
@@ -215,4 +258,34 @@ Future<bool> clearTagCacheDatabase(Ref ref) async {
 Future<File> _getTagCacheFile() async {
   final dbPath = await getTagCacheDbPath();
   return File(dbPath);
+}
+
+Future<bool> clearVideoCache(Ref ref) async {
+  try {
+    final cacheManager = ref.read(videoCacheManagerProvider);
+    await cacheManager?.clearAllVideos();
+    return true;
+  } on Exception catch (_) {
+    return false;
+  }
+}
+
+Future<int> _getPersistentCacheSize(Ref ref) async {
+  try {
+    final box = await ref.watch(persistentCacheBoxProvider.future);
+    // Hive doesn't provide direct size calculation, so we estimate based on entry count
+    return box.length * 1024;
+  } on Exception catch (_) {
+    return 0;
+  }
+}
+
+Future<bool> clearPersistentCache(Ref ref) async {
+  try {
+    final box = await ref.read(persistentCacheBoxProvider.future);
+    await box.clear();
+    return true;
+  } on Exception catch (_) {
+    return false;
+  }
 }

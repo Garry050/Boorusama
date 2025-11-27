@@ -3,21 +3,22 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:cache_manager/cache_manager.dart';
+import 'package:coreutils/coreutils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:share_plus/share_plus.dart';
 
 // Project imports:
-import '../../../boorus/engine/engine.dart';
 import '../../../config_widgets/website_logo.dart';
-import '../../../configs/config/src/types/booru_config.dart';
+import '../../../configs/config/types.dart';
 import '../../../downloads/filename/types.dart';
-import '../../../downloads/urls/sanitizer.dart';
-import '../../post/post.dart';
+import '../../details/providers.dart';
 import '../../post/providers.dart';
-import '../../sources/source.dart';
+import '../../post/types.dart';
+import '../../sources/types.dart';
 import 'download_and_share.dart';
+import 'share.dart';
 
 final _cachedImageFileProvider = FutureProvider.autoDispose
     .family<XFile?, ModalShareImageData>(
@@ -27,19 +28,18 @@ final _cachedImageFileProvider = FutureProvider.autoDispose
 
         if (imageUrl == null) return null;
 
-        final ext = sanitizedExtension(imageUrl);
+        final ext = urlExtension(imageUrl);
         final effectiveExt = ext.isNotEmpty ? ext : imageExt;
 
         final cacheManager = data.imageCacheManager;
         final cacheKey = cacheManager.generateCacheKey(imageUrl);
-        final file = await cacheManager.getCachedFile(cacheKey);
+        final filePath = await cacheManager.getCachedFilePath(cacheKey);
 
-        if (file == null || effectiveExt == null) return null;
+        if (filePath == null || effectiveExt == null) return null;
 
         // attach the extension to the file
-        final newPath = file.path + effectiveExt;
-        final newFile = file.copySync(newPath);
-        final xFile = XFile(newFile.path);
+        final newPath = filePath + effectiveExt;
+        final xFile = fileCopySync(filePath, newPath);
 
         return xFile;
       },
@@ -71,12 +71,11 @@ class PostModalShare extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final mediaUrlResolver = ref.watch(
+      mediaUrlResolverProvider(auth),
+    );
     final imageData = (
-      imageUrl: defaultPostImageUrlBuilder(
-        ref,
-        auth,
-        viewer,
-      )(post),
+      imageUrl: mediaUrlResolver.resolveMediaUrl(post, viewer),
       imageExt: post.format,
       imageCacheManager: imageCacheManager,
     );

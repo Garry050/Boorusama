@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../../foundation/info/device_info.dart';
-import '../../../search/histories/history.dart';
-import '../../../search/selected_tags/tag.dart';
+import '../../../search/histories/types.dart';
+import '../../../search/selected_tags/types.dart';
 import '../types/download_options.dart';
 
 class CreateDownloadOptionsNotifier
@@ -27,29 +27,26 @@ class CreateDownloadOptionsNotifier
   }
 
   void addFromSearchHistory(SearchHistory history) {
-    if (history.queryType == QueryType.list) {
-      final tags = history.queryAsList();
-      addTags(tags);
-    } else {
-      addTag(history.query);
-    }
+    state = state.copyWith(
+      tags: state.tags.clone()..addTagFromSearchHistory(history),
+    );
   }
 
-  void addTag(String tag) {
+  void addTag(TagSearchItem tag) {
     state = state.copyWith(
       tags: state.tags.clone()..addTag(tag),
     );
   }
 
-  void addTags(List<String> tags) {
+  void addTags(List<TagSearchItem> tags) {
     state = state.copyWith(
       tags: state.tags.clone()..addTags(tags),
     );
   }
 
-  void removeTag(String tag) {
+  void removeTag(TagSearchItem tag) {
     state = state.copyWith(
-      tags: state.tags.clone()..removeTagString(tag),
+      tags: state.tags.clone()..removeTag(tag),
     );
   }
 

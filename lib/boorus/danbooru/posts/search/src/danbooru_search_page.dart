@@ -6,11 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rich_text_controller/rich_text_controller.dart';
 
 // Project imports:
-import '../../../../../core/configs/ref.dart';
+import '../../../../../core/configs/config/providers.dart';
 import '../../../../../core/posts/count/widgets.dart';
+import '../../../../../core/search/search/routes.dart';
 import '../../../../../core/search/search/widgets.dart';
-import '../../../../../core/tags/metatag/providers.dart';
+import '../../../../../core/search/selected_tags/types.dart';
+import '../../../../../core/tags/metatag/widgets.dart';
 import '../../../../../foundation/utils/flutter_utils.dart';
+import '../../../tags/user_metatags/providers.dart';
 import '../../listing/widgets.dart';
 import '../../post/providers.dart';
 import 'widgets/danbooru_metatags_section.dart';
@@ -35,6 +38,9 @@ class _DanbooruSearchPageState extends ConsumerState<DanbooruSearchPage> {
     final config = ref.watchConfigSearch;
     final postRepo = ref.watch(danbooruPostRepoProvider(config));
     final metatags = ref.watch(metatagsProvider).map((e) => e.name).join('|');
+    final metatagExtractor = ref.watch(
+      danbooruMetatagExtractorProvider(config.auth),
+    );
 
     return SearchPageScaffold(
       fetcher: (page, controller) =>
@@ -48,22 +54,26 @@ class _DanbooruSearchPageState extends ConsumerState<DanbooruSearchPage> {
           ),
           spanBuilder: (match) => WidgetSpan(
             alignment: PlaceholderAlignment.middle,
-            child: _MetatagContainer(
+            child: MetatagContainer(
               tag: match.text,
             ),
           ),
         ),
       ],
-      trending: (context, controller) => _Trending(controller),
-      metatags: (context, controller) => _Metatags(controller),
       itemBuilder:
           (context, index, scrollController, postController, useHero) =>
-              DefaultDanbooruImageGridItem(
+              DanbooruPostListingContextMenu(
                 index: index,
-                autoScrollController: scrollController,
                 controller: postController,
-                useHero: useHero,
+                child: DefaultDanbooruImageGridItem(
+                  index: index,
+                  autoScrollController: scrollController,
+                  controller: postController,
+                  useHero: useHero,
+                ),
               ),
+      landingViewBuilder: (controller) =>
+          DanbooruSearchLandingView(controller: controller),
       extraHeaders:
           (
             context,
@@ -80,12 +90,22 @@ class _DanbooruSearchPageState extends ConsumerState<DanbooruSearchPage> {
                   builder: (context, selectedTags, _) => RelatedTagSection(
                     query: selectedTags,
                     onAdded: (tag) {
-                      selectedTagController.addTag(tag.tag);
+                      selectedTagController.addTag(
+                        TagSearchItem.fromString(
+                          tag.tag,
+                          extractor: metatagExtractor,
+                        ),
+                      );
                       postController.refresh();
                       searchController.search();
                     },
                     onNegated: (tag) {
-                      selectedTagController.negateTag(tag.tag);
+                      selectedTagController.addTag(
+                        TagSearchItem.fromString(
+                          '-${tag.tag}',
+                          extractor: metatagExtractor,
+                        ),
+                      );
                       postController.refresh();
                       searchController.search();
                     },
@@ -113,25 +133,25 @@ class _DanbooruSearchPageState extends ConsumerState<DanbooruSearchPage> {
   }
 }
 
-class _MetatagContainer extends StatelessWidget {
-  const _MetatagContainer({
-    required this.tag,
+class DanbooruSearchLandingView extends StatelessWidget {
+  const DanbooruSearchLandingView({
+    super.key,
+    required this.controller,
   });
 
-  final String tag;
+  final SearchPageController controller;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return TextContainer(
-      text: tag,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(4),
-          bottomLeft: Radius.circular(4),
-        ),
+    return SearchLandingView(
+      child: DefaultSearchLandingChildren(
+        children: [
+          DefaultMobileQueryActionSection(controller: controller),
+          _Metatags(controller),
+          DefaultMobileFavoriteTagsSection(controller: controller),
+          _Trending(controller),
+          DefaultMobileSearchHistorySection(controller: controller),
+        ],
       ),
     );
   }

@@ -1,13 +1,13 @@
 // Package imports:
 import 'package:booru_clients/sankaku.dart';
+import 'package:coreutils/coreutils.dart';
 
 // Project imports:
-import '../../../core/downloads/urls/sanitizer.dart';
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
-import '../../../core/tags/categories/tag_category.dart';
-import '../../../core/tags/tag/tag.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
+import '../../../core/tags/categories/types.dart';
+import '../../../core/tags/tag/types.dart';
 import 'types.dart';
 
 SankakuPost postDtoToPost(
@@ -114,7 +114,7 @@ SankakuPost postDtoToPost(
     sampleImageUrl: e.sampleUrl ?? '',
     originalImageUrl: e.fileUrl ?? '',
     tags: e.tags?.map((e) => e.tagName).nonNulls.toSet() ?? {},
-    rating: mapStringToRating(e.rating),
+    rating: Rating.parse(e.rating),
     hasComment: e.hasComments ?? false,
     isTranslated: false,
     hasParentOrChildren: hasParentOrChildren,
@@ -146,6 +146,7 @@ SankakuPost postDtoToPost(
     uploaderId: 0, // The id is now a string
     uploaderName: e.author?.name,
     metadata: metadata,
+    status: StringPostStatus.tryParse(e.status),
   );
 }
 
@@ -156,7 +157,7 @@ String? extractFileExtension(
   if (mimeType == null) {
     if (fileUrl == null) return null;
 
-    final ext = sanitizedExtension(fileUrl);
+    final ext = urlExtension(fileUrl);
 
     return ext;
   }

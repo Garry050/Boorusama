@@ -10,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../settings/providers.dart';
-import '../settings/settings.dart';
 
 class BooruSegmentedButton<T> extends ConsumerStatefulWidget {
   const BooruSegmentedButton({
@@ -138,7 +137,7 @@ class _CustomSlidingSegmentedControlState<T>
   double? height;
   double offset = 0;
   Map<T?, double> sizes = {};
-  bool hasTouch = false;
+  var hasTouch = false;
   double? maxSize;
   List<Cache<T>> cacheItems = [];
 

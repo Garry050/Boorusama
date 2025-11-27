@@ -1,14 +1,29 @@
 // Package imports:
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../../../core/cache/providers.dart';
-import '../../../../../../core/configs/config.dart';
+import '../../../../../../core/cache/persistent/providers.dart';
+import '../../../../../../core/configs/config/types.dart';
 import '../../../../../../foundation/riverpod/riverpod.dart';
 import '../../../../client_provider.dart';
 import '../../../../configs/providers.dart';
 import '../data/providers.dart';
 import '../types/user.dart';
+import 'users_notifier.dart';
+
+class DanbooruUserDetails extends Equatable {
+  const DanbooruUserDetails({
+    required this.user,
+    required this.previousNames,
+  });
+
+  final DanbooruUser user;
+  final List<String> previousNames;
+
+  @override
+  List<Object?> get props => [user, previousNames];
+}
 
 const _kCurrentUserIdKey = '_current_uid';
 
@@ -18,7 +33,7 @@ final danbooruCurrentUserProvider =
       if (!loginDetails.hasLogin()) return null;
 
       // First, we try to get the user id from the cache
-      final miscData = ref.watch(miscDataBoxProvider);
+      final miscData = await ref.watch(persistentCacheBoxProvider.future);
       final key =
           '${_kCurrentUserIdKey}_${Uri.encodeComponent(config.url)}_${config.login}';
       final cached = miscData.get(key);
@@ -52,5 +67,26 @@ final danbooruUserPreviousNamesProvider = FutureProvider.autoDispose
       final client = ref.watch(danbooruClientProvider(config));
       final requests = await client.getUserNameChangeRequests(userId: userId);
 
-      return requests.map((e) => e.desiredName).nonNulls.toList();
+      return requests.map((e) => e.originalName).nonNulls.toList();
+    });
+
+final danbooruUserDetailsProvider = FutureProvider.autoDispose
+    .family<DanbooruUserDetails, (BooruConfigAuth, int)>((
+      ref,
+      params,
+    ) async {
+      final (config, userId) = params;
+
+      final results = await Future.wait([
+        ref.watch(danbooruUserProvider(userId).future),
+        ref.watch(danbooruUserPreviousNamesProvider((config, userId)).future),
+      ]);
+
+      final user = results[0] as DanbooruUser;
+      final previousNames = results[1] as List<String>;
+
+      return DanbooruUserDetails(
+        user: user,
+        previousNames: previousNames,
+      );
     });

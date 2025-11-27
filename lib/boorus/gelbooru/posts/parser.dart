@@ -4,9 +4,9 @@ import 'package:foundation/foundation.dart';
 import 'package:path/path.dart' as path;
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 import '../common/parser.dart';
 import 'types.dart';
 
@@ -30,7 +30,7 @@ GelbooruPost gelbooruPostDtoToGelbooruPost(
     height: dto.height?.toDouble() ?? 0,
     format: path.extension(dto.fileUrl ?? 'foo.png').substring(1),
     source: PostSource.from(dto.source),
-    rating: mapStringToRating(dto.rating ?? 'general'),
+    rating: Rating.parse(dto.rating ?? 'general'),
     md5: dto.md5 ?? '',
     hasComment: dto.hasComments ?? false,
     hasParentOrChildren:
@@ -42,5 +42,6 @@ GelbooruPost gelbooruPostDtoToGelbooruPost(
     uploaderId: dto.creatorId,
     uploaderName: dto.owner,
     metadata: metadata,
+    status: StringPostStatus.tryParse(dto.status),
   );
 }

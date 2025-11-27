@@ -2,10 +2,10 @@
 import 'package:equatable/equatable.dart';
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
-import '../../../core/tags/tag/tag.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
+import '../../../core/tags/tag/types.dart';
 
 class SzurubooruPost extends Equatable
     with
@@ -42,6 +42,7 @@ class SzurubooruPost extends Equatable
     required this.commentCount,
     required this.metadata,
     required this.tagDetails,
+    required this.status,
     this.createdAt,
     this.parentId,
     this.downvotes,
@@ -108,6 +109,9 @@ class SzurubooruPost extends Equatable
   final PostMetadata? metadata;
 
   final List<Tag> tagDetails;
+
+  @override
+  final PostStatus? status;
 
   @override
   List<Object?> get props => [id];

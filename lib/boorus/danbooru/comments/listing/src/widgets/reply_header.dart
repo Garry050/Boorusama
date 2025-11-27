@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../../../core/theme.dart';
+import '../../../../../../core/themes/theme/types.dart';
 import '../../../../users/user/providers.dart';
-import '../../../comment/comment.dart';
+import '../../../comment/types.dart';
 
 class ReplyHeader extends StatelessWidget {
   const ReplyHeader({

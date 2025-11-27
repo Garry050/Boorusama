@@ -7,15 +7,15 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 // Project imports:
-import '../../../../../../core/configs/config.dart';
-import '../../../../../../core/configs/ref.dart';
+import '../../../../../../core/configs/config/providers.dart';
+import '../../../../../../core/configs/config/types.dart';
 import '../../../../../../core/search/search/widgets.dart';
 import '../../../../../../core/settings/providers.dart';
 import '../../../../../../core/tags/categories/providers.dart';
 import '../../../../../../core/tags/tag/providers.dart';
-import '../../../../../../core/theme.dart';
-import '../../../../../../core/theme/providers.dart';
-import '../../../../../../core/theme/utils.dart';
+import '../../../../../../core/themes/colors/providers.dart';
+import '../../../../../../core/themes/colors/types.dart';
+import '../../../../../../core/themes/theme/types.dart';
 import '../../../../../../core/widgets/widgets.dart';
 import '../providers/tag_edit_notifier.dart';
 import 'tag_edit_tag_tile.dart';
@@ -120,10 +120,6 @@ final _tagColorProvider = Provider.autoDispose.family<ChipColors?, String>(
   name: 'tagColorProvider',
 );
 
-final _initialTagCountProvider = Provider.autoDispose<int>((ref) {
-  throw UnimplementedError();
-});
-
 final _tagsProvider = Provider.autoDispose<Set<String>>((ref) {
   throw UnimplementedError();
 });
@@ -135,12 +131,13 @@ class SliverTagEditTagListSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tags = ref.watch(tagEditProvider.select((value) => value.tags));
-    final initialTags = ref.watch(tagEditProvider.notifier).initialTags;
+    final params = TagEditParamsProvider.of(context);
+    final tags = ref.watch(
+      tagEditProvider(params).select((value) => value.tags),
+    );
 
     return ProviderScope(
       overrides: [
-        _initialTagCountProvider.overrideWithValue(initialTags.length),
         _tagsProvider.overrideWithValue(tags),
       ],
       child: MultiSliver(
@@ -179,22 +176,22 @@ class _SliverTagEditListViewState
 
   @override
   Widget build(BuildContext context) {
+    final params = TagEditParamsProvider.of(context);
     final tags = ref.watch(_tagsProvider);
     final filtered = ref.watch(tagEditFilteredListProvider(tags));
     final toBeAdded = ref.watch(
-      tagEditProvider.select((value) => value.toBeAdded),
+      tagEditProvider(params).select((value) => value.toBeAdded),
     );
 
-    final notifier = ref.watch(tagEditProvider.notifier);
+    final notifier = ref.watch(tagEditProvider(params).notifier);
+    final tagEditColorsNotifier = ref.watch(
+      danbooruTagEditColorsProvider(ref.watchConfigAuth).notifier,
+    );
 
     ref.listen(
-      tagEditProvider.select((value) => value.toBeAdded),
+      tagEditProvider(params).select((value) => value.toBeAdded),
       (prev, cur) {
-        ref
-            .read(danbooruTagEditColorsProvider(ref.readConfigAuth).notifier)
-            .load(
-              cur.toList(),
-            );
+        tagEditColorsNotifier.load(cur.toList());
       },
     );
 
@@ -237,7 +234,7 @@ class TagEditFilterHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filterOn = ref.watch(tagEditTagFilterModeProvider);
-    final tagCount = ref.watch(_initialTagCountProvider);
+    final tagCount = TagEditParamsProvider.of(context).initialTags.length;
 
     return Container(
       constraints: const BoxConstraints(minHeight: 56),
@@ -308,22 +305,19 @@ class TagEditFilterHeader extends ConsumerWidget {
           if (!filterOn) const Spacer(),
           if (!filterOn)
             BooruPopupMenuButton(
-              itemBuilder: const {
-                'fetch_category': Text('Fetch tag category'),
-              },
-              onSelected: (value) async {
-                switch (value) {
-                  case 'fetch_category':
-                    await _fetch(ref);
-                }
-              },
+              items: [
+                BooruPopupMenuItem(
+                  title: const Text('Fetch tag category'),
+                  onTap: () => _fetch(ref),
+                ),
+              ],
             ),
         ],
       ),
     );
   }
 
-  Future<void> _fetch(WidgetRef ref) async {
+  Future<void> _fetch(WidgetRef ref) {
     final tags = ref.read(_tagsProvider);
     return ref
         .read(danbooruTagEditColorsProvider(ref.watchConfigAuth).notifier)

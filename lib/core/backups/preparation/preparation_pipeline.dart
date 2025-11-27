@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:version/version.dart';
+import 'package:coreutils/coreutils.dart';
 
 // Project imports:
 import '../../../foundation/version.dart';
@@ -60,13 +60,14 @@ PreparationContext<T> setVersionCheck<T>(
   VersionCheckInfo info,
 ) => context.copyWith(versionCheck: info);
 
-// Version checking step
 class VersionCheckStep<T> extends PreparationStep<T> {
   const VersionCheckStep({
     required this.currentVersion,
+    this.dataTypeName,
   });
 
   final Version? currentVersion;
+  final String? dataTypeName;
 
   @override
   Future<PreparationContext<T>> execute(
@@ -114,6 +115,7 @@ class VersionCheckStep<T> extends PreparationStep<T> {
           context: context,
           importVersion: import,
           currentVersion: current,
+          dataTypeName: dataTypeName,
         ),
       );
     }

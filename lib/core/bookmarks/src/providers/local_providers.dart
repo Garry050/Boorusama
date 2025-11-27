@@ -8,11 +8,11 @@ import '../../../../boorus/e621/tags/providers.dart';
 import '../../../../boorus/gelbooru_v2/tags/providers.dart';
 import '../../../../boorus/hybooru/tags/providers.dart';
 import '../../../../foundation/riverpod/riverpod.dart';
-import '../../../boorus/booru/booru.dart';
-import '../../../configs/config.dart';
+import '../../../boorus/booru/types.dart';
+import '../../../configs/config/types.dart';
 import '../../../tags/local/providers.dart';
 import '../../../tags/tag/providers.dart';
-import '../../../tags/tag/tag.dart';
+import '../../../tags/tag/types.dart';
 import '../../providers.dart';
 import '../data/bookmark_convert.dart';
 import '../types/bookmark.dart';
@@ -161,33 +161,39 @@ final bookmarkTagExtractorProvider =
           siteHost: config.url,
           tagCache: ref.watch(tagCacheRepositoryProvider.future),
           sorter: TagSorter.defaults(),
-          fetcher: (post, options) async {
+          fetcher: (post, options) {
             final tagResolver = ref.read(bookmarkTagResolverProvider(config));
 
             if (post case final BookmarkPost bookmarkPost) {
-              final originalPost = bookmarkPost.toOriginalPost();
+              final originalPostId = bookmarkPost.originalPostId;
+
+              if (originalPostId == null) {
+                final tags = bookmarkPost.tags;
+
+                return tagResolver.resolveRawTags(tags);
+              }
 
               //FIXME: Need a better way to handle different booru types
               if (config.booruType == BooruType.gelbooruV2) {
                 return ref.read(
                   gelbooruV2TagsFromIdProvider((
                     config,
-                    originalPost.id,
+                    bookmarkPost.id,
                   )).future,
                 );
               } else if (config.booruType == BooruType.hybooru) {
                 return ref.read(
-                  hybooruTagsFromIdProvider((config, originalPost.id)).future,
+                  hybooruTagsFromIdProvider((config, originalPostId)).future,
                 );
               } else if (config.booruType == BooruType.zerochan) {
                 return ref.read(
-                  hybooruTagsFromIdProvider((config, originalPost.id)).future,
+                  hybooruTagsFromIdProvider((config, originalPostId)).future,
                 );
               } else if (config.booruType == BooruType.animePictures) {
                 return ref.read(
                   animePicturesTagsFromIdProvider((
                     config,
-                    originalPost.id,
+                    originalPostId,
                   )).future,
                 );
               } else if (config.booruType == BooruType.e621) {

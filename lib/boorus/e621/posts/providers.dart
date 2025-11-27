@@ -2,10 +2,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../core/configs/config.dart';
+import '../../../core/configs/config/types.dart';
+import '../../../core/posts/details/types.dart';
 import '../../../core/posts/favorites/providers.dart';
-import '../../../core/posts/post/post.dart';
 import '../../../core/posts/post/providers.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../core/search/queries/providers.dart';
 import '../../../core/settings/providers.dart';
 import '../client_provider.dart';
@@ -22,7 +23,7 @@ final e621PostRepoProvider =
         fetchSingle: (id, {options}) async {
           final numericId = id as NumericPostId?;
 
-          if (numericId == null) return Future.value(null);
+          if (numericId == null) return Future.value();
 
           final post = await client.getPost(numericId.value);
 
@@ -60,3 +61,21 @@ final e621PostRepoProvider =
         getSettings: () async => ref.read(imageListingSettingsProvider),
       );
     });
+
+final e621MediaUrlResolverProvider = Provider<MediaUrlResolver>((ref) {
+  return E621MediaUrlResolver(
+    imageQuality: ref.watch(
+      settingsProvider.select((s) => s.listing.imageQuality),
+    ),
+  );
+});
+
+final e621UploaderQueryProvider = Provider.family<UploaderQuery?, E621Post>((
+  ref,
+  post,
+) {
+  return switch (post.uploaderName) {
+    final uploader? => UserColonUploaderQuery(uploader),
+    _ => null,
+  };
+});

@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
 // Project imports:
-import 'package:boorusama/core/http/src/sliding_window_rate_limit_interceptor.dart';
+import 'package:boorusama/core/http/client/types.dart';
 
 void main() {
   group('SlidingWindowRateLimitInterceptor', () {
@@ -168,7 +168,7 @@ void main() {
 }
 
 class MockRequestInterceptorHandler extends RequestInterceptorHandler {
-  bool nextCalled = false;
+  var nextCalled = false;
 
   @override
   void next(RequestOptions requestOptions) {

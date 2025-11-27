@@ -4,10 +4,10 @@ import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 
 // Project imports:
-import '../../../../../../core/posts/rating/rating.dart';
-import '../../../../../../core/posts/sources/source.dart';
-import '../../../../users/user/user.dart';
-import '../../../post/post.dart';
+import '../../../../../../core/posts/rating/types.dart';
+import '../../../../../../core/posts/sources/types.dart';
+import '../../../../users/user/types.dart';
+import '../../../post/types.dart';
 import 'danbooru_upload_post.dart';
 
 class DanbooruUpload extends Equatable {
@@ -100,7 +100,7 @@ extension DanbooruUploadX on DanbooruUpload {
       uploaderId: uploaderId,
       rating: Rating.unknown,
       fileSize: mediaAsset.fileSize ?? 0,
-      isBanned: false,
+      status: null,
       hasChildren: false,
       parentId: null,
       hasLarge: false,

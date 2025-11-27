@@ -2,10 +2,10 @@
 import 'package:booru_clients/danbooru.dart';
 
 // Project imports:
-import '../../../../../core/posts/post/post.dart';
 import '../../../../../core/posts/post/tags.dart';
-import '../../../../../core/posts/rating/rating.dart';
-import '../../../../../core/posts/sources/source.dart';
+import '../../../../../core/posts/post/types.dart';
+import '../../../../../core/posts/rating/types.dart';
+import '../../../../../core/posts/sources/types.dart';
 import 'danbooru_post.dart';
 import 'post_variant.dart';
 
@@ -55,9 +55,8 @@ DanbooruPost postDtoToPost(
       favCount: dto.favCount ?? 0,
       uploaderId: dto.uploaderId ?? 0,
       approverId: dto.approverId,
-      rating: mapStringToRating(dto.rating ?? 's'),
+      rating: Rating.parse(dto.rating ?? 's'),
       fileSize: dto.fileSize ?? 0,
-      isBanned: dto.isBanned ?? false,
       hasChildren: dto.hasChildren ?? false,
       parentId: dto.parentId,
       hasLarge: dto.hasLarge ?? false,
@@ -65,6 +64,12 @@ DanbooruPost postDtoToPost(
       variants: variants,
       pixelHash: dto.mediaAsset?.pixelHash ?? '',
       metadata: metadata,
+      status: DanbooruPostStatus.from(
+        isBanned: dto.isBanned,
+        isPending: dto.isPending,
+        isFlagged: dto.isFlagged,
+        isDeleted: dto.isDeleted,
+      ),
     );
   } catch (e) {
     return DanbooruPost.empty();

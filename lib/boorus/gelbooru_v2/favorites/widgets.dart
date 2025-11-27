@@ -13,8 +13,8 @@ import '../../../core/configs/config/providers.dart';
 import '../../../core/posts/details/routes.dart';
 import '../../../core/posts/favorites/providers.dart';
 import '../../../core/posts/favorites/widgets.dart';
-import '../../../core/posts/listing/src/_internal/default_image_grid_item.dart';
-import '../../../core/posts/post/src/types/post.dart';
+import '../../../core/posts/listing/widgets.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../foundation/toast.dart';
 import '../gelbooru_v2_provider.dart';
 import '../posts/providers.dart';
@@ -79,24 +79,29 @@ class GelbooruV2FavoritesPageHtml extends ConsumerWidget {
       favQueryBuilder: null,
       itemBuilder:
           (context, index, autoScrollController, controller, useHero) =>
-              DefaultImageGridItem(
+              GeneralPostContextMenu(
                 index: index,
-                autoScrollController: autoScrollController,
                 controller: controller,
-                useHero: useHero,
-                onTap: () {
-                  final post = controller.items.elementAtOrNull(index);
-                  if (post == null) {
-                    showErrorToast(context, 'Post not found'.hc);
-                    return;
-                  }
+                child: DefaultImageGridItem(
+                  index: index,
+                  autoScrollController: autoScrollController,
+                  controller: controller,
+                  useHero: useHero,
+                  config: config.auth,
+                  onTap: () {
+                    final post = controller.items.elementAtOrNull(index);
+                    if (post == null) {
+                      showErrorToast(context, 'Post not found'.hc);
+                      return;
+                    }
 
-                  goToSinglePostDetailsPage(
-                    ref: ref,
-                    postId: NumericPostId(post.id),
-                    configSearch: config,
-                  );
-                },
+                    goToSinglePostDetailsPage(
+                      ref: ref,
+                      postId: NumericPostId(post.id),
+                      configSearch: config,
+                    );
+                  },
+                ),
               ),
       fetcher: (page) => TaskEither.Do(($) async {
         // Just a placeholder since we can't really search with tags

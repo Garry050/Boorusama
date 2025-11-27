@@ -1,10 +1,6 @@
-// Package imports:
-import 'package:foundation/foundation.dart';
-
 // Project imports:
 import '../../../core/configs/config/types.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/search/queries/query.dart';
+import '../../../core/search/queries/types.dart';
 
 class GelbooruV2TagQueryComposer implements TagQueryComposer {
   GelbooruV2TagQueryComposer({
@@ -23,16 +19,12 @@ class GelbooruV2TagQueryComposer implements TagQueryComposer {
         '-rating:explicit',
       ],
       BooruConfigRatingFilter.custom =>
-        config.filter.granularRatingFiltersWithoutUnknown.toOption().fold(
-          () => <String>[],
-          (ratings) => [
-            ...ratings.map(
-              (e) =>
-                  '-rating:${e.toFullString(
-                    legacy: true,
-                  )}',
-            ),
-          ],
+        TagQueryComposer.extractTagsFromGranularFilter(
+          config.filter.granularRatingFilters,
+          (rating) =>
+              '-rating:${rating.toFullString(
+                legacy: true,
+              )}',
         ),
     },
   );

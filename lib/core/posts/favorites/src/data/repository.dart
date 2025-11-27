@@ -1,5 +1,5 @@
 // Project imports:
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 import '../types/types.dart';
 
 class EmptyFavoriteRepository extends FavoriteRepository<Post> {
@@ -37,12 +37,12 @@ class FavoriteRepositoryBuilder<T extends Post>
   bool canFavorite() => _canFavorite();
 
   @override
-  Future<AddFavoriteStatus> addToFavorites(int postId) async {
+  Future<AddFavoriteStatus> addToFavorites(int postId) {
     return add(postId);
   }
 
   @override
-  Future<bool> removeFromFavorites(int postId) async {
+  Future<bool> removeFromFavorites(int postId) {
     return remove(postId);
   }
 

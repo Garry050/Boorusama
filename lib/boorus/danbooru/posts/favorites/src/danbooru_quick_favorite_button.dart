@@ -8,10 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../../core/configs/ref.dart';
+import '../../../../../core/configs/config/providers.dart';
 import '../../../../../core/posts/favorites/providers.dart';
 import '../../../../../core/posts/favorites/widgets.dart';
-import '../../post/post.dart';
+import '../../post/types.dart';
 
 class DanbooruQuickFavoriteButton extends ConsumerWidget {
   const DanbooruQuickFavoriteButton({
@@ -31,7 +31,7 @@ class DanbooruQuickFavoriteButton extends ConsumerWidget {
 
     return QuickFavoriteButton(
       isFaved: isFaved,
-      onFavToggle: (isFaved) async {
+      onFavToggle: (isFaved) {
         if (!isFaved) {
           unawaited(notifier.remove(post.id));
         } else {

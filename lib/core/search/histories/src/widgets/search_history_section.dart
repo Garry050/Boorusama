@@ -10,8 +10,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../../../core/widgets/widgets.dart';
 import '../../../../../foundation/display/media_query_utils.dart';
 import '../../../../../foundation/platform.dart';
-import '../../../selected_tags/tag.dart';
-import '../search_history.dart';
+import '../../../selected_tags/types.dart';
+import '../types/search_history.dart';
 
 class SearchHistorySection extends StatelessWidget {
   const SearchHistorySection({
@@ -114,7 +114,7 @@ class SearchHistoryQueryWidget extends StatelessWidget {
                     vertical: 2,
                     horizontal: 8,
                   ),
-                  backgroundColor: reverseScheme == true
+                  backgroundColor: (reverseScheme ?? false)
                       ? Theme.of(context).colorScheme.surface
                       : Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),

@@ -9,13 +9,13 @@ import 'package:selection_mode/selection_mode.dart';
 
 // Project imports:
 import '../../../../boorus/engine/providers.dart';
-import '../../../../configs/gesture/gesture.dart';
-import '../../../../configs/ref.dart';
+import '../../../../configs/config/providers.dart';
+import '../../../../configs/gesture/types.dart';
 import '../../../../settings/providers.dart';
-import '../../../../settings/settings.dart';
-import '../../../post/post.dart';
 import '../../../post/tags.dart';
+import '../../../post/types.dart';
 import '../../../post/widgets.dart';
+import '../types/image_list_type.dart';
 
 class BlockOverlayItem {
   const BlockOverlayItem({
@@ -58,8 +58,8 @@ class SliverPostGridImageGridItem<T extends Post> extends ConsumerWidget {
     final overlay = blockOverlay;
     final hideOverlay = multiSelectEnabled;
 
-    final booruBuilder = ref.watch(booruBuilderProvider(ref.watchConfigAuth));
-    final postGesturesHandler = booruBuilder?.postGestureHandlerBuilder;
+    final auth = ref.watchConfigAuth;
+    final booruRepo = ref.watch(booruRepoProvider(auth));
     final gestures = ref.watchPostGestures?.preview;
 
     final imageBorderRadius = ref.watch(
@@ -86,8 +86,8 @@ class SliverPostGridImageGridItem<T extends Post> extends ConsumerWidget {
     );
 
     return GestureDetector(
-      onLongPress: gestures.canLongPress && postGesturesHandler != null
-          ? () => postGesturesHandler(
+      onLongPress: gestures.canLongPress && booruRepo != null
+          ? () => booruRepo.handlePostGesture(
               ref,
               gestures?.longPress,
               post,
@@ -109,8 +109,8 @@ class SliverPostGridImageGridItem<T extends Post> extends ConsumerWidget {
                     SelectionMode.of(context).toggleItem(index);
                   }
                 : () {
-                    if (gestures.canTap && postGesturesHandler != null) {
-                      postGesturesHandler(
+                    if (gestures.canTap && booruRepo != null) {
+                      booruRepo.handlePostGesture(
                         ref,
                         gestures?.tap,
                         post,
@@ -145,7 +145,6 @@ class SliverPostGridImageGridItem<T extends Post> extends ConsumerWidget {
               )
             else
               Align(
-                alignment: Alignment.center,
                 child: overlay.overlay,
               ),
           ],

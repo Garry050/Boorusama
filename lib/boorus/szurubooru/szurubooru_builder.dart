@@ -5,15 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../core/boorus/engine/engine.dart';
+import '../../core/boorus/defaults/widgets.dart';
+import '../../core/boorus/engine/types.dart';
 import '../../core/comments/widgets.dart';
-import '../../core/configs/config.dart';
+import '../../core/configs/config/providers.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/widgets.dart';
 import '../../core/configs/manage/widgets.dart';
-import '../../core/configs/ref.dart';
 import '../../core/posts/details/widgets.dart';
-import '../../core/posts/details_manager/types.dart';
-import '../../core/posts/details_parts/widgets.dart';
+import '../../core/search/search/routes.dart';
 import '../../core/search/search/widgets.dart';
 import '../../core/widgets/widgets.dart';
 import '../../foundation/html.dart';
@@ -21,29 +21,11 @@ import 'configs/providers.dart';
 import 'configs/widgets.dart';
 import 'favorites/widgets.dart';
 import 'home/widgets.dart';
-import 'post_votes/widgets.dart';
 import 'posts/providers.dart';
 import 'posts/types.dart';
 import 'posts/widgets.dart';
 
-class SzurubooruBuilder
-    with
-        ArtistNotSupportedMixin,
-        CharacterNotSupportedMixin,
-        LegacyGranularRatingOptionsBuilderMixin,
-        UnknownMetatagsMixin,
-        DefaultUnknownBooruWidgetsBuilderMixin,
-        DefaultViewTagListBuilderMixin,
-        DefaultTagSuggestionsItemBuilderMixin,
-        DefaultMultiSelectionActionsBuilderMixin,
-        DefaultQuickFavoriteButtonBuilderMixin,
-        DefaultHomeMixin,
-        DefaultPostImageDetailsUrlMixin,
-        DefaultPostGesturesHandlerMixin,
-        DefaultGranularRatingFiltererMixin,
-        DefaultPostStatisticsPageBuilderMixin,
-        DefaultBooruUIMixin
-    implements BooruBuilder {
+class SzurubooruBuilder extends BaseBooruBuilder {
   SzurubooruBuilder();
 
   @override
@@ -81,8 +63,8 @@ class SzurubooruBuilder
 
   @override
   CommentPageBuilder? get commentPageBuilder =>
-      (context, useAppBar, postId) => CommentPageScaffold(
-        postId: postId,
+      (context, useAppBar, post) => CommentPageScaffold(
+        postId: post.id,
         useAppBar: useAppBar,
       );
 
@@ -115,19 +97,7 @@ class SzurubooruBuilder
   };
 
   @override
-  final PostDetailsUIBuilder postDetailsUIBuilder = PostDetailsUIBuilder(
-    preview: {
-      DetailsPart.toolbar: (context) => const SzurubooruPostActionToolbar(),
-    },
-    full: {
-      DetailsPart.toolbar: (context) => const SzurubooruPostActionToolbar(),
-      DetailsPart.stats: (context) => const SzurubooruStatsTileSection(),
-      DetailsPart.tags: (context) =>
-          const DefaultInheritedTagsTile<SzurubooruPost>(),
-      DetailsPart.fileDetails: (context) =>
-          const SzurubooruFileDetailsSection(),
-    },
-  );
+  final postDetailsUIBuilder = kSzurubooruPostDetailsUIBuilder;
 }
 
 class SzurubooruSearchPage extends ConsumerWidget {
@@ -145,14 +115,17 @@ class SzurubooruSearchPage extends ConsumerWidget {
     final postRepo = ref.watch(szurubooruPostRepoProvider(config));
 
     return SearchPageScaffold(
-      noticeBuilder: (context) => !loginDetails.hasLogin()
-          ? InfoContainer(
-              contentBuilder: (context) => const AppHtml(
-                data:
-                    'You need to log in to use <b>Szurubooru</b> tag completion.',
-              ),
-            )
-          : const SizedBox.shrink(),
+      landingViewBuilder: (controller) => DefaultMobileSearchLandingView(
+        notice: !loginDetails.hasLogin()
+            ? InfoContainer(
+                contentBuilder: (context) => const AppHtml(
+                  data:
+                      'You need to log in to use <b>Szurubooru</b> tag completion.',
+                ),
+              )
+            : null,
+        controller: controller,
+      ),
       params: params,
       fetcher: (page, controller) =>
           postRepo.getPostsFromController(controller.tagSet, page),

@@ -7,7 +7,7 @@ import 'package:i18n/i18n.dart';
 import 'package:intl/intl.dart';
 
 // Project imports:
-import '../../theme/theme.dart';
+import '../../themes/theme/types.dart';
 import '../../widgets/widgets.dart';
 import '../types/backup_data_source.dart';
 import 'types.dart';
@@ -113,7 +113,7 @@ class _ZipPreviewDialogState extends ConsumerState<ZipPreviewDialog> {
       children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(null),
+            onPressed: () => Navigator.of(context).pop(),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(

@@ -2,7 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../booru/booru.dart';
+import '../../booru/types.dart';
 import 'booru_builder.dart';
 import 'booru_engine.dart';
 import 'booru_repository.dart';
@@ -45,7 +45,7 @@ class BooruRegistry {
     );
   }
 
-  Booru parseFromConfig(String name, dynamic data) {
+  Booru parseFromConfig(String name) {
     final type = _findBooruType(name);
 
     if (type == BooruType.unknown) {
@@ -57,7 +57,7 @@ class BooruRegistry {
       throw Exception('No components registered for booru type: $type');
     }
 
-    return components.parser.parse(name, data);
+    return components.parser.parse();
   }
 
   BooruType _findBooruType(String name) {

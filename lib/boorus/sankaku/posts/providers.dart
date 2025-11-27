@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../core/configs/config/types.dart';
-import '../../../core/posts/post/post.dart';
+import '../../../core/posts/details/types.dart';
 import '../../../core/posts/post/providers.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../core/search/queries/providers.dart';
 import '../../../core/settings/providers.dart';
 import '../client_provider.dart';
@@ -28,7 +29,7 @@ final sankakuPostRepoProvider =
           fetchSingle: (id, {options}) async {
             final stringId = id as StringPostId?;
 
-            if (stringId == null) return Future.value(null);
+            if (stringId == null) return Future.value();
 
             final post = await client.getPost(id: stringId.value);
 
@@ -59,3 +60,11 @@ final sankakuPostRepoProvider =
         );
       },
     );
+
+final sankakuUploaderQueryProvider =
+    Provider.family<UploaderQuery?, SankakuPost>((ref, post) {
+      return switch (post.uploaderName) {
+        final uploader? => UserColonUploaderQuery(uploader),
+        _ => null,
+      };
+    });

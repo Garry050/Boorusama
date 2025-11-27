@@ -11,15 +11,16 @@ import '../../../../foundation/info/device_info.dart';
 import '../../../../foundation/toast.dart';
 import '../../../../foundation/utils/collection_utils.dart';
 import '../../../blacklists/providers.dart';
-import '../../../configs/ref.dart';
-import '../../../configs/search/search.dart';
+import '../../../configs/config/providers.dart';
+import '../../../configs/search/types.dart';
 import '../../../downloads/configs/widgets/download_folder_selector_section.dart';
+import '../../../downloads/downloader/types.dart' as d;
 import '../../../router.dart';
 import '../../../search/search/routes.dart';
+import '../../../search/selected_tags/types.dart' hide queryAsList;
 import '../../../settings/providers.dart';
-import '../../../settings/settings.dart';
 import '../../../settings/widgets.dart';
-import '../../../theme.dart';
+import '../../../themes/theme/types.dart';
 import '../../../widgets/widgets.dart';
 import '../providers/bulk_download_notifier.dart';
 import '../providers/create_download_options_notifier.dart';
@@ -199,8 +200,12 @@ class _CreateDownloadOptionsRawSheetState
       children: [
         BulkDownloadTagList(
           tags: options.tags,
-          onSubmit: notifier.addTag,
-          onRemove: notifier.removeTag,
+          onSubmit: (value) {
+            notifier.addTag(TagSearchItem.fromString(value));
+          },
+          onRemove: (tag) {
+            notifier.removeTag(TagSearchItem.fromString(tag));
+          },
           onHistoryTap: notifier.addFromSearchHistory,
         ),
         if (!widget.advancedToggle)
@@ -282,8 +287,8 @@ class _CreateDownloadOptionsRawSheetState
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   title: Text(context.t.settings.download.quality),
                   selectedOption:
-                      options.quality ?? DownloadQuality.original.name,
-                  items: DownloadQuality.values.map((e) => e.name).toList(),
+                      options.quality ?? d.DownloadQuality.original.name,
+                  items: d.DownloadQuality.values.map((e) => e.name).toList(),
                   onChanged: (value) {
                     notifier.setQuality(value);
                   },

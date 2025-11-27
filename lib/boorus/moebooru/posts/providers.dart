@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../core/configs/config/types.dart';
-import '../../../core/posts/post/post.dart';
 import '../../../core/posts/post/providers.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../core/search/queries/providers.dart';
 import '../../../core/settings/providers.dart';
 import '../client_provider.dart';
@@ -22,7 +22,7 @@ final moebooruPostRepoProvider =
           fetchSingle: (id, {options}) async {
             final numericId = id as NumericPostId?;
 
-            if (numericId == null) return Future.value(null);
+            if (numericId == null) return Future.value();
 
             final post = await client.getPost(numericId.value);
 

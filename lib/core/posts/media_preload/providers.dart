@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../configs/config/types.dart';
-import '../../http/providers.dart';
+import '../../http/client/providers.dart';
 import '../../images/providers.dart';
 import 'types.dart';
 
@@ -25,9 +25,7 @@ final preloadManagerProvider =
             headers: headers,
             cancelToken: cancelToken,
           ),
-          downloadConfiguration: const DownloadConfiguration(
-            maxConcurrentDownloads: 2,
-          ),
+          downloadConfiguration: const DownloadConfiguration(),
         );
 
         ref.onDispose(() {

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:dio/dio.dart';
 
@@ -13,7 +12,7 @@ Future<Response<T>?> tryGetResponse<T>(
   void Function(int count, int total)? onReceiveProgress,
   Options? options,
 }) async {
-  if (cancelToken?.isCancelled == true) {
+  if (cancelToken?.isCancelled ?? false) {
     throw DioException(
       requestOptions: RequestOptions(path: uri.toString()),
       type: DioExceptionType.cancel,
@@ -31,7 +30,7 @@ Future<Response<T>?> tryGetResponse<T>(
 
   while (!instructions.shouldGiveUp) {
     attemptCount++;
-    if (cancelToken?.isCancelled == true) {
+    if (cancelToken?.isCancelled ?? false) {
       throw DioException(
         requestOptions: RequestOptions(path: uri.toString()),
         type: DioExceptionType.cancel,
@@ -43,7 +42,7 @@ Future<Response<T>?> tryGetResponse<T>(
         cancelToken: cancelToken,
         options: effectiveOptions.copyWith(
           receiveTimeout: instructions.timeout,
-          validateStatus: (status) => status == HttpStatus.ok,
+          validateStatus: (status) => status == 200,
         ),
         onReceiveProgress: onReceiveProgress,
       );
@@ -79,7 +78,6 @@ Future<Response<T>?> tryGetResponse<T>(
 }
 
 const _defaultFetchStrategy = FetchStrategyBuilder(
-  exponentialBackoffMultiplier: 2,
   initialPauseBetweenRetries: Duration(milliseconds: 500),
 );
 

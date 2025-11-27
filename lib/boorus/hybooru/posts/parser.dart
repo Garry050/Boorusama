@@ -2,9 +2,9 @@
 import 'package:booru_clients/hybooru.dart';
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 import 'types.dart';
 
 HybooruPost postSummaryToPost(
@@ -54,7 +54,7 @@ HybooruPost postDtoToPost(
     rating: _mapRating(e.rating),
     hasComment: false,
     isTranslated: false,
-    hasParentOrChildren: e.relations?.isNotEmpty == true,
+    hasParentOrChildren: e.relations?.isNotEmpty ?? false,
     source: PostSource.from(e.sources?.firstOrNull),
     score: 0,
     duration: e.duration?.toDouble() ?? 0,

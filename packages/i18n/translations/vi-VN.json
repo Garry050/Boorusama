@@ -79,6 +79,10 @@
     "messages": {
       "title": "Tin nhắn",
       "empty": "Bạn chưa có tin nhắn nào",
+      "unread_message_notice": {
+        "one": "Bạn có $n tin nhắn chưa đọc",
+        "other": "Bạn có $n tin nhắn chưa đọc"
+      },
       "categories": {
         "all": "Tất cả",
         "received": "Đã nhận",
@@ -113,6 +117,7 @@
       "duration": "Thời lượng",
       "uploader": "Người tải lên",
       "approver": "Người duyệt",
+      "artist": "Họa sĩ",
       "share": {
         "source": "Chia sẻ link nguồn",
         "booru": "Chia sẻ link booru",
@@ -120,6 +125,8 @@
       },
       "show_original": "Xem bản gốc",
       "show_translated": "Xem bản dịch",
+      "show_n_more": "Hiện thêm $n",
+      "show_less": "Hiện bớt",
       "login_required_notice": "Bạn cần đăng nhập để thực hiện tác vụ này",
       "open_wiki": "Mở wiki",
       "add_to_favorites": "Thêm vào yêu thích",
@@ -144,6 +151,7 @@
         "artist_posts": "Ảnh của họa sĩ",
         "related_posts": "Ảnh liên quan",
         "character_list": "Danh sách nhân vật",
+        "uploader_posts": "Ảnh của người tải lên",
         "source": "Nguồn"
       }
     },
@@ -153,7 +161,8 @@
       "share": "Chia sẻ",
       "bookmark": "Dấu trang",
       "favorite": "Yêu thích",
-      "upvote": "Bình chọn",
+      "unfavorite": "Bỏ yêu thích",
+      "upvote": "Nâng điểm",
       "downvote": "Hạ điểm",
       "view_artist": "Xem họa sĩ",
       "view_tags": "Xem tag",
@@ -167,6 +176,18 @@
       "toggle_favorite": "Bật/tắt yêu thích",
       "view_in_browser": "Xem bằng trình duyệt",
       "view_original": "Xem ảnh gốc"
+    },
+    "votes": {
+      "user_list": {
+        "title": "Những ai đã bình chọn",
+        "disclaimer": "Bình chọn ẩn hoặc không thích sẽ không được hiển thị."
+      }
+    },
+    "favorites": {
+      "user_list": {
+        "title": "Những ai đã yêu thích",
+        "disclaimer": "Chỉ hiển thị các lượt yêu thích công khai."
+      }
     },
     "statistics": {
       "stats_for_nerds": "Thống kê chi tiết",
@@ -261,6 +282,10 @@
     "search": {
       "hint": "Tìm ảnh"
     },
+    "counter": {
+      "one": "Ảnh",
+      "other": "Ảnh"
+    },
     "detail": {
       "last_updated": "Cập nhật"
     },
@@ -349,6 +374,14 @@
       "image_viewer": "Trình xem ảnh",
       "slideshow": "Trình chiếu",
       "slideshow_interval": "Thời gian chuyển ảnh",
+      "slideshow_video_behavior": "Cách trình chiếu xử lý video",
+      "slideshow_video_behavior_explanation": "Thiết lập cách trình chiếu xử lý video trong lúc chuyển slide.",
+      "slideshow_video_behaviors": {
+        "wait_for_completion": "Chờ video phát xong",
+        "wait_for_completion_description": "Chờ video phát xong rồi mới chuyển sang slide tiếp theo",
+        "fixed_interval": "Phát theo thời lượng cố định",
+        "fixed_interval_description": "Chuyển sang slide tiếp theo sau thời lượng cố định, dù video có đang phát hay không"
+      },
       "slideshow_mode": "Chế độ trình chiếu",
       "slideshow_modes": {
         "random": "Ngẫu nhiên",
@@ -366,7 +399,11 @@
         "vertical_description": "Vuốt lên/xuống kiểu TikTok. Phổ biến trên các nền tảng video ngắn. Chỉ dùng chế độ dọc."
       },
       "mute_video": "Mặc định tắt tiếng video",
+      "double_tap_seek": "Chạm hai lần để tua",
       "video_section_title": "Video",
+      "manage_cache": "Quản lý bộ nhớ đệm",
+      "enable_video_cache": "Bật bộ nhớ đệm video",
+      "enable_video_cache_description": "Tải video trong lúc xem và lưu vào bộ nhớ đệm để giảm sử dụng dữ liệu và phát nhanh hơn khi xem lại.",
       "video": {
         "video_player_engine": "Trình phát video",
         "engine": {
@@ -450,6 +487,10 @@
       "all_cache": "Tất cả bộ nhớ đệm",
       "tag_cache": "Bộ nhớ đệm thẻ",
       "image_only_cache": "Bộ nhớ đệm chỉ hình ảnh",
+      "video_cache": "Bộ nhớ đệm video",
+      "video_cache_limit": "Giới hạn bộ nhớ đệm video",
+      "video_cache_limit_description": "Kích thước tối đa cho bộ nhớ đệm video",
+      "no_limit": "Không giới hạn",
       "bookmark_images": "Ảnh được đánh dấu",
       "loading": "Đang tải...",
       "storage": "Bộ nhớ",
@@ -458,6 +499,7 @@
         "groups": {
           "system": "Hệ thống",
           "images": "Ảnh",
+          "videos": "Video",
           "others": "Khác",
           "free": "Trống"
         }
@@ -670,6 +712,10 @@
     "counter": {
       "one": "Lượt thích",
       "other": "Lượt thích"
+    },
+    "update": {
+      "success": "Đã cập nhật yêu thích",
+      "failure": "Cập nhật yêu thích thất bại"
     }
   },
   "favorite_groups": {
@@ -731,13 +777,23 @@
       "variants_2": "*Đăng nhập tài khoản trên trình duyệt, vào <b>My Account > Options > API Access Credentials</b>. Nếu có key thì dùng, nếu không thì trang này không hỗ trợ và bạn có thể bỏ qua.",
       "variants_3": "*Đăng nhập tài khoản trên trình duyệt, vào <b><a href=\"api-credentials\">My Account > API Key</a></b>. Copy key của bạn, hoặc tạo key mới nếu cần, nhớ bật đủ permissions để app hoạt động đúng.",
       "variants_4": "*Đăng nhập tài khoản trên trình duyệt, vào <b>Account > Login tokens</b>. Copy <b>Web Login Token</b> hoặc tạo mới nếu cần rồi dán vào đây. Lưu ý: nếu bạn logout khỏi trình duyệt thì token này sẽ bị vô hiệu.",
-      "variants_5": "*Đăng nhập tài khoản trên trình duyệt, vào <b><a href=\"api-credentials\">My Account > Options > API Access Credentials</a></b> để lấy API key. Copy key rồi dán vào ô bên trên. Bạn cũng có thể copy toàn bộ chuỗi trong phần <b>API Access Credentials</b> rồi bấm nút bên dưới."
+      "variants_5": "*Đăng nhập tài khoản trên trình duyệt, vào <b><a href=\"api-credentials\">My Account > Options > API Access Credentials</a></b> để lấy API key. Copy key rồi dán vào ô bên trên. Bạn cũng có thể copy toàn bộ chuỗi trong phần <b>API Access Credentials</b> rồi bấm nút bên dưới.",
+      "shimmie2": {
+        "danbooru_api_extension_notice": "Ứng dụng cần extension <b>Danbooru Client API</b> được cài trên trang web để hoạt động.",
+        "user_api_key_notice": "Ứng dụng cần extension <b>User API Key</b> được cài trên trang web để đăng nhập và truy cập nội dung riêng tư.",
+        "view_extension_docs": "Xem tài liệu extension"
+      }
     },
     "deletion": {
       "title": "Xoá '${profileName}'",
       "confirmation": "Xóa hồ sơ này? Hành động này sẽ không thể khôi phục."
     },
     "invalid_booru_warning": "Có vẻ như trang web không chạy trên engine đã chọn. Vui lòng thử với engine khác.",
+    "invalid_selected_profile": "Hồ sơ hiện tại không hợp lệ",
+    "invalid_selected_profile_selection_request": "Chọn một hồ sơ từ danh sách bên dưới để tiếp tục",
+    "unknown_engine_selection_request": "Chọn một booru engine để tiếp tục",
+    "new_profile_leave_as_empty_tips": "Không biết sửa gì? Cứ để nguyên, bạn có thể thay đổi sau.",
+    "select_a_profile": "Chọn hồ sơ",
     "using_status": "dùng ${booru}",
     "paste_from_clipboard": "Dán từ clipboard",
     "booru_engine_input_label": "Booru engine (*)",
@@ -800,6 +856,8 @@
       "title": "Listing",
       "thumbnail_button": "Nút trên ảnh thu nhỏ",
       "thumbnail_button_description": "Chọn nút mặc định hiển thị ở góc dưới bên phải ảnh thu nhỏ.",
+      "tooltip_on_hover_title": "Hiển thị tooltip",
+      "tooltip_on_hover_description": "Hiển thị thông tin xem trước khi di chuột qua ảnh thu nhỏ.",
       "enable_profile_specific_settings": "Dùng cài đặt riêng cho hồ sơ này",
       "enable_profile_specific_settings_description": "Khi bật, hồ sơ này sẽ dùng cài đặt riêng thay vì theo cài đặt chung.",
       "overridden_notice": "Cài đặt này bị ghi đè bởi listing tùy chỉnh. Vui lòng chỉnh trong phần <b><a href=\"booru-profiles\">Listing của Hồ sơ</a></b>."
@@ -854,7 +912,8 @@
     },
     "viewer": {
       "auto_fetch_notes": "Tự động lấy ghi chú",
-      "auto_fetch_notes_description": "Tự động tải và hiển thị ghi chú khi có thể."
+      "auto_fetch_notes_description": "Tự động tải và hiển thị ghi chú khi có thể.",
+      "overridden_notice": "Cài đặt này bị ghi đè bởi trình xem tùy chỉnh. Vui lòng chỉnh trong phần <b><a href=\"booru-profiles\">Trình xem của Hồ sơ</a></b>."
     },
     "gestures": {
       "title": "Cử chỉ",
@@ -1124,6 +1183,10 @@
       "description": "Bạn đã mở khóa các tính năng cao cấp. Thoải mái trải nghiệm nhé!",
       "confirm": "OK"
     },
+    "changelog": {
+      "thanks_for_supporting": "Cảm ơn bạn đã ủng hộ ứng dụng này bằng cách đăng ký $brand!",
+      "support_reminder": "Nếu bạn thích những bản cập nhật này, hãy ủng hộ mình để có thêm động lực phát triển nhé."
+    },
     "per": {
       "year": "/ năm",
       "month": "/ tháng"
@@ -1152,14 +1215,41 @@
       "other": "$n tải lên"
     }
   },
+  "infinite_scroll": {
+    "load_more": "Tải thêm",
+    "nore_more_data": "Hết rồi",
+    "page_label": "Trang $page",
+    "next_page": "Trang tiếp",
+    "previous_page": "Trang trước"
+  },
+  "window": {
+    "pin": {
+      "pin_toast": "Đã ghim cửa sổ",
+      "unpin_toast": "Đã bỏ ghim cửa sổ"
+    }
+  },
   "video_player": {
     "playback_speed": "Tốc độ phát",
+    "lock_screen": "Khoá màn hình",
     "buffering": "Đang tải...",
     "engine_not_supported": "Trình phát này không được hỗ trợ trên nền tảng hiện tại.",
     "change_video_player_engine_suggest": "Nếu lỗi này xảy ra thường xuyên, cân nhắc sử dụng một trình phát video khác trong cài đặt.",
     "change_video_player_engine_request": "Vui lòng đổi sang trình phát video khác trong cài đặt.",
+    "video_quality": "Chất lượng video",
+    "video_qualities": {
+      "auto": "Tự động",
+      "sample": "Mẫu",
+      "original": "Gốc"
+    },
+    "current_video_quality_disclaimer": "Phần này chỉ áp dụng cho video hiện tại. Để áp dụng cho tất cả video, hãy vào <a href=\"booru-profiles\">$video_profile_path</a>.",
     "speed": {
       "normal": "Bình thường"
+    }
+  },
+  "shimmie2": {
+    "extension": {
+      "title": "Tiện ích",
+      "failed_to_fetch": "Không thể tải danh sách tiện ích cho trang này"
     }
   }
 }

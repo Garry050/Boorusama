@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../../../core/configs/ref.dart';
-import '../../../../../../core/theme.dart';
+import '../../../../../../core/configs/config/providers.dart';
+import '../../../../../../core/themes/theme/types.dart';
 import '../../../../posts/votes/providers.dart';
 import '../../providers.dart';
 import 'user_list_page.dart';
@@ -30,12 +31,12 @@ class DanbooruVoterListPage extends ConsumerWidget {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Flexible(
-              child: Text('Voters'),
+            Flexible(
+              child: Text(context.t.post.votes.user_list.title),
             ),
             const SizedBox(width: 4),
             Tooltip(
-              message: 'Downvotes and private votes are hidden.',
+              message: context.t.post.votes.user_list.disclaimer,
               triggerMode: TooltipTriggerMode.tap,
               showDuration: const Duration(seconds: 3),
               child: Icon(

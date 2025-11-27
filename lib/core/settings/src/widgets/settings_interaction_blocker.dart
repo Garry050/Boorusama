@@ -8,11 +8,12 @@ import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../foundation/html.dart';
+import '../../../configs/config/providers.dart';
 import '../../../configs/create/routes.dart';
-import '../../../configs/ref.dart';
-import '../../../theme/theme.dart';
 import '../../../widgets/widgets.dart';
 import '../providers/listing_provider.dart';
+import '../providers/settings_provider.dart';
+import '../providers/viewer_providers.dart';
 
 class SettingsInteractionBlocker extends StatelessWidget {
   const SettingsInteractionBlocker({
@@ -95,6 +96,47 @@ class ListingSettingsInteractionBlocker extends ConsumerWidget {
               ref,
               config: config,
               initialTab: 'listing',
+            );
+
+            onNavigateAway?.call();
+          }
+        },
+      ),
+      child: child,
+    );
+  }
+}
+
+class ViewerSettingsInteractionBlocker extends ConsumerWidget {
+  const ViewerSettingsInteractionBlocker({
+    required this.child,
+    super.key,
+    this.padding,
+    this.onNavigateAway,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final void Function()? onNavigateAway;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasCustomViewer = ref.watch(hasCustomViewerSettingsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final config = ref.watchConfig;
+
+    return SettingsInteractionBlocker(
+      padding: padding,
+      block: hasCustomViewer,
+      description: AppHtml(
+        data: context.t.booru.viewer.overridden_notice,
+        style: AppHtml.hintStyle(colorScheme),
+        onLinkTap: (url, _, _) {
+          if (url == 'booru-profiles') {
+            goToUpdateBooruConfigPage(
+              ref,
+              config: config,
+              initialTab: 'viewer',
             );
 
             onNavigateAway?.call();

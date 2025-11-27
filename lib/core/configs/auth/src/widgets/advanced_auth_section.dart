@@ -8,9 +8,9 @@ import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../foundation/toast.dart';
-import '../../../../theme.dart';
+import '../../../../themes/theme/types.dart';
 import '../../../../widgets/widgets.dart';
-import '../../../config.dart';
+import '../../../config/types.dart';
 import '../../../create/providers.dart';
 import '../pages/cookie_access_webview_page.dart';
 
@@ -19,6 +19,7 @@ class AdvancedAuthSection extends ConsumerWidget {
     required this.loginController,
     required this.getLoginUrl,
     this.onCookiesReceived,
+    this.onGetCookies,
     super.key,
     this.showWarningContainer = false,
     this.warningTitle,
@@ -28,6 +29,7 @@ class AdvancedAuthSection extends ConsumerWidget {
   final TextEditingController loginController;
   final String? Function() getLoginUrl;
   final void Function(List<dynamic> cookies)? onCookiesReceived;
+  final void Function(List<dynamic> cookies)? onGetCookies;
   final bool showWarningContainer;
   final String? warningTitle;
   final String? warningDescription;
@@ -164,6 +166,12 @@ class AdvancedAuthSection extends ConsumerWidget {
           url: loginUrl,
           onGet: (cookies) {
             if (cookies.isNotEmpty) {
+              if (onGetCookies != null) {
+                onGetCookies!(cookies);
+                Navigator.of(context).pop();
+                return;
+              }
+
               final passHash = cookies.firstWhereOrNull(
                 (e) => e.name == 'pass_hash',
               );

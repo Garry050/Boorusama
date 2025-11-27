@@ -1,31 +1,24 @@
+// Flutter imports:
+import 'package:flutter/material.dart';
+
 // Package imports:
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../../../core/posts/rating/rating.dart';
+import '../../../../../../core/posts/rating/types.dart';
+import '../../../../posts/post/types.dart';
 import '../tag_edit_state.dart';
 
-final tagEditProvider = NotifierProvider<TagEditNotifier, TagEditState>(() {
-  throw UnimplementedError();
-});
+final tagEditProvider = NotifierProvider.autoDispose
+    .family<TagEditNotifier, TagEditState, TagEditParams>(
+      TagEditNotifier.new,
+    );
 
-class TagEditNotifier extends Notifier<TagEditState> {
-  TagEditNotifier({
-    required this.initialTags,
-    required this.postId,
-    required this.imageAspectRatio,
-    required this.imageUrl,
-    required this.initialRating,
-  });
-
-  final Set<String> initialTags;
-  final int postId;
-  final double imageAspectRatio;
-  final String imageUrl;
-  final Rating? initialRating;
-
+class TagEditNotifier
+    extends AutoDisposeFamilyNotifier<TagEditState, TagEditParams> {
   @override
-  TagEditState build() {
+  TagEditState build(TagEditParams arg) {
     listenSelf(
       (prev, current) {
         if (prev?.selectedTag != current.selectedTag) {
@@ -34,77 +27,86 @@ class TagEditNotifier extends Notifier<TagEditState> {
       },
     );
 
-    return TagEditState(
-      tags: initialTags,
-      toBeAdded: const {},
-      toBeRemoved: const {},
-      expandMode: null,
-      viewExpanded: false,
-      selectedTag: null,
-    );
+    return TagEditState.initial(arg.initialTags);
   }
 
   Set<String> addTag(String tag) {
-    if (state.tags.contains(tag)) return state.tags;
-    if (state.toBeAdded.contains(tag)) return state.tags;
-
-    final tags = {...state.tags, tag};
-
-    state = state.copyWith(
-      tags: tags,
-      toBeAdded: {...state.toBeAdded, tag},
-    );
-
-    return tags;
+    state = state.addTag(tag);
+    return state.tags;
   }
 
   Set<String> addTags(Iterable<String> tags) {
-    final newTags = tags.toSet().difference(state.tags);
-    if (newTags.isEmpty) return state.tags;
-
-    final newTagSet = {
-      ...state.tags,
-      ...newTags,
-    };
-
-    state = state.copyWith(
-      tags: newTagSet,
-      toBeAdded: {
-        ...state.toBeAdded,
-        ...newTags,
-      },
-    );
-
-    return newTagSet;
+    state = state.addTags(tags);
+    return state.tags;
   }
 
   void removeTag(String tag) {
-    final tags = state.tags.toSet()..remove(tag);
-    if (state.toBeAdded.contains(tag)) {
-      state = state.copyWith(
-        tags: tags,
-        toBeAdded: {...state.toBeAdded}..remove(tag),
-      );
-    } else {
-      state = state.copyWith(
-        tags: tags,
-        toBeRemoved: {...state.toBeRemoved, tag},
-      );
-    }
+    state = state.removeTag(tag);
   }
 
   void setExpandMode(TagEditExpandMode? mode) {
-    state = state.copyWith(expandMode: () => mode);
+    state = state.withExpandMode(mode);
   }
 
   bool toggleViewExpanded() {
-    final viewExpanded = !state.viewExpanded;
-    state = state.copyWith(viewExpanded: viewExpanded);
-
-    return viewExpanded;
+    state = state.toggleViewExpanded();
+    return state.viewExpanded;
   }
 
   void setSelectedTag(String? tag) {
-    state = state.copyWith(selectedTag: () => tag);
+    state = state.withSelectedTag(tag);
+  }
+}
+
+class TagEditParams extends Equatable {
+  const TagEditParams({
+    required this.initialTags,
+    required this.postId,
+    required this.imageAspectRatio,
+    required this.imageUrl,
+    required this.placeholderUrl,
+    required this.initialRating,
+    required this.post,
+  });
+
+  final Set<String> initialTags;
+  final int postId;
+  final double imageAspectRatio;
+  final String imageUrl;
+  final String placeholderUrl;
+  final Rating? initialRating;
+  final DanbooruPost post;
+
+  @override
+  List<Object?> get props => [
+    initialTags,
+    postId,
+    imageAspectRatio,
+    imageUrl,
+    placeholderUrl,
+    initialRating,
+    post,
+  ];
+}
+
+class TagEditParamsProvider extends InheritedWidget {
+  const TagEditParamsProvider({
+    required this.params,
+    required super.child,
+    super.key,
+  });
+
+  final TagEditParams params;
+
+  static TagEditParams of(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<TagEditParamsProvider>();
+    assert(widget != null, 'TagEditParamsProvider not found in widget tree');
+    return widget!.params;
+  }
+
+  @override
+  bool updateShouldNotify(TagEditParamsProvider oldWidget) {
+    return params != oldWidget.params;
   }
 }

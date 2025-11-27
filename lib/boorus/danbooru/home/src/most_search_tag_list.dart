@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../core/configs/ref.dart';
-import '../../../../core/tags/tag/tag.dart';
+import '../../../../core/configs/config/providers.dart';
+import '../../../../core/tags/tag/types.dart';
 import '../../../../core/tags/tag/widgets.dart';
-import '../../../../core/theme/providers.dart';
+import '../../../../core/themes/colors/providers.dart';
 import '../../tags/tag/widgets.dart';
 import '../../tags/trending/providers.dart';
 

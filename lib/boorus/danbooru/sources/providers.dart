@@ -6,7 +6,7 @@ import 'package:booru_clients/danbooru.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../core/configs/ref.dart';
+import '../../../core/configs/config/providers.dart';
 import '../client_provider.dart';
 
 final danbooruSourceProvider =
@@ -20,7 +20,7 @@ class DanbooruSourceNotifier extends FamilyAsyncNotifier<SourceDto, String> {
     return _fetch(arg);
   }
 
-  Future<SourceDto> _fetch(String arg) async {
+  Future<SourceDto> _fetch(String arg) {
     final config = ref.watchConfigAuth;
 
     final client = ref.watch(danbooruClientProvider(config));

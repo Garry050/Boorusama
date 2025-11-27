@@ -1,5 +1,8 @@
+// Package imports:
+import 'package:booru_clients/shimmie2.dart';
+
 // Project imports:
-import '../../../core/posts/post/post.dart';
+import '../../../core/posts/post/types.dart';
 
 class Shimmie2Post extends SimplePost {
   Shimmie2Post({
@@ -27,5 +30,44 @@ class Shimmie2Post extends SimplePost {
     required super.createdAt,
     required super.uploaderName,
     required super.metadata,
-  });
+    super.parentId,
+    this.locked,
+    this.ext,
+    this.mime,
+    this.niceName,
+    this.tooltip,
+    this.favorites,
+    this.numericScore,
+    this.notes,
+    this.hasChildren,
+    this.title,
+    this.approved,
+    this.approvedById,
+    this.private,
+    this.trash,
+    this.ownerJoinDate,
+    this.votes,
+    this.myVote,
+    this.comments,
+  }) : super(downvotes: votes?.where((v) => (v.score ?? 0) < 0).length);
+
+  final bool? locked;
+  final String? ext;
+  final String? mime;
+  final String? niceName;
+  final String? tooltip;
+  final int? favorites;
+  final int? numericScore;
+  final int? notes;
+  final bool? hasChildren;
+  final String? title;
+  final bool? approved;
+  final int? approvedById;
+  final bool? private;
+  final bool? trash;
+  final DateTime? ownerJoinDate;
+  final List<NumericScoreVoteDto>? votes;
+  final int? myVote;
+
+  final List<CommentDto>? comments;
 }

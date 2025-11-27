@@ -11,16 +11,19 @@ import '../../../../../foundation/display.dart';
 import '../../../../../foundation/platform.dart';
 import '../../../../boorus/engine/providers.dart';
 import '../../../../configs/config/types.dart';
-import '../../../../configs/gesture/gesture.dart';
-import '../../../../videos/widgets.dart';
+import '../../../../configs/gesture/types.dart';
+import '../../../../videos/player/widgets.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../details_pageview/widgets.dart';
-import '../../../post/post.dart';
-import '../../details.dart';
+import '../../../post/types.dart';
+import '../providers/note_overlay_provider.dart';
+import 'play_pause_animation_overlay.dart';
 import 'post_details_controller.dart';
+import 'post_details_page_view_scope.dart';
 import 'post_media.dart';
+import 'seek_animation_overlay.dart';
 
-class PostDetailsItem<T extends Post> extends ConsumerWidget {
+class PostDetailsItem<T extends Post> extends ConsumerStatefulWidget {
   const PostDetailsItem({
     required this.index,
     required this.posts,
@@ -29,6 +32,7 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
     required this.imageCacheManager,
     required this.detailsController,
     required this.authConfig,
+    required this.viewerConfig,
     required this.gestureConfig,
     required this.imageUrlBuilder,
     super.key,
@@ -41,27 +45,35 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
   final ImageCacheManager? imageCacheManager;
   final PostDetailsController<T> detailsController;
   final BooruConfigAuth authConfig;
+  final BooruConfigViewer viewerConfig;
   final PostGestureConfig? gestureConfig;
   final String Function(T post) imageUrlBuilder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final pageViewController = PostDetailsPageViewScope.of(context);
-    final post = posts[index];
+  ConsumerState<PostDetailsItem<T>> createState() => _PostDetailsItemState<T>();
+}
 
-    final booruBuilder = ref.watch(booruBuilderProvider(authConfig));
-    final postGesturesHandler = booruBuilder?.postGestureHandlerBuilder;
-    final gestures = gestureConfig?.fullview;
+class _PostDetailsItemState<T extends Post>
+    extends ConsumerState<PostDetailsItem<T>> {
+  final _videoKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final pageViewController = PostDetailsPageViewScope.of(context);
+    final post = widget.posts[widget.index];
+
+    final booruRepo = ref.watch(booruRepoProvider(widget.authConfig));
+    final gestures = widget.gestureConfig?.fullview;
 
     void onItemTap() {
-      final controller = detailsController;
+      final controller = widget.detailsController;
 
       if (isDesktopPlatform()) {
         if (controller.currentPost.value.isVideo) {
           if (controller.isVideoPlaying.value) {
-            controller.pauseCurrentVideo();
+            controller.pauseCurrentVideo(showAnimation: true);
           } else {
-            controller.playCurrentVideo();
+            controller.playCurrentVideo(showAnimation: true);
           }
         } else {
           if (pageViewController.isExpanded) return;
@@ -75,7 +87,18 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
       }
     }
 
-    final initialThumbnailUrl = detailsController.initialThumbnailUrl;
+    void onVideoDoubleTap(Offset? tapPosition) {
+      final renderBox =
+          _videoKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null || tapPosition == null) return;
+
+      widget.detailsController.seekFromDoubleTap(
+        tapPosition,
+        renderBox.size,
+      );
+    }
+
+    final initialThumbnailUrl = widget.detailsController.initialThumbnailUrl;
 
     return ValueListenableBuilder(
       valueListenable: pageViewController.sheetState,
@@ -83,23 +106,36 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
         // let the user tap the image to toggle overlay
         onTap: onItemTap,
         child: InteractiveViewerExtended(
+          key: _videoKey,
           contentSize: Size(post.width, post.height),
-          controller: transformController,
-          enable: switch (state.isExpanded) {
-            true => context.isLargeScreen,
-            false => true,
+          controller: widget.transformController,
+          enable: switch (ref.watch(
+            noteOverlayProvider((widget.authConfig, post)),
+          )) {
+            // If the note overlay is shown, disable all interactions to prevent gesture conflicts
+            true => false,
+            false => switch (state.isExpanded) {
+              true => context.isLargeScreen,
+              false => true,
+            },
           },
           onTransformationChanged: pageViewController.onTransformationChanged,
           onTap: onItemTap,
-          onDoubleTap: gestures.canDoubleTap && postGesturesHandler != null
-              ? () => postGesturesHandler(
-                  ref,
-                  gestures?.doubleTap,
-                  post,
-                )
-              : null,
-          onLongPress: gestures.canLongPress && postGesturesHandler != null
-              ? () => postGesturesHandler(
+          onDoubleTap: switch ((
+            doubleTap: gestures.canDoubleTap,
+            handler: booruRepo?.handlePostGesture,
+          )) {
+            (doubleTap: true, handler: final h?) => (_) => h(
+              ref,
+              gestures?.doubleTap,
+              post,
+            ),
+            (doubleTap: false, handler: _) when post.isVideo =>
+              (details) => onVideoDoubleTap(details?.localPosition),
+            _ => null,
+          },
+          onLongPress: gestures.canLongPress && booruRepo != null
+              ? () => booruRepo.handlePostGesture(
                   ref,
                   gestures?.longPress,
                   post,
@@ -109,19 +145,29 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
             alignment: Alignment.center,
             children: [
               ValueListenableBuilder(
-                valueListenable: isInitPageListenable,
+                valueListenable: widget.isInitPageListenable,
                 builder: (_, isInitPage, _) {
-                  return PostMedia<T>(
-                    post: post,
-                    config: authConfig,
-                    imageUrlBuilder: imageUrlBuilder,
-                    imageCacheManager: imageCacheManager,
-                    // This is used to make sure we have a thumbnail to show instead of a black placeholder
-                    thumbnailUrlBuilder:
-                        isInitPage && initialThumbnailUrl != null
-                        ? (_) => initialThumbnailUrl
-                        : null,
-                    controller: pageViewController,
+                  return ValueListenableBuilder(
+                    valueListenable:
+                        widget.detailsController.currentSettledPage,
+                    builder: (_, currentSettledPage, _) {
+                      final isPageSettled = currentSettledPage == widget.index;
+
+                      return PostMedia<T>(
+                        post: post,
+                        config: widget.authConfig,
+                        viewer: widget.viewerConfig,
+                        imageUrlBuilder: widget.imageUrlBuilder,
+                        imageCacheManager: widget.imageCacheManager,
+                        // This is used to make sure we have a thumbnail to show instead of a black placeholder
+                        thumbnailUrlBuilder:
+                            isInitPage && initialThumbnailUrl != null
+                            ? (_) => initialThumbnailUrl
+                            : null,
+                        controller: pageViewController,
+                        isPageSettled: isPageSettled,
+                      );
+                    },
                   );
                 },
               ),
@@ -135,12 +181,19 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
                             children: [
                               // duplicate codes, maybe refactor later
                               PlayPauseButton(
-                                isPlaying: detailsController.isVideoPlaying,
+                                isPlaying:
+                                    widget.detailsController.isVideoPlaying,
                                 onPlayingChanged: (value) {
                                   if (value) {
-                                    detailsController.pauseVideo(post.id);
+                                    widget.detailsController.pauseVideo(
+                                      post.id,
+                                      showAnimation: true,
+                                    );
                                   } else if (!value) {
-                                    detailsController.playVideo(post.id);
+                                    widget.detailsController.playVideo(
+                                      post.id,
+                                      showAnimation: true,
+                                    );
                                   } else {
                                     // do nothing
                                   }
@@ -153,6 +206,14 @@ class PostDetailsItem<T extends Post> extends ConsumerWidget {
                           ),
                         )
                       : const SizedBox.shrink(),
+                ),
+              if (post.isVideo)
+                SeekAnimationOverlay(
+                  controller: widget.detailsController,
+                ),
+              if (post.isVideo)
+                PlayPauseAnimationOverlay(
+                  controller: widget.detailsController,
                 ),
             ],
           ),

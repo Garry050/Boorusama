@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 // Project imports:
 import '../../../../../foundation/url_launcher.dart';
-import '../../../../theme.dart';
+import '../../../../themes/theme/types.dart';
 import '../../widgets.dart';
 
 class BasicAuthSection extends StatelessWidget {
@@ -56,7 +56,7 @@ class BasicAuthSection extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (verifyButton case final button?) button,
+                ?verifyButton,
               ],
             ),
           ),

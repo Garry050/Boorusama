@@ -6,3 +6,5 @@ export 'src/widgets/post_details_item.dart';
 export 'src/widgets/post_details_notes.dart';
 export 'src/widgets/post_details_actions.dart';
 export 'src/widgets/post_details_image_preloader.dart';
+export 'src/widgets/default_post_details_page.dart';
+export 'src/widgets/post_details_image.dart';

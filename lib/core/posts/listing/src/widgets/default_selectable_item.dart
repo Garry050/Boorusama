@@ -8,9 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:selection_mode/selection_mode.dart';
 
 // Project imports:
+import '../../../../configs/config/types.dart';
 import '../../../../widgets/shadow_gradient_overlay.dart';
-import '../../../post/post.dart';
-import '../../../post/routes.dart';
+import '../../../post/types.dart';
+import '../routes/route_utils.dart';
 
 const _kDefaultAnimationDuration = Duration(milliseconds: 200);
 
@@ -19,6 +20,7 @@ class DefaultSelectableItem<T extends Post> extends StatefulWidget {
     required this.index,
     required this.post,
     required this.item,
+    required this.config,
     super.key,
     this.indicatorSize,
   });
@@ -27,6 +29,7 @@ class DefaultSelectableItem<T extends Post> extends StatefulWidget {
   final T post;
   final Widget item;
   final double? indicatorSize;
+  final BooruConfigAuth config;
 
   @override
   State<DefaultSelectableItem<T>> createState() =>
@@ -184,9 +187,12 @@ class _DefaultSelectableItemState<T extends Post>
       visualDensity: VisualDensity.compact,
       icon: const Icon(Icons.zoom_in),
       onPressed: () {
-        goToImagePreviewPage(context, widget.post);
+        goToImagePreviewPage(
+          context,
+          widget.post,
+          widget.config,
+        );
       },
-      onLongPress: null,
     );
   }
 
@@ -236,15 +242,15 @@ class SelectionIndicatorPainter extends CustomPainter {
   final Color primaryColor;
   final Color onPrimaryColor;
 
-  late final Paint _borderPaint = Paint()
+  late final _borderPaint = Paint()
     ..color = Colors.white
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.0
     ..strokeCap = StrokeCap.round;
 
-  late final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
+  late final _fillPaint = Paint()..style = PaintingStyle.fill;
 
-  late final Paint _checkPaint = Paint()
+  late final _checkPaint = Paint()
     ..color = onPrimaryColor
     ..style = PaintingStyle.stroke
     ..strokeWidth = 3.0

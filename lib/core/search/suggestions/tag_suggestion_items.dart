@@ -7,7 +7,7 @@ import 'package:foundation/foundation.dart';
 
 // Project imports:
 import '../../boorus/engine/providers.dart';
-import '../../configs/config.dart';
+import '../../configs/config/types.dart';
 import '../../tags/autocompletes/types.dart';
 import 'tag_suggestion_item.dart';
 
@@ -48,7 +48,6 @@ class TagSuggestionItems extends ConsumerWidget {
     return _tags.isNotEmpty
         ? Material(
             color: backgroundColor ?? Theme.of(context).colorScheme.surface,
-            elevation: 0,
             borderRadius:
                 borderRadius ?? const BorderRadius.all(Radius.circular(8)),
             child: ListView.builder(

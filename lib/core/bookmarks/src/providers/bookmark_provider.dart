@@ -2,6 +2,7 @@
 import 'dart:async';
 
 // Package imports:
+import 'package:cache_manager/cache_manager.dart';
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,22 +11,21 @@ import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../foundation/toast.dart';
-import '../../../boorus/booru/booru.dart';
+import '../../../boorus/booru/types.dart';
 import '../../../boorus/engine/providers.dart';
-import '../../../configs/config.dart';
+import '../../../configs/config/types.dart';
 import '../../../downloads/downloader/providers.dart';
 import '../../../downloads/downloader/types.dart';
 import '../../../downloads/filename/types.dart';
-import '../../../http/providers.dart';
-import '../../../posts/post/post.dart';
+import '../../../http/client/providers.dart';
 import '../../../posts/post/providers.dart';
+import '../../../posts/post/types.dart';
 import '../../../router.dart';
 import '../../../settings/providers.dart';
 import '../data/bookmark_convert.dart';
 import '../data/providers.dart';
 import '../types/bookmark.dart';
 import '../types/bookmark_repository.dart';
-import 'bookmark_image_cache_manager.dart';
 
 final bookmarkProvider = AsyncNotifierProvider<BookmarkNotifier, BookmarkState>(
   BookmarkNotifier.new,
@@ -45,12 +45,8 @@ final bookmarkUrlResolverProvider = Provider.autoDispose
       return repo?.imageUrlResolver() ?? const DefaultImageUrlResolver();
     });
 
-final bookmarkImageCacheManagerProvider = Provider<BookmarkImageCacheManager>(
-  (ref) => BookmarkImageCacheManager(),
-);
-
 class BookmarkNotifier extends AsyncNotifier<BookmarkState> {
-  BookmarkImageCacheManager get _cacheManager =>
+  ImageCacheManager get _cacheManager =>
       ref.read(bookmarkImageCacheManagerProvider);
 
   @override
@@ -262,25 +258,45 @@ class BookmarkNotifier extends AsyncNotifier<BookmarkState> {
           downloadUrl: bookmark.originalUrl,
         );
 
-        return downloader
-            .downloadWithSettings(
-              settings,
-              config: download,
-              url: bookmark.originalUrl,
-              metadata: DownloaderMetadata(
-                thumbnailUrl: bookmark.thumbnailUrl,
-                fileSize: null,
-                siteUrl: bookmark.sourceUrl,
-                group: null,
-              ),
-              filename: fileName,
-              headers: headers,
-            )
-            .run();
+        return downloader.download(
+          DownloadOptions.fromSettings(
+            settings,
+            config: download,
+            url: bookmark.originalUrl,
+            metadata: DownloaderMetadata(
+              thumbnailUrl: bookmark.thumbnailUrl,
+              fileSize: null,
+              siteUrl: bookmark.sourceUrl,
+              group: null,
+            ),
+            filename: fileName,
+            headers: headers,
+          ),
+        );
       },
     ).toList();
 
-    await Future.wait(tasks);
+    final results = await Future.wait(tasks);
+
+    final failures = results.whereType<DownloadFailure>().toList();
+
+    if (failures.isNotEmpty) {
+      final context = navigatorKey.currentContext;
+
+      final uniqueErrors = failures
+          .map((e) => e.error.getErrorMessage())
+          .toSet()
+          .take(3)
+          .join('\n');
+
+      if (context != null && context.mounted) {
+        showErrorToast(
+          context,
+          'Download failed:\n$uniqueErrors',
+          duration: const Duration(seconds: 5),
+        );
+      }
+    }
   }
 }
 

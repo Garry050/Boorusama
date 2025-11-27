@@ -4,7 +4,8 @@ import 'package:test/test.dart';
 // Project imports:
 import 'package:boorusama/core/posts/filter/src/check_tag.dart';
 import 'package:boorusama/core/posts/filter/src/tag_filter_data.dart';
-import 'package:boorusama/core/posts/rating/rating.dart';
+import 'package:boorusama/core/posts/post/types.dart';
+import 'package:boorusama/core/posts/rating/types.dart';
 import 'package:boorusama/core/tags/autocompletes/types.dart';
 
 void main() {
@@ -118,6 +119,67 @@ void main() {
               'score:<-4',
             ),
             false,
+          );
+        });
+      });
+
+      group('Status', () {
+        test('should match when status is active', () {
+          expect(
+            checkIfTagsContainsRawTagExpression(
+              TagFilterData(
+                tags: {'a', 'b', 'c'},
+                rating: Rating.general,
+                score: 0,
+                status: StringPostStatus.tryParse('active'),
+              ),
+              'status:active',
+            ),
+            true,
+          );
+        });
+
+        test('should not match when status is different', () {
+          expect(
+            checkIfTagsContainsRawTagExpression(
+              TagFilterData(
+                tags: {'a', 'b', 'c'},
+                rating: Rating.general,
+                score: 0,
+                status: StringPostStatus.tryParse('active'),
+              ),
+              'status:deleted',
+            ),
+            false,
+          );
+        });
+
+        test('should not match when status is null', () {
+          expect(
+            checkIfTagsContainsRawTagExpression(
+              TagFilterData(
+                tags: {'a', 'b', 'c'},
+                rating: Rating.general,
+                score: 0,
+              ),
+              'status:active',
+            ),
+            false,
+          );
+        });
+
+        test('should match status case-insensitively', () {
+          expect(
+            checkIfTagsContainsRawTagExpression(
+              TagFilterData(
+                tags: {'a', 'b', 'c'},
+                rating: Rating.general,
+                score: 0,
+                status: StringPostStatus.tryParse('Active'),
+              ),
+              'status:active',
+            ),
+            true,
           );
         });
       });
@@ -349,7 +411,6 @@ void main() {
               tags: {'a', 'b', 'c'},
               rating: Rating.explicit,
               score: -10,
-              downvotes: null,
             ),
             'a downvotes:<5',
           ),
@@ -506,6 +567,36 @@ void main() {
           true,
         );
       });
+
+      test('should match tag with specific status', () {
+        expect(
+          checkIfTagsContainsRawTagExpression(
+            TagFilterData(
+              tags: {'a', 'b', 'c'},
+              rating: Rating.explicit,
+              score: 0,
+              status: StringPostStatus.tryParse('pending'),
+            ),
+            'a status:pending',
+          ),
+          true,
+        );
+      });
+
+      test('should not match tag with different status', () {
+        expect(
+          checkIfTagsContainsRawTagExpression(
+            TagFilterData(
+              tags: {'a', 'b', 'c'},
+              rating: Rating.explicit,
+              score: 0,
+              status: StringPostStatus.tryParse('pending'),
+            ),
+            'a status:approved',
+          ),
+          false,
+        );
+      });
     });
 
     group('NOT + Metatags', () {
@@ -564,6 +655,36 @@ void main() {
           false,
         );
       });
+
+      test('should match when status is not deleted', () {
+        expect(
+          checkIfTagsContainsRawTagExpression(
+            TagFilterData(
+              tags: {'a', 'b', 'c'},
+              rating: Rating.general,
+              score: 0,
+              status: StringPostStatus.tryParse('active'),
+            ),
+            'a -status:deleted',
+          ),
+          true,
+        );
+      });
+
+      test('should not match when status is deleted', () {
+        expect(
+          checkIfTagsContainsRawTagExpression(
+            TagFilterData(
+              tags: {'a', 'b', 'c'},
+              rating: Rating.general,
+              score: 0,
+              status: StringPostStatus.tryParse('deleted'),
+            ),
+            'a -status:deleted',
+          ),
+          false,
+        );
+      });
     });
   });
 
@@ -575,7 +696,6 @@ void main() {
           AutocompleteData.fromJson(const {'value': 'b', 'label': 'b'}),
         ],
         {'a'},
-        shouldFilter: true,
       );
 
       expect(result.length, 1);
@@ -592,7 +712,6 @@ void main() {
           AutocompleteData.fromJson(const {'value': 'b', 'label': 'b'}),
         ],
         {'a_b'},
-        shouldFilter: true,
       );
 
       expect(result.length, 1);
@@ -608,7 +727,6 @@ void main() {
           AutocompleteData.fromJson(const {'value': 'b', 'label': 'b'}),
         ],
         {'a'},
-        shouldFilter: true,
       );
 
       expect(result.length, 1);
@@ -627,7 +745,6 @@ void main() {
           AutocompleteData.fromJson(const {'value': 'b', 'label': 'b'}),
         ],
         {'a'},
-        shouldFilter: true,
       );
 
       expect(result.length, 1);

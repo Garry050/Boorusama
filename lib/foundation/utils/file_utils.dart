@@ -20,7 +20,7 @@ class DirectorySizeInfo {
   final int fileCount;
   final int directoryCount;
 
-  static DirectorySizeInfo zero = DirectorySizeInfo(
+  static var zero = DirectorySizeInfo(
     directoryCount: 0,
     fileCount: 0,
     size: 0,
@@ -65,23 +65,42 @@ Future<DirectorySizeInfo> getDirectorySize(
 
 Future<DirectorySizeInfo> getCacheSize() async {
   final cacheDir = await getAppTemporaryDirectory();
+
+  if (cacheDir == null) return DirectorySizeInfo.zero;
+
   return getDirectorySize(
     cacheDir,
     excludedDirNames: [
       cacheImageFolderName,
+      VideoCacheManager.defaultSubPath,
     ],
   );
 }
 
 Future<DirectorySizeInfo> getImageCacheSize() async {
-  final cacheDir = await getTemporaryDirectory();
+  final cacheDir = await getAppTemporaryDirectory();
+
+  if (cacheDir == null) return DirectorySizeInfo.zero;
+
   final path = join(cacheDir.path, cacheImageFolderName);
   final imageCacheDir = Directory(path);
   return getDirectorySize(imageCacheDir);
 }
 
+Future<DirectorySizeInfo> getVideoCacheSize() async {
+  final cacheDir = await getAppTemporaryDirectory();
+
+  if (cacheDir == null) return DirectorySizeInfo.zero;
+
+  final path = join(cacheDir.path, VideoCacheManager.defaultSubPath);
+  final videoCacheDir = Directory(path);
+  return getDirectorySize(videoCacheDir);
+}
+
 Future<void> clearCache() async {
   final cacheDir = await getAppTemporaryDirectory();
+
+  if (cacheDir == null) return;
 
   if (cacheDir.existsSync()) {
     if (isWindows()) {
@@ -126,6 +145,9 @@ class DiskSpaceInfo {
 
   static Future<DiskSpaceInfo> fromTempDir() async {
     final tempDir = await getAppTemporaryDirectory();
+
+    if (tempDir == null) return DiskSpaceInfo.zero;
+
     final freeSpace = await DiskSpace.getFreeDiskSpaceForPath(tempDir.path);
     final totalSpace = await DiskSpace.getTotalDiskSpace;
 
@@ -144,7 +166,7 @@ class DiskSpaceInfo {
   int get usedSpace => totalSpace - freeSpace;
   double get usagePercentage => totalSpace > 0 ? usedSpace / totalSpace : 0.0;
 
-  static DiskSpaceInfo zero = DiskSpaceInfo(
+  static var zero = DiskSpaceInfo(
     freeSpace: 0,
     totalSpace: 0,
   );

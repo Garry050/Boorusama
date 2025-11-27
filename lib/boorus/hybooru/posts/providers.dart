@@ -2,9 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../core/configs/config.dart';
-import '../../../core/posts/post/post.dart';
+import '../../../core/configs/config/types.dart';
 import '../../../core/posts/post/providers.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../core/search/queries/providers.dart';
 import '../../../core/settings/providers.dart';
 import '../client_provider.dart';
@@ -21,7 +21,7 @@ final hybooruPostRepoProvider =
           fetchSingle: (id, {options}) async {
             final numericId = id as NumericPostId?;
 
-            if (numericId == null) return Future.value(null);
+            if (numericId == null) return Future.value();
 
             final post = await client.getPost(id: numericId.value);
             return post != null

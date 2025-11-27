@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../foundation/info/app_info.dart';
 import '../../../foundation/networking.dart';
 import '../../../foundation/url_launcher.dart';
-import '../../posts/sources/source.dart';
+import '../../posts/sources/types.dart';
 import '../../widgets/website_logo.dart';
 
 class DonationPage extends ConsumerWidget {
@@ -44,7 +44,6 @@ class DonationPage extends ConsumerWidget {
 
   Widget _buildTextButtons(AppInfo appInfo) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: appInfo.donationUrls
           .map(

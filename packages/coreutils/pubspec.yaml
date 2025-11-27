@@ -1,0 +1,16 @@
+name: coreutils
+description: A collection of utility functions and classes for Dart.
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+resolution: workspace
+
+dependencies:
+  cookie_jar: ^4.0.8
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

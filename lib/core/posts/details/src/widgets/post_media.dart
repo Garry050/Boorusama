@@ -6,37 +6,42 @@ import 'package:cache_manager/cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../../foundation/display.dart';
 import '../../../../../foundation/loggers.dart';
 import '../../../../configs/config/types.dart';
-import '../../../../http/providers.dart';
+import '../../../../http/client/providers.dart';
 import '../../../../settings/providers.dart';
 import '../../../../settings/routes.dart';
-import '../../../../videos/providers.dart';
-import '../../../../videos/widgets.dart';
+import '../../../../videos/cache/providers.dart';
+import '../../../../videos/player/providers.dart';
+import '../../../../videos/player/widgets.dart';
 import '../../../details_pageview/widgets.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
+import '../providers/video_url_provider.dart';
 import '../types/post_details.dart';
+import '../types/utils.dart';
 import 'post_details_image.dart';
-import 'video_controls.dart';
 
 class PostMedia<T extends Post> extends ConsumerWidget {
   const PostMedia({
     required this.post,
     required this.config,
+    required this.viewer,
     required this.imageUrlBuilder,
     required this.thumbnailUrlBuilder,
     required this.controller,
     required this.imageCacheManager,
     super.key,
+    this.isPageSettled = false,
   });
 
   final T post;
   final BooruConfigAuth config;
+  final BooruConfigViewer viewer;
   final PostDetailsPageViewController controller;
   final String Function(T post)? imageUrlBuilder;
   final String Function(T post)? thumbnailUrlBuilder;
   final ImageCacheManager? imageCacheManager;
+  final bool isPageSettled;
 
   void _openSettings(WidgetRef ref) {
     openImageViewerSettingsPage(ref);
@@ -52,43 +57,54 @@ class PostMedia<T extends Post> extends ConsumerWidget {
         ? Stack(
             children: [
               Positioned.fill(
-                child: BooruVideo(
-                  heroTag: heroTag,
-                  url: post.videoUrl,
-                  aspectRatio: post.aspectRatio,
-                  onCurrentPositionChanged:
-                      details.controller.onCurrentPositionChanged,
-                  onVideoPlayerCreated: (player) => details.controller
-                      .onBooruVideoPlayerCreated(player, post.id),
-                  sound: ref.watch(globalSoundStateProvider),
-                  speed: ref.watch(playbackSpeedProvider(post.videoUrl)),
-                  thumbnailUrl: post.videoThumbnailUrl,
-                  onOpenSettings: () => _openSettings(ref),
-                  headers: headers,
-                  videoPlayerEngine: ref.watch(
-                    settingsProvider.select(
-                      (value) => value.viewer.videoPlayerEngine,
-                    ),
-                  ),
-                  userAgent: ref.watch(
-                    userAgentProvider(config),
-                  ),
-                  logger: ref.watch(loggerProvider),
-                  autoplay: true,
+                child: Builder(
+                  builder: (context) {
+                    final videoUrl = ref.watch(
+                      postDetailsVideoUrlProvider(
+                        VideoUrlParam(
+                          viewer: viewer,
+                          post: post,
+                          auth: config,
+                        ),
+                      ),
+                    );
+
+                    return BooruVideo(
+                      heroTag: heroTag,
+                      url: videoUrl,
+                      aspectRatio: post.aspectRatio,
+                      onCurrentPositionChanged: (current, total) =>
+                          details.controller.onCurrentPositionChanged(
+                            current,
+                            total,
+                            post.id.toString(),
+                          ),
+                      onVideoPlayerCreated: (player) => details.controller
+                          .onBooruVideoPlayerCreated(player, post.id),
+                      onVideoPlayerDisposed: () => details.controller
+                          .onBooruVideoPlayerDisposed(post.id),
+                      sound: ref.watch(globalSoundStateProvider),
+                      speed: ref.watch(playbackSpeedProvider(videoUrl)),
+                      thumbnailUrl: post.videoThumbnailUrl,
+                      onOpenSettings: () => _openSettings(ref),
+                      headers: headers,
+                      videoPlayerEngine: ref.watch(
+                        imageViewerSettingsProvider.select(
+                          (value) => value.videoPlayerEngine,
+                        ),
+                      ),
+                      userAgent: ref.watch(
+                        userAgentProvider(config),
+                      ),
+                      logger: ref.watch(loggerProvider),
+                      cacheManager: ref.watch(videoCacheManagerProvider),
+                      cacheDelay: createVideoCacheDelayCallback(post),
+                      fileSize: post.fileSize > 0 ? post.fileSize : null,
+                      shouldInitialize: isPageSettled,
+                    );
+                  },
                 ),
               ),
-              if (context.isLargeScreen)
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: ValueListenableBuilder(
-                    valueListenable: controller.overlay,
-                    builder: (context, overlay, child) =>
-                        overlay ? child! : const SizedBox.shrink(),
-                    child: PostDetailsVideoControls(
-                      controller: details.controller,
-                    ),
-                  ),
-                ),
             ],
           )
         : PostDetailsImage(

@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../../settings/providers.dart';
-import '../../../rating/rating.dart';
+import '../../../rating/types.dart';
 
 class ExplicitContentBlockOverlay extends StatefulWidget {
   const ExplicitContentBlockOverlay({
@@ -52,7 +52,7 @@ class _ExplicitContentBlockOverlayState
       builder: (_, ref, _) {
         final enable = ref.watch(
           imageListingSettingsProvider.select(
-            (value) => value.blurExplicitMedia,
+            (value) => value.mediaBlurCondition.blurExplicitMedia,
           ),
         );
 
@@ -91,7 +91,7 @@ class _ExplicitContentBlockOverlayState
       builder: (_, ref, _) {
         final enable = ref.watch(
           imageListingSettingsProvider.select(
-            (value) => value.blurExplicitMedia,
+            (value) => value.mediaBlurCondition.blurExplicitMedia,
           ),
         );
 

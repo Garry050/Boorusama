@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
+import 'package:coreutils/coreutils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:foundation/foundation.dart';
 import 'package:i18n/i18n.dart';
@@ -9,9 +10,9 @@ import 'package:i18n/i18n.dart';
 // Project imports:
 import '../../../../../foundation/clipboard.dart';
 import '../../../../../foundation/display/media_query_utils.dart';
-import '../../../../theme.dart';
-import '../../../post/post.dart';
-import '../../../rating/rating.dart';
+import '../../../../themes/theme/types.dart';
+import '../../../post/types.dart';
+import '../../../rating/types.dart';
 import '../_internal/details_widget_frame.dart';
 import 'file_detail_tile.dart';
 
@@ -28,7 +29,7 @@ class FileDetailsSection extends StatelessWidget {
   final Post post;
   final Rating rating;
   final Widget? uploader;
-  final Map<String, Widget>? customDetails;
+  final List<Widget>? customDetails;
   final bool initialExpanded;
 
   @override
@@ -62,10 +63,12 @@ class FileDetailsSection extends StatelessWidget {
             ? '${post.width.toInt()}x${post.height.toInt()} • '
             : '';
 
+        final format = normalizeUrl(post.format);
+
         // if start with a dot, remove it
-        final fileFormatText = post.format.startsWith('.')
-            ? post.format.substring(1).toUpperCase()
-            : post.format.toUpperCase();
+        final fileFormatText = format.startsWith('.')
+            ? format.substring(1).toUpperCase()
+            : format.toUpperCase();
 
         final ratingText = rating.name.getFirstCharacter().toUpperCase();
 
@@ -73,24 +76,21 @@ class FileDetailsSection extends StatelessWidget {
           FileDetailTile(
             title: 'ID',
             valueLabel: post.id.toString(),
-            valueTrailing: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(4),
-                child: Transform.scale(
-                  scale: 0.8,
-                  child: const Icon(
-                    FontAwesomeIcons.copy,
-                    size: 20,
-                  ),
+            valueTrailing: FileDetailsInWell(
+              borderRadius: BorderRadius.circular(4),
+              child: Transform.scale(
+                scale: 0.8,
+                child: const Icon(
+                  FontAwesomeIcons.copy,
+                  size: 20,
                 ),
-                onTap: () {
-                  AppClipboard.copyWithDefaultToast(
-                    context,
-                    post.id.toString(),
-                  );
-                },
               ),
+              onTap: () {
+                AppClipboard.copyWithDefaultToast(
+                  context,
+                  post.id.toString(),
+                );
+              },
             ),
           ),
           FileDetailTile(
@@ -109,7 +109,7 @@ class FileDetailsSection extends StatelessWidget {
             ),
           FileDetailTile(
             title: context.t.post.detail.file_format,
-            valueLabel: post.format,
+            valueLabel: format,
           ),
           if (post.isVideo && post.duration > 0)
             FileDetailTile(
@@ -118,18 +118,8 @@ class FileDetailsSection extends StatelessWidget {
                 n: post.duration.toInt(),
               ),
             ),
-          if (uploader != null)
-            FileDetailTile(
-              title: context.t.post.detail.uploader,
-              value: uploader,
-            ),
-          if (customDetails != null) ...[
-            for (final detail in customDetails!.entries)
-              FileDetailTile(
-                title: detail.key,
-                value: detail.value,
-              ),
-          ],
+          ?uploader,
+          ...?customDetails,
         ];
 
         return ExpansionTile(
@@ -171,6 +161,98 @@ class FileDetailsSection extends StatelessWidget {
                 ],
         );
       },
+    );
+  }
+}
+
+class UploaderFileDetailTile extends StatelessWidget {
+  const UploaderFileDetailTile({
+    super.key,
+    this.onViewDetails,
+    this.onSearch,
+    this.textStyle,
+    required this.uploaderName,
+  });
+
+  final VoidCallback? onViewDetails;
+  final VoidCallback? onSearch;
+  final String uploaderName;
+  final TextStyle? textStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return FileDetailTile(
+      title: context.t.post.detail.uploader,
+      value: FileDetailsInWell(
+        onTap: onViewDetails,
+        child: Text(
+          uploaderName.replaceAll('_', ' '),
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: textStyle,
+        ),
+      ),
+      valueTrailing: onSearch == null
+          ? null
+          : FileDetailsActionIconButton(onTap: onSearch),
+    );
+  }
+}
+
+class FileDetailsActionIconButton extends StatelessWidget {
+  const FileDetailsActionIconButton({
+    super.key,
+    required this.onTap,
+  });
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: FileDetailsInWell(
+        borderRadius: BorderRadius.circular(4),
+        onTap: onTap,
+        child: Transform.scale(
+          scale: 0.8,
+          child: const Icon(
+            Icons.arrow_forward_ios,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FileDetailsInWell extends StatelessWidget {
+  const FileDetailsInWell({
+    super.key,
+    this.borderRadius,
+    this.onTap,
+    required this.child,
+  });
+
+  final BorderRadiusGeometry? borderRadius;
+  final Widget child;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(
+      borderRadius: borderRadius ?? const BorderRadius.all(Radius.circular(8)),
+    );
+
+    return Material(
+      color: Colors.transparent,
+      shape: shape,
+      child: InkWell(
+        customBorder: shape,
+        onTap: onTap,
+        child: child,
+      ),
     );
   }
 }

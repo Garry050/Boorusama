@@ -3,16 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../../../core/boorus/engine/providers.dart';
-import '../../../../../core/configs/config.dart';
-import '../../../../../core/configs/ref.dart';
-import '../../../../../core/posts/explores/explore.dart';
-import '../../../../../core/posts/post/post.dart';
-import '../../../../../core/posts/rating/rating.dart';
+import '../../../../../core/configs/config/providers.dart';
+import '../../../../../core/configs/config/types.dart';
+import '../../../../../core/posts/explores/types.dart';
+import '../../../../../core/posts/post/types.dart';
+import '../../../../../core/posts/rating/types.dart';
 import '../../../../../core/settings/providers.dart';
 import '../../../client_provider.dart';
 import '../../../constants.dart';
-import '../../post/post.dart';
 import '../../post/providers.dart';
+import '../../post/types.dart';
 import 'data/explore_repository_cacher.dart';
 import 'data/explore_repository_impl.dart';
 import 'types/explore_repository.dart';
@@ -33,8 +33,8 @@ final danbooruExploreRepoProvider =
               }
 
               final filterer = ref
-                  .read(booruBuilderProvider(config.auth))
-                  ?.granularRatingFilterer;
+                  .read(booruRepoProvider(config.auth))
+                  ?.granularRatingFilterer(config);
 
               if (filterer == null) return false;
 
@@ -53,7 +53,7 @@ final danbooruExploreRepoProvider =
     );
 
 final danbooruMostViewedTodayProvider =
-    FutureProvider<PostResult<DanbooruPost>>((ref) async {
+    FutureProvider<PostResult<DanbooruPost>>((ref) {
       final repo = ref
           .watch(danbooruExploreRepoProvider(ref.watchConfigSearch))
           .getMostViewedPosts(DateTime.now());
@@ -68,7 +68,7 @@ final danbooruMostViewedTodayProvider =
 
 final danbooruPopularTodayProvider = FutureProvider<PostResult<DanbooruPost>>((
   ref,
-) async {
+) {
   final repo = ref
       .watch(danbooruExploreRepoProvider(ref.watchConfigSearch))
       .getPopularPosts(DateTime.now(), 1, TimeScale.day);
@@ -83,7 +83,7 @@ final danbooruPopularTodayProvider = FutureProvider<PostResult<DanbooruPost>>((
 
 final danbooruHotTodayProvider = FutureProvider<PostResult<DanbooruPost>>((
   ref,
-) async {
+) {
   final repo = ref
       .watch(danbooruExploreRepoProvider(ref.watchConfigSearch))
       .getHotPosts(1);

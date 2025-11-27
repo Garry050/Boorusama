@@ -6,11 +6,12 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 
 // Project imports:
+import '../../../../../foundation/platform.dart';
 import '../../../../../foundation/utils/collection_utils.dart';
 import '../../../../errors/types.dart';
-import '../../../../settings/settings.dart';
-import '../../../filter/filter.dart';
-import '../../../post/post.dart';
+import '../../../filter/types.dart';
+import '../../../post/types.dart';
+import '../types/page_mode.dart';
 import 'post_duplicate_checker.dart';
 
 const _kFirstPage = 1;
@@ -36,6 +37,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
     required this.blacklistedTagsFetcher,
     required this.mountedChecker,
     required PostDuplicateTracker<T> duplicateTracker,
+    required this.onError,
     this.debounceDuration = const Duration(milliseconds: 500),
     PageMode pageMode = PageMode.infinite,
     this.blacklistedUrlsFetcher,
@@ -59,8 +61,9 @@ class PostGridController<T extends Post> extends ChangeNotifier {
   final Future<Set<String>> Function()? blacklistedUrlsFetcher;
 
   Set<String>? blacklistedTags;
-  List<List<TagExpression>>? _cachedParsedTags;
+  List<List<TagExpression>> _cachedParsedTags = [];
   final Future<Set<String>> Function() blacklistedTagsFetcher;
+  final void Function(String message) onError;
 
   // Terrible hack to check if the widget is mounted, should have a better way to do this
   final bool Function() mountedChecker;
@@ -71,11 +74,11 @@ class PostGridController<T extends Post> extends ChangeNotifier {
   final PostDuplicateTracker<T> _duplicateTracker;
 
   int _page = _kFirstPage;
-  bool _hasMore = true;
-  bool _loading = false;
-  bool _refreshing = false;
+  var _hasMore = true;
+  var _loading = false;
+  var _refreshing = false;
 
-  int _total = 0;
+  var _total = 0;
 
   Iterable<T> get items => _filteredItems;
   Iterable<T> get allItems => _items;
@@ -141,7 +144,7 @@ class PostGridController<T extends Post> extends ChangeNotifier {
         .map((tag) => tag.split(' ').map(TagExpression.parse).toList())
         .toList();
 
-    tagCounts.value = await _count(_items, _cachedParsedTags!);
+    tagCounts.value = await _count(_items, _cachedParsedTags);
 
     if (!mountedChecker()) return;
 
@@ -196,15 +199,20 @@ class PostGridController<T extends Post> extends ChangeNotifier {
   Future<List<List<TagExpression>>> _getBlacklistedTags() async {
     // lazy load blacklisted tags
     if (blacklistedTags == null) {
-      final tags = await blacklistedTagsFetcher();
-      blacklistedTags = tags;
+      try {
+        final tags = await blacklistedTagsFetcher();
+        blacklistedTags = tags;
 
-      _cachedParsedTags = tags
-          .map((tag) => tag.split(' ').map(TagExpression.parse).toList())
-          .toList();
+        _cachedParsedTags = tags
+            .map((tag) => tag.split(' ').map(TagExpression.parse).toList())
+            .toList();
+      } on Exception catch (e) {
+        onError('Failed to fetch blacklisted tags: $e');
+        return [];
+      }
     }
 
-    return _cachedParsedTags!;
+    return _cachedParsedTags;
   }
 
   Future<void> _filter() async {
@@ -289,7 +297,9 @@ class PostGridController<T extends Post> extends ChangeNotifier {
   }
 
   // Loads more items
-  Future<void> fetchMore() async {
+  Future<void> fetchMore({
+    VoidCallback? onNoMoreData,
+  }) async {
     if (_loading ||
         !_hasMore ||
         (_debounceTimer != null && _debounceTimer!.isActive)) {
@@ -308,6 +318,8 @@ class PostGridController<T extends Post> extends ChangeNotifier {
       _hasMore = newItems.posts.isNotEmpty;
       if (_hasMore) {
         await _addAll(newItems.posts);
+      } else {
+        onNoMoreData?.call();
       }
       _loading = false;
       count.value = newItems.total;
@@ -467,7 +479,7 @@ List<T> _filterPosts<T extends Post>(
 ) {
   return items.where((e) {
     for (final entry in tagCounts.entries) {
-      if (activeFilters[entry.key] == true && entry.value.contains(e.id)) {
+      if ((activeFilters[entry.key] ?? false) && entry.value.contains(e.id)) {
         return false;
       }
     }
@@ -492,9 +504,15 @@ Future<Map<String, Set<int>>> _count<T extends Post>(
       .map((post) => (filterData: post.extractTagFilterData(), id: post.id))
       .toList();
 
-  return Isolate.run(
-    () => _countInIsolate(payload, parsedTags),
-  );
+  return switch (isWeb()) {
+    true => _countInIsolate(
+      payload,
+      parsedTags,
+    ),
+    false => await Isolate.run(
+      () => _countInIsolate(payload, parsedTags),
+    ),
+  };
 }
 
 Map<String, Set<int>> _countInIsolate(

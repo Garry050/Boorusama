@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../configs/config.dart';
-import '../../../post/post.dart';
+import '../../../../configs/config/types.dart';
+import '../../../post/types.dart';
 import '../data/providers.dart';
 import '../types/types.dart';
 
@@ -67,7 +67,7 @@ class FavoritesNotifier
   }
 
   Future<AddFavoriteStatus> add(int postId) async {
-    if (state[postId] == true) return AddFavoriteStatus.alreadyExists;
+    if (state[postId] ?? false) return AddFavoriteStatus.alreadyExists;
 
     final status = await repo.addToFavorites(postId);
     if (status == AddFavoriteStatus.success ||

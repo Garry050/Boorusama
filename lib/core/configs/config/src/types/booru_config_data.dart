@@ -3,15 +3,16 @@ import 'package:equatable/equatable.dart';
 
 // Project imports:
 import '../../../../../foundation/utils/int_utils.dart';
-import '../../../../boorus/booru/booru.dart';
-import '../../../../posts/rating/rating.dart';
-import '../../../../proxy/proxy.dart';
-import '../../../../settings/settings.dart';
-import '../../../../theme/theme_configs.dart';
-import '../../../gesture/gesture.dart';
-import '../../../search/search.dart';
+import '../../../../boorus/booru/types.dart';
+import '../../../../posts/listing/types.dart';
+import '../../../../posts/rating/types.dart';
+import '../../../../proxy/types.dart';
+import '../../../../settings/types.dart';
+import '../../../../themes/configs/types.dart';
+import '../../../gesture/types.dart';
+import '../../../search/types.dart';
 import 'booru_config.dart';
-import 'rating_parser.dart';
+import 'granular_rating_filter.dart';
 
 class BooruConfigData extends Equatable {
   const BooruConfigData({
@@ -29,16 +30,19 @@ class BooruConfigData extends Equatable {
     required this.customBulkDownloadFileNameFormat,
     required this.customDownloadLocation,
     required this.imageDetaisQuality,
+    required this.videoQuality,
     required this.granularRatingFilterString,
     required this.postGestures,
     required this.defaultPreviewImageButtonAction,
     required this.listing,
+    required this.viewerConfigs,
     required this.theme,
     required this.alwaysIncludeTags,
     required this.blacklistConfigs,
     required this.layout,
     required this.proxySettings,
     required this.viewerNotesFetchBehavior,
+    required this.tooltipDisplayMode,
   });
 
   factory BooruConfigData.anonymous({
@@ -50,6 +54,7 @@ class BooruConfigData extends Equatable {
     required String? customDownloadFileNameFormat,
     required String? customBulkDownloadFileNameFormat,
     required String? imageDetaisQuality,
+    required String? videoQuality,
   }) => BooruConfigData(
     booruId: booru.id,
     booruIdHint: booruHint.id,
@@ -65,16 +70,19 @@ class BooruConfigData extends Equatable {
     customBulkDownloadFileNameFormat: customBulkDownloadFileNameFormat,
     customDownloadLocation: null,
     imageDetaisQuality: imageDetaisQuality,
+    videoQuality: videoQuality,
     granularRatingFilterString: null,
     postGestures: null,
     defaultPreviewImageButtonAction: null,
     listing: null,
+    viewerConfigs: null,
     theme: null,
     alwaysIncludeTags: null,
     blacklistConfigs: null,
     layout: null,
     proxySettings: null,
     viewerNotesFetchBehavior: null,
+    tooltipDisplayMode: null,
   );
 
   static BooruConfigData? fromJson(Map<String, dynamic> json) {
@@ -96,12 +104,14 @@ class BooruConfigData extends Equatable {
             json['customBulkDownloadFileNameFormat'] as String?,
         customDownloadLocation: json['customDownloadLocation'] as String?,
         imageDetaisQuality: json['imageDetaisQuality'] as String?,
+        videoQuality: json['videoQuality'] as String?,
         granularRatingFilterString:
             json['granularRatingFilterString'] as String?,
         postGestures: json['postGestures'] as String?,
         defaultPreviewImageButtonAction:
             json['defaultPreviewImageButtonAction'] as String?,
         listing: json['listing'] as String?,
+        viewerConfigs: json['viewer'] as String?,
         theme: json['theme'] as String?,
         alwaysIncludeTags: json['alwaysIncludeTags'] as String?,
         blacklistConfigs:
@@ -110,6 +120,7 @@ class BooruConfigData extends Equatable {
         layout: json['layout'] as String?,
         proxySettings: json['proxySettings'] as String?,
         viewerNotesFetchBehavior: json['viewerNotesFetchBehavior'] as int?,
+        tooltipDisplayMode: json['tooltipDisplayMode'] as int?,
       );
     } catch (e) {
       return null;
@@ -132,16 +143,19 @@ class BooruConfigData extends Equatable {
       'customBulkDownloadFileNameFormat': customBulkDownloadFileNameFormat,
       'customDownloadLocation': customDownloadLocation,
       'imageDetaisQuality': imageDetaisQuality,
+      'videoQuality': videoQuality,
       'granularRatingFilterString': granularRatingFilterString,
       'postGestures': postGestures,
       'defaultPreviewImageButtonAction': defaultPreviewImageButtonAction,
       'listing': listing,
+      'viewer': viewerConfigs,
       'theme': theme,
       'alwaysIncludeTags': alwaysIncludeTags,
       'blacklistConfigs': blacklistConfigs,
       'layout': layout,
       'proxySettings': proxySettings,
       'viewerNotesFetchBehavior': viewerNotesFetchBehavior,
+      'tooltipDisplayMode': tooltipDisplayMode,
     };
   }
 
@@ -159,16 +173,19 @@ class BooruConfigData extends Equatable {
   final String? customBulkDownloadFileNameFormat;
   final String? customDownloadLocation;
   final String? imageDetaisQuality;
+  final String? videoQuality;
   final String? granularRatingFilterString;
   final String? postGestures;
   final String? defaultPreviewImageButtonAction;
   final String? listing;
+  final String? viewerConfigs;
   final String? theme;
   final String? alwaysIncludeTags;
   final String? blacklistConfigs;
   final String? layout;
   final String? proxySettings;
   final int? viewerNotesFetchBehavior;
+  final int? tooltipDisplayMode;
 
   @override
   List<Object?> get props => [
@@ -186,16 +203,19 @@ class BooruConfigData extends Equatable {
     customBulkDownloadFileNameFormat,
     customDownloadLocation,
     imageDetaisQuality,
+    videoQuality,
     granularRatingFilterString,
     postGestures,
     defaultPreviewImageButtonAction,
     listing,
+    viewerConfigs,
     theme,
     alwaysIncludeTags,
     blacklistConfigs,
     layout,
     proxySettings,
     viewerNotesFetchBehavior,
+    tooltipDisplayMode,
   ];
 }
 
@@ -208,6 +228,10 @@ extension BooruConfigDataX on BooruConfigData {
     return ListingConfigs.fromJsonString(listing);
   }
 
+  ViewerConfigs? get viewerTyped {
+    return ViewerConfigs.fromJsonString(viewerConfigs);
+  }
+
   LayoutConfigs? get layoutTyped {
     return LayoutConfigs.fromJsonString(layout);
   }
@@ -217,54 +241,19 @@ extension BooruConfigDataX on BooruConfigData {
   }
 
   BlacklistConfigs? get blacklistConfigsTyped {
-    return BlacklistConfigs.fromJsonString(blacklistConfigs);
+    return BlacklistConfigs.tryParse(blacklistConfigs);
   }
 
   Set<Rating>? get granularRatingFilterTyped {
-    return parseGranularRatingFilters(granularRatingFilterString);
-  }
-
-  BooruConfigRatingFilter? get ratingFilterTyped {
-    if (ratingFilter < 0 ||
-        ratingFilter >= BooruConfigRatingFilter.values.length) {
-      return null;
-    }
-
-    return BooruConfigRatingFilter.values[ratingFilter];
-  }
-
-  BooruConfigBannedPostVisibility? get bannedPostVisibilityTyped {
-    if (bannedPostVisibility < 0 ||
-        bannedPostVisibility >= BooruConfigBannedPostVisibility.values.length) {
-      return null;
-    }
-
-    return BooruConfigBannedPostVisibility.values[bannedPostVisibility];
-  }
-
-  BooruConfigDeletedItemBehavior get deletedItemBehaviorTyped {
-    if (deletedItemBehavior < 0 ||
-        deletedItemBehavior >= BooruConfigDeletedItemBehavior.values.length) {
-      return BooruConfigDeletedItemBehavior.show;
-    }
-
-    return BooruConfigDeletedItemBehavior.values[deletedItemBehavior];
+    return GranularRatingFilter.parse(granularRatingFilterString)?.ratings;
   }
 
   ProxySettings? get proxySettingsTyped {
     return ProxySettings.fromJsonString(proxySettings);
   }
 
-  BooruConfigViewerNotesFetchBehavior? get viewerNotesFetchBehaviorTyped {
-    final behavior = viewerNotesFetchBehavior;
-
-    if (behavior == null ||
-        behavior < 0 ||
-        behavior >= BooruConfigViewerNotesFetchBehavior.values.length) {
-      return null;
-    }
-
-    return BooruConfigViewerNotesFetchBehavior.values[behavior];
+  TooltipDisplayMode? get tooltipDisplayModeTyped {
+    return TooltipDisplayMode.tryParse(tooltipDisplayMode);
   }
 }
 
@@ -284,16 +273,19 @@ extension BooruConfigDataCopyWith on BooruConfigData {
     String? Function()? customBulkDownloadFileNameFormat,
     String? Function()? customDownloadLocation,
     String? Function()? imageDetaisQuality,
+    String? Function()? videoQuality,
     Set<Rating>? Function()? granularRatingFilter,
     PostGestureConfig? Function()? postGestures,
     String? Function()? defaultPreviewImageButtonAction,
     ListingConfigs? Function()? listing,
+    ViewerConfigs? Function()? viewerConfigs,
     ThemeConfigs? Function()? theme,
     String? Function()? alwaysIncludeTags,
     BlacklistConfigs? Function()? blacklistConfigs,
     LayoutConfigs? Function()? layout,
     ProxySettings? Function()? proxySettings,
     BooruConfigViewerNotesFetchBehavior? Function()? viewerNotesFetchBehavior,
+    TooltipDisplayMode? Function()? tooltipDisplayMode,
   }) {
     return BooruConfigData(
       booruId: booruId ?? this.booruId,
@@ -324,8 +316,9 @@ extension BooruConfigDataCopyWith on BooruConfigData {
       imageDetaisQuality: imageDetaisQuality != null
           ? imageDetaisQuality()
           : this.imageDetaisQuality,
+      videoQuality: videoQuality != null ? videoQuality() : this.videoQuality,
       granularRatingFilterString: granularRatingFilter != null
-          ? granularRatingFilterToString(granularRatingFilter())
+          ? GranularRatingFilter.parse(granularRatingFilter())?.toFilterString()
           : granularRatingFilterString,
       postGestures: postGestures != null
           ? postGestures()?.toJsonString() ??
@@ -335,6 +328,9 @@ extension BooruConfigDataCopyWith on BooruConfigData {
           ? defaultPreviewImageButtonAction()
           : this.defaultPreviewImageButtonAction,
       listing: listing != null ? listing()?.toJsonString() : this.listing,
+      viewerConfigs: viewerConfigs != null
+          ? viewerConfigs()?.toJsonString()
+          : this.viewerConfigs,
       theme: theme != null ? theme()?.toJsonString() : this.theme,
       alwaysIncludeTags: alwaysIncludeTags != null
           ? alwaysIncludeTags()
@@ -349,6 +345,9 @@ extension BooruConfigDataCopyWith on BooruConfigData {
       viewerNotesFetchBehavior: viewerNotesFetchBehavior != null
           ? viewerNotesFetchBehavior()?.index
           : this.viewerNotesFetchBehavior,
+      tooltipDisplayMode: tooltipDisplayMode != null
+          ? tooltipDisplayMode()?.toData()
+          : this.tooltipDisplayMode,
     );
   }
 }

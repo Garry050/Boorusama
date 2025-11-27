@@ -9,7 +9,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import '../../../../../foundation/display.dart';
 import '../../../../settings/providers.dart';
 import '../../../details_pageview/widgets.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 import '../types/inherited_post.dart';
 import '../types/post_details.dart';
 import 'post_details_controller.dart';
@@ -49,10 +49,11 @@ class _PostDetailsLayoutSwitcherState<T extends Post>
 
     final initialPage = widget.initialIndex;
     final settings = ref.read(settingsProvider);
+    final viewerSettings = ref.read(imageViewerSettingsProvider);
 
     final reduceAnimations = settings.reduceAnimations;
-    final hideOverlay = settings.viewer.hidePostDetailsOverlay;
-    final slideshowOptions = toSlideShowOptions(settings);
+    final hideOverlay = viewerSettings.postDetailsOverlayInitialState.isHide;
+    final slideshowOptions = toSlideShowOptions(viewerSettings);
     final hoverToControlOverlay = widget.posts[initialPage].isVideo;
 
     _controller = PostDetailsController<T>(
@@ -62,6 +63,7 @@ class _PostDetailsLayoutSwitcherState<T extends Post>
       posts: widget.posts,
       reduceAnimations: reduceAnimations,
       dislclaimer: widget.dislclaimer,
+      doubleTapSeekDuration: viewerSettings.doubleTapSeekDuration,
     );
 
     _pageViewController = PostDetailsPageViewController(
@@ -72,6 +74,15 @@ class _PostDetailsLayoutSwitcherState<T extends Post>
       checkIfLargeScreen: () => context.isLargeScreen,
       totalPage: widget.posts.length,
       disableAnimation: reduceAnimations,
+      onBeforeSlideshowAdvance: (currentPage, nextPage) async {
+        if (viewerSettings.slideshowVideoBehavior.isWaitForCompletion) {
+          final currentPost = widget.posts[currentPage];
+
+          if (currentPost.isVideo) {
+            await _controller.waitForVideoCompletion(currentPost.id);
+          }
+        }
+      },
     );
   }
 

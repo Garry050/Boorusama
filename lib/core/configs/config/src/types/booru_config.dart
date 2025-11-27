@@ -5,22 +5,25 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:equatable/equatable.dart';
-import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../boorus/booru/booru.dart';
-import '../../../../home/custom_home.dart';
+import '../../../../boorus/booru/types.dart';
+import '../../../../home/types.dart';
 import '../../../../posts/details_manager/types.dart';
-import '../../../../posts/rating/rating.dart';
-import '../../../../proxy/proxy.dart';
-import '../../../../settings/settings.dart';
-import '../../../../theme/theme_configs.dart';
-import '../../../gesture/gesture.dart';
-import '../../../search/search.dart';
+import '../../../../posts/details_parts/types.dart';
+import '../../../../posts/listing/types.dart';
+import '../../../../posts/rating/types.dart';
+import '../../../../proxy/types.dart';
+import '../../../../settings/types.dart';
+import '../../../../themes/configs/types.dart';
+import '../../../gesture/types.dart';
+import '../../../search/types.dart';
+import 'always_included_tags.dart';
 import 'booru_config_repository.dart';
-import 'rating_parser.dart';
+import 'granular_rating_filter.dart';
 import 'types.dart';
 
+export 'always_included_tags.dart';
 export 'booru_login_details.dart';
 export 'booru_login_details_impl.dart';
 export 'types.dart';
@@ -42,22 +45,22 @@ class BooruConfig extends Equatable {
     required this.customBulkDownloadFileNameFormat,
     required this.customDownloadLocation,
     required this.imageDetaisQuality,
+    required this.videoQuality,
     required this.granularRatingFilters,
     required this.postGestures,
     required this.defaultPreviewImageButtonAction,
     required this.listing,
+    required this.viewerConfigs,
     required this.theme,
     required this.alwaysIncludeTags,
     required this.blacklistConfigs,
     required this.layout,
     required this.proxySettings,
     required this.viewerNotesFetchBehavior,
+    required this.tooltipDisplayMode,
   });
 
   factory BooruConfig.fromJson(Map<String, dynamic> json) {
-    final ratingFilter = json['ratingFilter'] as int?;
-    final bannedPostVisibility = json['bannedPostVisibility'] as int?;
-
     return BooruConfig(
       id: json['id'] as int,
       booruId: json['booruId'] as int,
@@ -67,26 +70,22 @@ class BooruConfig extends Equatable {
       passHash: json['passHash'] as String?,
       url: json['url'] as String,
       name: json['name'] as String,
-      deletedItemBehavior: BooruConfigDeletedItemBehavior
-          .values[json['deletedItemBehavior'] as int],
-      ratingFilter: ratingFilter != null
-          ? BooruConfigRatingFilter.values.getOrNull(ratingFilter) ??
-                BooruConfigRatingFilter.hideNSFW
-          : BooruConfigRatingFilter.hideNSFW,
-      bannedPostVisibility: bannedPostVisibility != null
-          ? BooruConfigBannedPostVisibility.values.getOrNull(
-                  bannedPostVisibility,
-                ) ??
-                BooruConfigBannedPostVisibility.show
-          : BooruConfigBannedPostVisibility.show,
+      deletedItemBehavior: BooruConfigDeletedItemBehavior.parse(
+        json['deletedItemBehavior'],
+      ),
+      ratingFilter: BooruConfigRatingFilter.parse(json['ratingFilter']),
+      bannedPostVisibility: BooruConfigBannedPostVisibility.parse(
+        json['bannedPostVisibility'],
+      ),
       customDownloadFileNameFormat:
           json['customDownloadFileNameFormat'] as String?,
       customBulkDownloadFileNameFormat:
           json['customBulkDownloadFileNameFormat'] as String?,
       customDownloadLocation: json['customDownloadLocation'] as String?,
       imageDetaisQuality: json['imageDetaisQuality'] as String?,
-      granularRatingFilters: parseGranularRatingFilters(
-        json['granularRatingFilterString'] as String?,
+      videoQuality: json['videoQuality'] as String?,
+      granularRatingFilters: GranularRatingFilter.parse(
+        json['granularRatingFilterString'],
       ),
       postGestures: json['postGestures'] == null
           ? null
@@ -98,11 +97,16 @@ class BooruConfig extends Equatable {
       listing: json['listing'] == null
           ? null
           : ListingConfigs.fromJson(json['listing'] as Map<String, dynamic>),
+      viewerConfigs: json['viewer'] == null
+          ? null
+          : ViewerConfigs.fromJson(json['viewer'] as Map<String, dynamic>),
       theme: json['theme'] == null
           ? null
           : ThemeConfigs.fromJson(json['theme'] as Map<String, dynamic>),
-      alwaysIncludeTags: json['alwaysIncludeTags'] as String?,
-      blacklistConfigs: _parseBlacklistConfigs(json),
+      alwaysIncludeTags: AlwaysIncludedTags.parse(json['alwaysIncludeTags']),
+      blacklistConfigs: BlacklistConfigs.tryParse(
+        json['blacklistedConfigs'] ?? json['blacklistedTags'],
+      ),
       layout: json['layout'] == null
           ? null
           : LayoutConfigs.fromJson(json['layout'] as Map<String, dynamic>),
@@ -111,14 +115,16 @@ class BooruConfig extends Equatable {
           : ProxySettings.fromJson(
               json['proxySettings'] as Map<String, dynamic>,
             ),
-      viewerNotesFetchBehavior: json['viewerNotesFetchBehavior'] == null
-          ? null
-          : BooruConfigViewerNotesFetchBehavior
-                .values[json['viewerNotesFetchBehavior'] as int],
+      viewerNotesFetchBehavior: BooruConfigViewerNotesFetchBehavior.tryParse(
+        json['viewerNotesFetchBehavior'],
+      ),
+      tooltipDisplayMode: TooltipDisplayMode.tryParse(
+        json['tooltipDisplayMode'],
+      ),
     );
   }
 
-  static const BooruConfig empty = BooruConfig(
+  static const empty = BooruConfig(
     id: -2,
     booruId: -1,
     booruIdHint: -1,
@@ -126,24 +132,27 @@ class BooruConfig extends Equatable {
     login: null,
     passHash: null,
     name: '',
-    deletedItemBehavior: BooruConfigDeletedItemBehavior.show,
-    ratingFilter: BooruConfigRatingFilter.none,
+    deletedItemBehavior: BooruConfigDeletedItemBehavior.defaultValue,
+    ratingFilter: BooruConfigRatingFilter.defaultValue,
     bannedPostVisibility: BooruConfigBannedPostVisibility.show,
     url: '',
     customDownloadFileNameFormat: null,
     customBulkDownloadFileNameFormat: null,
     customDownloadLocation: null,
     imageDetaisQuality: null,
+    videoQuality: null,
     granularRatingFilters: null,
     postGestures: null,
     defaultPreviewImageButtonAction: null,
     listing: null,
+    viewerConfigs: null,
     theme: null,
     alwaysIncludeTags: null,
     blacklistConfigs: null,
     layout: null,
     proxySettings: null,
     viewerNotesFetchBehavior: null,
+    tooltipDisplayMode: null,
   );
 
   // ignore: prefer_constructors_over_static_methods
@@ -159,24 +168,27 @@ class BooruConfig extends Equatable {
     login: null,
     passHash: null,
     name: 'new profile',
-    deletedItemBehavior: BooruConfigDeletedItemBehavior.show,
-    ratingFilter: BooruConfigRatingFilter.none,
-    bannedPostVisibility: BooruConfigBannedPostVisibility.show,
+    deletedItemBehavior: BooruConfigDeletedItemBehavior.defaultValue,
+    ratingFilter: BooruConfigRatingFilter.defaultValue,
+    bannedPostVisibility: BooruConfigBannedPostVisibility.defaultValue,
     url: url,
     customDownloadFileNameFormat: customDownloadFileNameFormat,
     customBulkDownloadFileNameFormat: customDownloadFileNameFormat,
     customDownloadLocation: null,
     imageDetaisQuality: null,
+    videoQuality: null,
     granularRatingFilters: null,
     postGestures: null,
     defaultPreviewImageButtonAction: null,
     listing: null,
+    viewerConfigs: null,
     theme: null,
     alwaysIncludeTags: null,
     blacklistConfigs: null,
     layout: null,
     proxySettings: null,
     viewerNotesFetchBehavior: null,
+    tooltipDisplayMode: null,
   );
 
   final int id;
@@ -194,16 +206,19 @@ class BooruConfig extends Equatable {
   final String? customBulkDownloadFileNameFormat;
   final String? customDownloadLocation;
   final String? imageDetaisQuality;
-  final Set<Rating>? granularRatingFilters;
+  final String? videoQuality;
+  final GranularRatingFilter? granularRatingFilters;
   final PostGestureConfig? postGestures;
   final String? defaultPreviewImageButtonAction;
   final ListingConfigs? listing;
+  final ViewerConfigs? viewerConfigs;
   final ThemeConfigs? theme;
-  final String? alwaysIncludeTags;
+  final AlwaysIncludedTags? alwaysIncludeTags;
   final BlacklistConfigs? blacklistConfigs;
   final LayoutConfigs? layout;
   final ProxySettings? proxySettings;
   final BooruConfigViewerNotesFetchBehavior? viewerNotesFetchBehavior;
+  final TooltipDisplayMode? tooltipDisplayMode;
 
   BooruConfig copyWith({
     String? url,
@@ -211,7 +226,9 @@ class BooruConfig extends Equatable {
     String? login,
     String? name,
     int? booruIdHint,
+    ViewerConfigs? Function()? viewerConfigs,
     LayoutConfigs? Function()? layout,
+    TooltipDisplayMode? tooltipDisplayMode,
   }) {
     return BooruConfig(
       id: id,
@@ -229,16 +246,21 @@ class BooruConfig extends Equatable {
       customBulkDownloadFileNameFormat: customBulkDownloadFileNameFormat,
       customDownloadLocation: customDownloadLocation,
       imageDetaisQuality: imageDetaisQuality,
+      videoQuality: videoQuality,
       granularRatingFilters: granularRatingFilters,
       postGestures: postGestures,
       defaultPreviewImageButtonAction: defaultPreviewImageButtonAction,
       listing: listing,
+      viewerConfigs: viewerConfigs != null
+          ? viewerConfigs()
+          : this.viewerConfigs,
       theme: theme,
       alwaysIncludeTags: alwaysIncludeTags,
       blacklistConfigs: blacklistConfigs,
       layout: layout != null ? layout() : this.layout,
       proxySettings: proxySettings,
       viewerNotesFetchBehavior: viewerNotesFetchBehavior,
+      tooltipDisplayMode: tooltipDisplayMode ?? this.tooltipDisplayMode,
     );
   }
 
@@ -259,16 +281,19 @@ class BooruConfig extends Equatable {
     customBulkDownloadFileNameFormat,
     customDownloadLocation,
     imageDetaisQuality,
+    videoQuality,
     granularRatingFilters,
     postGestures,
     defaultPreviewImageButtonAction,
     listing,
+    viewerConfigs,
     theme,
     alwaysIncludeTags,
     blacklistConfigs,
     layout,
     proxySettings,
     viewerNotesFetchBehavior,
+    tooltipDisplayMode,
   ];
 
   @override
@@ -293,34 +318,22 @@ class BooruConfig extends Equatable {
       'customBulkDownloadFileNameFormat': customBulkDownloadFileNameFormat,
       'customDownloadLocation': customDownloadLocation,
       'imageDetaisQuality': imageDetaisQuality,
-      'granularRatingFilterString': granularRatingFilterToString(
-        granularRatingFilters,
-      ),
+      'videoQuality': videoQuality,
+      if (granularRatingFilters case final filter?)
+        'granularRatingFilterString': filter.toFilterString(),
       'postGestures': postGestures?.toJson(),
       'defaultPreviewImageButtonAction': defaultPreviewImageButtonAction,
       'listing': listing?.toJson(),
+      'viewer': viewerConfigs?.toJson(),
       'theme': theme?.toJson(),
-      'alwaysIncludeTags': alwaysIncludeTags,
+      'alwaysIncludeTags': alwaysIncludeTags?.toJsonString(),
       'blacklistedTags': blacklistConfigs?.toJson(),
       'layout': layout?.toJson(),
       'proxySettings': proxySettings?.toJson(),
       'viewerNotesFetchBehavior': viewerNotesFetchBehavior?.index,
+      'tooltipDisplayMode': ?tooltipDisplayMode?.toData(),
     };
   }
-}
-
-BlacklistConfigs? _parseBlacklistConfigs(Map<String, dynamic> json) {
-  if (json['blacklistedConfigs'] != null) {
-    return BlacklistConfigs.fromJson(
-      json['blacklistedConfigs'] as Map<String, dynamic>,
-    );
-  }
-  if (json['blacklistedTags'] != null) {
-    return BlacklistConfigs.fromJson(
-      json['blacklistedTags'] as Map<String, dynamic>,
-    );
-  }
-  return null;
 }
 
 class BooruConfigAuth extends Equatable with BooruConfigAuthMixin {
@@ -419,8 +432,8 @@ class BooruConfigSearchFilter extends Equatable
 
   final BooruConfigRatingFilter ratingFilter;
   @override
-  final Set<Rating>? granularRatingFilters;
-  final String? alwaysIncludeTags;
+  final GranularRatingFilter? granularRatingFilters;
+  final AlwaysIncludedTags? alwaysIncludeTags;
   final BooruConfigDeletedItemBehavior deletedItemBehavior;
   @override
   final BooruConfigBannedPostVisibility bannedPostVisibility;
@@ -431,45 +444,15 @@ class BooruConfigSearchFilter extends Equatable
     BooruConfigRatingFilter.none => 'unfiltered',
     BooruConfigRatingFilter.hideExplicit => 'questionable',
     BooruConfigRatingFilter.hideNSFW => 'sfw',
-    BooruConfigRatingFilter.custom => () {
-      final filters = granularRatingFiltersWithoutUnknown;
-
-      if (filters == null) return 'custom';
-
-      final str = granularRatingFilterToString(filters, sort: true);
-
-      if (str == null) return 'custom';
-
-      return 'filtered($str)';
-    }(),
+    BooruConfigRatingFilter.custom => switch (granularRatingFilters
+        ?.withoutUnknown()) {
+      final filter? => switch (filter.toFilterString(sort: true)) {
+        final str when str.isNotEmpty => 'filtered($str)',
+        _ => 'custom',
+      },
+      null => 'custom',
+    },
   };
-
-  bool canView(String rating) {
-    final parsedRating = mapStringToRating(rating);
-
-    if (ratingFilter == BooruConfigRatingFilter.none) return true;
-
-    if (ratingFilter == BooruConfigRatingFilter.custom) {
-      final granularRatingFilters = granularRatingFiltersWithoutUnknown;
-
-      if (granularRatingFilters == null) return false;
-
-      return granularRatingFilters.contains(parsedRating);
-    }
-
-    if (ratingFilter == BooruConfigRatingFilter.hideExplicit &&
-        parsedRating == Rating.explicit) {
-      return false;
-    }
-
-    if (ratingFilter == BooruConfigRatingFilter.hideNSFW &&
-        (parsedRating == Rating.explicit ||
-            parsedRating == Rating.questionable)) {
-      return false;
-    }
-
-    return true;
-  }
 
   @override
   List<Object?> get props => [
@@ -527,26 +510,35 @@ class BooruConfigFilter extends Equatable {
 class BooruConfigViewer extends Equatable {
   const BooruConfigViewer({
     required this.imageDetaisQuality,
+    required this.videoQuality,
     required this.viewerNotesFetchBehavior,
+    required this.settings,
   });
 
   factory BooruConfigViewer.fromConfig(BooruConfig config) {
     return BooruConfigViewer(
       imageDetaisQuality: config.imageDetaisQuality,
+      videoQuality: config.videoQuality,
       viewerNotesFetchBehavior: config.viewerNotesFetchBehavior,
+      settings: (config.viewerConfigs?.enable ?? false)
+          ? config.viewerConfigs?.settings
+          : null,
     );
   }
 
   final String? imageDetaisQuality;
+  final String? videoQuality;
   final BooruConfigViewerNotesFetchBehavior? viewerNotesFetchBehavior;
+  final ImageViewerSettings? settings;
 
-  bool get autoFetchNotes =>
-      viewerNotesFetchBehavior == BooruConfigViewerNotesFetchBehavior.auto;
+  bool get autoFetchNotes => viewerNotesFetchBehavior?.isAuto ?? false;
 
   @override
   List<Object?> get props => [
     imageDetaisQuality,
+    videoQuality,
     viewerNotesFetchBehavior,
+    settings,
   ];
 }
 
@@ -593,17 +585,12 @@ mixin BooruConfigAuthMixin {
 }
 
 mixin BooruConfigSearchFilterMixin {
-  Set<Rating>? get granularRatingFilters;
+  GranularRatingFilter? get granularRatingFilters;
   BooruConfigBannedPostVisibility get bannedPostVisibility;
 
   Set<Rating>? get granularRatingFiltersWithoutUnknown {
-    if (granularRatingFilters == null) return null;
-
-    return granularRatingFilters!.where((e) => e != Rating.unknown).toSet();
+    return granularRatingFilters?.withoutUnknown().ratings;
   }
-
-  bool get hideBannedPosts =>
-      bannedPostVisibility == BooruConfigBannedPostVisibility.hide;
 }
 
 extension BooruConfigX on BooruConfig {

@@ -5,15 +5,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../core/boorus/booru/providers.dart';
 import '../../core/configs/config/types.dart';
-import '../../core/http/http.dart';
-import '../../core/http/providers.dart';
-import '../../foundation/info/app_info.dart';
-import '../../foundation/info/package_info.dart';
+import '../../core/ddos/handler/providers.dart';
+import '../../core/http/client/providers.dart';
+import '../../core/http/client/types.dart';
 import '../../foundation/loggers.dart';
-import '../../foundation/vendors/google/providers.dart';
-import 'gelbooru_v2.dart';
+import 'gelbooru_v2_provider.dart';
 
 final gelbooruV2ClientProvider =
     Provider.family<GelbooruV2Client, BooruConfigAuth>((ref, config) {
@@ -47,36 +44,28 @@ final gelbooruV2DioProvider = Provider.family<Dio, BooruConfigAuth>((
   ref,
   config,
 ) {
-  final ddosProtectionHandler = ref.watch(httpDdosProtectionBypassHandler);
-  final packageInfo = ref.watch(packageInfoProvider);
-  final appInfo = ref.watch(appInfoProvider);
+  final ddosProtectionHandler = ref.watch(httpDdosProtectionBypassProvider);
   final loggerService = ref.watch(loggerProvider);
-  final booruDb = ref.watch(booruDbProvider);
-  final cronetAvailable = ref.watch(isGooglePlayServiceAvailableProvider);
   final gelbooruV2 = ref.watch(gelbooruV2Provider);
   final capabilities = gelbooruV2.getCapabilitiesForSite(config.url);
 
   return newDio(
     options: DioOptions(
       ddosProtectionHandler: ddosProtectionHandler,
-      userAgent: getDefaultUserAgent(appInfo, packageInfo),
-      authConfig: config,
+      userAgent: ref.watch(defaultUserAgentProvider),
       loggerService: loggerService,
-      booruDb: booruDb,
-      cronetAvailable: cronetAvailable,
+      networkProtocolInfo: ref.watch(
+        defaultNetworkProtocolInfoProvider(config),
+      ),
+      baseUrl: config.url,
+      proxySettings: config.proxySettings,
     ),
     additionalInterceptors: [
       if (capabilities?.auth?.cookie case final c?)
         if (c.isNotEmpty) CookieInjectionInterceptor(cookie: c),
       if (capabilities?.auth?.required case true)
         AuthErrorResponseInterceptor(),
-      SlidingWindowRateLimitInterceptor(
-        config: const SlidingWindowRateLimitConfig(
-          requestsPerWindow: 10,
-          windowSizeMs: 1000,
-          maxDelayMs: 5000,
-        ),
-      ),
+      ref.watch(defaultSlidingWindowRateLimitConfigInterceptorProvider),
     ],
   );
 });

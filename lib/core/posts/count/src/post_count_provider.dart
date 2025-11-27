@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../boorus/engine/providers.dart';
-import '../../../configs/config.dart';
+import '../../../configs/config/types.dart';
 import '../../post/providers.dart';
 import 'post_count_repository.dart';
 
@@ -24,7 +24,7 @@ final postCountProvider = FutureProvider.autoDispose
 
 final cachedPostCountProvider =
     FutureProvider.family<int?, (BooruConfigSearch, String)>(
-      (ref, params) async => ref.watch(postCountProvider(params).future),
+      (ref, params) => ref.watch(postCountProvider(params).future),
     );
 
 final emptyPostCountRepoProvider = Provider<PostCountRepository>(

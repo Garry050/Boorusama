@@ -10,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../settings/providers.dart';
-import '../settings/settings.dart';
 
 /// Fallback max zoom scale when content size is unknown. Limits zoom-in.
 const _kFallbackMaxScale = 10.0;
@@ -110,16 +109,20 @@ class InteractiveViewerExtended extends ConsumerWidget {
     this.onTransformationChanged,
     this.enable = true,
     this.contentSize,
+    this.panEnabled = true,
+    this.scaleEnabled = true,
   });
 
   final Widget child;
   final VoidCallback? onTap;
-  final VoidCallback? onDoubleTap;
+  final void Function(TapDownDetails?)? onDoubleTap;
   final VoidCallback? onLongPress;
   final void Function(TransformationDetails details)? onTransformationChanged;
   final TransformationController? controller;
   final bool enable;
   final Size? contentSize;
+  final bool panEnabled;
+  final bool scaleEnabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -135,6 +138,8 @@ class InteractiveViewerExtended extends ConsumerWidget {
       enable: enable,
       contentSize: contentSize,
       enableHapticFeedback: enableHapticFeedback,
+      panEnabled: panEnabled,
+      scaleEnabled: scaleEnabled,
       child: child,
     );
   }
@@ -152,11 +157,13 @@ class RawInteractiveViewerExtended extends StatefulWidget {
     this.enable = true,
     this.contentSize,
     this.enableHapticFeedback = false,
+    this.panEnabled = true,
+    this.scaleEnabled = true,
   });
 
   final Widget child;
   final VoidCallback? onTap;
-  final VoidCallback? onDoubleTap;
+  final void Function(TapDownDetails?)? onDoubleTap;
   final VoidCallback? onLongPress;
   final void Function(TransformationDetails details)? onTransformationChanged;
   final TransformationController? controller;
@@ -169,6 +176,12 @@ class RawInteractiveViewerExtended extends StatefulWidget {
 
   // Enable haptic feedback for interactions
   final bool enableHapticFeedback;
+
+  // Enable/disable panning
+  final bool panEnabled;
+
+  // Enable/disable scaling
+  final bool scaleEnabled;
 
   @override
   State<RawInteractiveViewerExtended> createState() =>
@@ -192,7 +205,7 @@ class _RawInteractiveViewerExtendedState
   Size? _containerSize;
 
   // Track if max zoom haptic feedback has been triggered
-  bool _hasTriggeredMaxZoomHaptic = false;
+  var _hasTriggeredMaxZoomHaptic = false;
 
   @override
   void initState() {
@@ -299,16 +312,16 @@ class _RawInteractiveViewerExtendedState
           minScale: _kFallbackMinScale,
           maxScale: _calcMaxScale(widget.contentSize, containerSize),
           transformationController: _controller,
-          panEnabled: enable,
-          scaleEnabled: enable,
+          panEnabled: enable && widget.panEnabled,
+          scaleEnabled: enable && widget.scaleEnabled,
           child: GestureDetector(
             onDoubleTapDown: enable
                 ? (details) => _doubleTapDetails = details
                 : null,
             onDoubleTap: enable
                 ? () {
-                    if (widget.onDoubleTap != null) {
-                      widget.onDoubleTap!();
+                    if (widget.onDoubleTap case final cb?) {
+                      cb(_doubleTapDetails);
                     } else {
                       _handleDoubleTap();
                     }

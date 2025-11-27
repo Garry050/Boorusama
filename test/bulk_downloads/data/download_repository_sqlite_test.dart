@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 // Project imports:
-import 'package:boorusama/core/bulk_downloads/src/data/download_repository_sqlite.dart';
+import 'package:boorusama/core/bulk_downloads/src/data/repo_sqlite.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_options.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_record.dart';
 import 'package:boorusama/core/bulk_downloads/src/types/download_session.dart';
@@ -371,6 +371,29 @@ void main() {
           isNotEmpty,
           reason: 'Statistics should still exist after session deletion',
         );
+      });
+    });
+
+    group('edge cases', () {
+      test('should handle duplicate record creation', () async {
+        final task = await repository.createTask(_options);
+        final session = await repository.createSession(task, _auth);
+
+        final record = DownloadRecord(
+          url: 'https://example.com/duplicate.jpg',
+          sessionId: session.id,
+          status: DownloadRecordStatus.pending,
+          page: 1,
+          pageIndex: 0,
+          createdAt: DateTime.now(),
+          fileName: 'duplicate.jpg',
+        );
+
+        await repository.createRecord(record);
+        await repository.createRecord(record);
+
+        final records = await repository.getRecordsBySessionId(session.id);
+        expect(records, hasLength(1));
       });
     });
   });

@@ -2,9 +2,8 @@
 import 'package:booru_clients/gelbooru.dart';
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
 import '../../../core/posts/post/providers.dart';
-import '../gelbooru_v2_repository.dart';
+import '../../../core/posts/post/types.dart';
 import 'parser.dart';
 import 'types.dart';
 
@@ -41,7 +40,7 @@ class GelbooruV2PostRepository extends PostRepositoryBuilder<GelbooruV2Post> {
          fetchSingle: (id, {options}) async {
            final numericId = id as NumericPostId?;
 
-           if (numericId == null) return Future.value(null);
+           if (numericId == null) return Future.value();
 
            final post = await fetchSingle(numericId.value);
 

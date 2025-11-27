@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../../configs/config/types.dart';
-import '../../../../notes/notes.dart';
+import '../../../../notes/note/providers.dart';
 import '../../../details_pageview/widgets.dart';
-import '../../../post/post.dart';
-import '../../details.dart';
+import '../../../post/types.dart';
+import 'post_details_page_view_scope.dart';
 
 class PostDetailsNotes<T extends Post> extends ConsumerStatefulWidget {
   const PostDetailsNotes({

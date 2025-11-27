@@ -9,12 +9,15 @@ import 'package:foundation/foundation.dart';
 // Project imports:
 import '../../../../configs/config/types.dart';
 import '../../../../images/booru_image.dart';
-import '../../../../notes/notes.dart';
+import '../../../../notes/note/providers.dart';
+import '../../../../notes/note/types.dart';
+import '../../../../notes/note/widgets.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../listing/providers.dart';
-import '../../../post/post.dart';
+import '../../../post/types.dart';
+import '../providers/note_overlay_provider.dart';
 
-class PostDetailsImage<T extends Post> extends ConsumerStatefulWidget {
+class PostDetailsImage<T extends Post> extends StatelessWidget {
   const PostDetailsImage({
     required this.config,
     required this.imageUrlBuilder,
@@ -33,18 +36,94 @@ class PostDetailsImage<T extends Post> extends ConsumerStatefulWidget {
   final T post;
 
   @override
-  ConsumerState<PostDetailsImage<T>> createState() =>
-      _PostDetailsImageState<T>();
+  Widget build(BuildContext context) {
+    final aspectRatio = post.aspectRatio;
+
+    return aspectRatio != null
+        ? AspectRatio(
+            aspectRatio: aspectRatio,
+            child: Consumer(
+              builder: (_, ref, _) => Stack(
+                children: [
+                  RawPostDetailsImage(
+                    config: config,
+                    post: post,
+                    heroTag: heroTag,
+                    imageUrlBuilder: imageUrlBuilder,
+                    thumbnailUrlBuilder: thumbnailUrlBuilder,
+                    imageCacheManager: imageCacheManager,
+                  ),
+                  ..._buildNotes(ref),
+                ],
+              ),
+            ),
+          )
+        : RawPostDetailsImage(
+            config: config,
+            post: post,
+            heroTag: heroTag,
+            imageUrlBuilder: imageUrlBuilder,
+            thumbnailUrlBuilder: thumbnailUrlBuilder,
+            imageCacheManager: imageCacheManager,
+          );
+  }
+
+  List<Widget> _buildNotes(WidgetRef ref) {
+    final params = (config, post);
+    final noteState = ref.watch(notesControllerProvider(post));
+    final notes = ref.watch(currentNotesProvider(params)) ?? <Note>[].lock;
+    final noteOverlayNotifier = ref.watch(noteOverlayProvider(params).notifier);
+
+    return [
+      if (noteState.enableNotes)
+        ...notes.map(
+          (note) => LayoutBuilder(
+            builder: (context, constraints) => PostNote(
+              note: note.adjust(
+                width: post.width,
+                height: post.height,
+                widthConstraint: constraints.maxWidth,
+                heightConstraint: constraints.maxHeight,
+              ),
+              onShow: () {
+                noteOverlayNotifier.setVisible(true);
+              },
+              onHide: () {
+                noteOverlayNotifier.setVisible(false);
+              },
+            ),
+          ),
+        ),
+    ];
+  }
 }
 
-class _PostDetailsImageState<T extends Post>
-    extends ConsumerState<PostDetailsImage<T>> {
+class RawPostDetailsImage<T extends Post> extends ConsumerWidget {
+  const RawPostDetailsImage({
+    required this.config,
+    required this.post,
+    super.key,
+    this.heroTag,
+    this.imageUrlBuilder,
+    this.thumbnailUrlBuilder,
+    this.imageCacheManager,
+    this.fit,
+  });
+
+  final BooruConfigAuth config;
+  final String? heroTag;
+  final String Function(T post)? imageUrlBuilder;
+  final String Function(T post)? thumbnailUrlBuilder;
+  final ImageCacheManager? imageCacheManager;
+  final T post;
+  final BoxFit? fit;
+
   @override
-  Widget build(BuildContext context) {
-    final imageUrl = widget.imageUrlBuilder != null
-        ? widget.imageUrlBuilder!(widget.post)
-        : widget.post.thumbnailImageUrl;
-    final aspectRatio = widget.post.aspectRatio;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final imageUrl = imageUrlBuilder != null
+        ? imageUrlBuilder!(post)
+        : post.thumbnailImageUrl;
+    final aspectRatio = post.aspectRatio;
 
     if (imageUrl.isEmpty) {
       return NullableAspectRatio(
@@ -55,66 +134,17 @@ class _PostDetailsImageState<T extends Post>
       );
     }
 
-    return BooruHero(
-      tag: widget.heroTag,
-      child: aspectRatio != null
-          ? AspectRatio(
-              aspectRatio: aspectRatio,
-              child: Stack(
-                children: [
-                  _buildImage(imageUrl),
-                  ..._buildNotes(),
-                ],
-              ),
-            )
-          : LayoutBuilder(
-              builder: (context, constraints) => _buildImage(imageUrl),
-            ),
-    );
-  }
-
-  List<Widget> _buildNotes() {
-    final post = widget.post;
-
-    final params = (widget.config, post);
-    final noteState = ref.watch(notesControllerProvider(post));
-    final notes = ref.watch(currentNotesProvider(params)) ?? <Note>[].lock;
-
-    return [
-      if (noteState.enableNotes)
-        ...notes.map(
-          (e) => LayoutBuilder(
-            builder: (context, constraints) {
-              final effectiveNote = e.adjustNoteCoordFor(
-                post,
-                widthConstraint: constraints.maxWidth,
-                heightConstraint: constraints.maxHeight,
-              );
-              return PostNote(
-                coordinate: effectiveNote.coordinate,
-                content: effectiveNote.content,
-              );
-            },
-          ),
-        ),
-    ];
-  }
-
-  Widget _buildImage(String imageUrl) {
-    final post = widget.post;
-    final config = widget.config;
-
     final gridThumbnailUrlBuilder = ref.watch(
       gridThumbnailUrlGeneratorProvider(config),
     );
-    final placeholderImageUrl = widget.thumbnailUrlBuilder != null
-        ? widget.thumbnailUrlBuilder!(post)
+    final placeholderImageUrl = thumbnailUrlBuilder != null
+        ? thumbnailUrlBuilder!(post)
         : gridThumbnailUrlBuilder.generateUrl(
             post,
             settings: ref.watch(gridThumbnailSettingsProvider(config)),
           );
 
-    return BooruImage(
+    final image = BooruImage(
       config: config,
       imageUrl: imageUrl,
       placeholderUrl: placeholderImageUrl,
@@ -123,9 +153,22 @@ class _PostDetailsImageState<T extends Post>
       imageHeight: post.height,
       imageWidth: post.width,
       forceFill: true,
+      fit: fit,
       borderRadius: BorderRadius.zero,
       forceLoadPlaceholder: true,
-      imageCacheManager: widget.imageCacheManager,
+      imageCacheManager: imageCacheManager,
+    );
+
+    return BooruHero(
+      tag: heroTag,
+      child: aspectRatio != null
+          ? AspectRatio(
+              aspectRatio: aspectRatio,
+              child: image,
+            )
+          : LayoutBuilder(
+              builder: (context, constraints) => image,
+            ),
     );
   }
 }

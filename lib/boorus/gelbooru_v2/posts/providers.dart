@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../core/blacklists/providers.dart';
-import '../../../core/configs/config.dart';
-import '../../../core/posts/post/post.dart';
+import '../../../core/configs/config/types.dart';
+import '../../../core/posts/details/types.dart';
 import '../../../core/posts/post/providers.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../core/settings/providers.dart';
 import '../../../foundation/riverpod/riverpod.dart';
 import '../client_provider.dart';
-import '../gelbooru_v2.dart';
-import '../gelbooru_v2_repository.dart';
+import '../gelbooru_v2_provider.dart';
 import '../tags/providers.dart';
 import 'repo.dart';
 import 'types.dart';
@@ -67,7 +67,7 @@ final gelbooruV2ChildPostsProvider = FutureProvider.autoDispose
     .family<
       List<GelbooruV2Post>,
       (BooruConfigFilter, BooruConfigSearch, GelbooruV2Post)
-    >((ref, params) async {
+    >((ref, params) {
       final (filter, search, post) = params;
 
       return ref
@@ -82,3 +82,11 @@ final gelbooruV2PostImageUrlResolverProvider =
     Provider<GelbooruV2ImageUrlResolver>(
       (ref) => const GelbooruV2ImageUrlResolver(),
     );
+
+final gelbooruV2UploaderQueryProvider =
+    Provider.family<UploaderQuery?, GelbooruV2Post>((ref, post) {
+      return switch (post.uploaderName) {
+        final uploader? => UserColonUploaderQuery(uploader),
+        _ => null,
+      };
+    });

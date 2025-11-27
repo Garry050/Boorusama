@@ -2,9 +2,9 @@
 import 'package:equatable/equatable.dart';
 
 // Project imports:
-import '../../../core/posts/post/post.dart';
-import '../../../core/posts/rating/rating.dart';
-import '../../../core/posts/sources/source.dart';
+import '../../../core/posts/post/types.dart';
+import '../../../core/posts/rating/types.dart';
+import '../../../core/posts/sources/types.dart';
 
 class GelbooruV2Post extends Equatable
     with
@@ -36,6 +36,7 @@ class GelbooruV2Post extends Equatable
     required this.uploaderName,
     required this.hasNotes,
     required this.metadata,
+    required this.status,
   }) : _sampleImageUrl = sampleImageUrl;
 
   factory GelbooruV2Post.empty() => GelbooruV2Post(
@@ -60,6 +61,7 @@ class GelbooruV2Post extends Equatable
     uploaderName: null,
     hasNotes: false,
     metadata: null,
+    status: null,
   );
 
   final String _sampleImageUrl;
@@ -142,4 +144,32 @@ class GelbooruV2Post extends Equatable
 
   @override
   final PostMetadata? metadata;
+
+  @override
+  final PostStatus? status;
+}
+
+class GelbooruV2ImageUrlResolver implements ImageUrlResolver {
+  const GelbooruV2ImageUrlResolver();
+
+  @override
+  String resolveImageUrl(String url) => url;
+
+  @override
+  String resolvePreviewUrl(String url) {
+    if (url.isEmpty) return url;
+
+    final uri = Uri.tryParse(url);
+
+    return switch (uri) {
+      null => url,
+      Uri(host: 'api-cdn.rule34.xxx', path: final p)
+          when p.contains('/samples/') =>
+        uri.replace(host: 'wimg.rule34.xxx').toString(),
+      _ => url,
+    };
+  }
+
+  @override
+  String resolveThumbnailUrl(String url) => url;
 }

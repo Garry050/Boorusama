@@ -10,12 +10,11 @@ import 'package:flutter/material.dart';
 // Project imports:
 import '../../../../foundation/mobile.dart';
 import '../../../widgets/widgets.dart';
-import 'auto_slide_mixin.dart';
+import '../../slideshow/types.dart';
 import 'constants.dart';
 import 'post_details_page_view.dart';
 
-class PostDetailsPageViewController extends ChangeNotifier
-    with AutomaticSlideMixin {
+class PostDetailsPageViewController extends ChangeNotifier {
   PostDetailsPageViewController({
     required this.initialPage,
     required this.totalPage,
@@ -27,12 +26,13 @@ class PostDetailsPageViewController extends ChangeNotifier
     this.thresholdSizeToExpand = 0.02,
     SlideshowOptions slideshowOptions = const SlideshowOptions(),
     this.viewMode = ViewMode.horizontal,
+    this.onBeforeSlideshowAdvance,
   }) : currentPage = ValueNotifier(initialPage),
-       _slideshowOptions = slideshowOptions,
        overlay = ValueNotifier(!initialHideOverlay),
        bottomSheet = ValueNotifier(!initialHideOverlay),
        hoverToControlOverlay = ValueNotifier(hoverToControlOverlay),
-       sheetState = ValueNotifier(SheetState.collapsed);
+       sheetState = ValueNotifier(SheetState.collapsed),
+       _initialSlideshowOptions = slideshowOptions;
 
   final int initialPage;
   final int totalPage;
@@ -41,8 +41,8 @@ class PostDetailsPageViewController extends ChangeNotifier
   final double thresholdSizeToExpand;
   final bool disableAnimation;
   final ViewMode viewMode;
-
-  late SlideshowOptions _slideshowOptions;
+  final SlideshowOptions _initialSlideshowOptions;
+  final SlideshowAdvanceCallback? onBeforeSlideshowAdvance;
 
   // Use for large screen when details is on the side to prevent spamming
   Timer? _debounceTimer;
@@ -50,8 +50,12 @@ class PostDetailsPageViewController extends ChangeNotifier
   late final _pageController = PageController(
     initialPage: initialPage,
   );
-  final DraggableScrollableController _sheetController =
-      DraggableScrollableController();
+  final _sheetController = DraggableScrollableController();
+  late final _slideshowController = SlideshowController(
+    onNavigateToPage: createDefaultSlideshowNavigateCallback(_pageController),
+    options: _initialSlideshowOptions,
+    onBeforeAdvance: onBeforeSlideshowAdvance,
+  );
 
   final bool Function() checkIfLargeScreen;
 
@@ -60,18 +64,16 @@ class PostDetailsPageViewController extends ChangeNotifier
   bool get useVerticalLayout =>
       viewMode == ViewMode.vertical && !checkIfLargeScreen();
 
-  @override
   PageController get pageController => _pageController;
-
   DraggableScrollableController get sheetController => _sheetController;
+  SlideshowController get slideshowController => _slideshowController;
 
   AnimationController? _overlayAnimController;
   AnimationController? _bottomSheetAnimController;
 
-  // ignore: unnecessary_getters_setters
-  SlideshowOptions get slideshowOptions => _slideshowOptions;
+  SlideshowOptions get slideshowOptions => _slideshowController.options;
   set slideshowOptions(SlideshowOptions value) {
-    _slideshowOptions = value;
+    _slideshowController.options = value;
   }
 
   late final ValueNotifier<SheetState> sheetState;
@@ -90,13 +92,13 @@ class PostDetailsPageViewController extends ChangeNotifier
   final canPull = ValueNotifier(true);
   final pulling = ValueNotifier(false);
   final zoom = ValueNotifier(false);
-  final slideshow = ValueNotifier(false);
   final freestyleMoveOffset = ValueNotifier(Offset.zero);
   final freestyleMoving = ValueNotifier(false);
   final isItemPushed = ValueNotifier(false);
   final forceHideOverlay = ValueNotifier(false);
   final forceHideBottomSheet = ValueNotifier(false);
   final cooldown = ValueNotifier(false);
+  final keyboardShortcutsEnabled = ValueNotifier(true);
 
   var previouslyForcedShowUIByDrag = false;
 
@@ -310,9 +312,7 @@ class PostDetailsPageViewController extends ChangeNotifier
       if (!bottomSheet.value && !overlay.value) {
         previouslyForcedShowUIByDrag = true;
       }
-      showOverlay(
-        includeSystemStatus: true,
-      );
+      showOverlay();
     }
 
     if (verticalPosition.value < 0) {
@@ -467,6 +467,14 @@ class PostDetailsPageViewController extends ChangeNotifier
     canPull.value = true;
   }
 
+  void enableKeyboardShortcuts() {
+    keyboardShortcutsEnabled.value = true;
+  }
+
+  void disableKeyboardShortcuts() {
+    keyboardShortcutsEnabled.value = false;
+  }
+
   void setDisplacement(double value) {
     displacement.value = value;
     isItemPushed.value = value > 0;
@@ -526,35 +534,44 @@ class PostDetailsPageViewController extends ChangeNotifier
   }
 
   Future<void> startSlideshow() async {
-    slideshow.value = true;
-    hideAllUI();
-
     final isLargeScreen = checkIfLargeScreen();
 
     // if in expanded mode, exit expanded mode first
     if (isExpanded) {
       if (!isLargeScreen) {
         await resetSheet();
+
+        const maxWaitTime = Duration(seconds: 2);
+        final startTime = DateTime.now();
+
+        // wait for sheet to be fully collapsed with timeout
+        while (sheetState.value != SheetState.hidden) {
+          if (DateTime.now().difference(startTime) > maxWaitTime) {
+            // Timeout reached, force the state
+            sheetState.value = SheetState.hidden;
+            break;
+          }
+          await Future.delayed(const Duration(milliseconds: 50));
+        }
       } else {
         sheetState.value = SheetState.hidden;
       }
     }
 
-    startAutoSlide(
+    hideAllUI();
+
+    _slideshowController.start(
       page,
       totalPage,
-      options: _slideshowOptions,
     );
   }
 
   void stopSlideshow() {
-    slideshow.value = false;
-
     if (!initialHideOverlay) {
       showAllUI();
     }
 
-    stopAutoSlide();
+    _slideshowController.stop();
   }
 
   void _cancelCooldown() {
@@ -579,7 +596,7 @@ class PostDetailsPageViewController extends ChangeNotifier
 
   @override
   void dispose() {
-    stopAutoSlide();
+    _slideshowController.dispose();
     _cancelCooldown();
 
     _pageController.dispose();
@@ -598,12 +615,12 @@ class PostDetailsPageViewController extends ChangeNotifier
     canPull.dispose();
     pulling.dispose();
     zoom.dispose();
-    slideshow.dispose();
     freestyleMoveOffset.dispose();
     freestyleMoving.dispose();
     isItemPushed.dispose();
     forceHideOverlay.dispose();
     forceHideBottomSheet.dispose();
+    keyboardShortcutsEnabled.dispose();
 
     super.dispose();
   }

@@ -1,36 +1,19 @@
 // Project imports:
-import '../../core/boorus/engine/engine.dart';
-import '../../core/configs/config.dart';
+import '../../core/boorus/defaults/widgets.dart';
+import '../../core/boorus/engine/types.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/widgets.dart';
 import '../../core/configs/manage/widgets.dart';
 import '../../core/downloads/filename/types.dart';
 import '../../core/posts/details/widgets.dart';
-import '../../core/posts/details_manager/types.dart';
-import '../../core/posts/details_parts/widgets.dart';
 import 'artists/widgets.dart';
 import 'configs/widgets.dart';
 import 'favorites/widgets.dart';
 import 'home/widgets.dart';
 import 'posts/types.dart';
+import 'posts/widgets.dart';
 
-class SankakuBuilder
-    with
-        CommentNotSupportedMixin,
-        CharacterNotSupportedMixin,
-        LegacyGranularRatingOptionsBuilderMixin,
-        UnknownMetatagsMixin,
-        DefaultUnknownBooruWidgetsBuilderMixin,
-        DefaultViewTagListBuilderMixin,
-        DefaultTagSuggestionsItemBuilderMixin,
-        DefaultMultiSelectionActionsBuilderMixin,
-        DefaultQuickFavoriteButtonBuilderMixin,
-        DefaultHomeMixin,
-        DefaultPostImageDetailsUrlMixin,
-        DefaultPostGesturesHandlerMixin,
-        DefaultGranularRatingFiltererMixin,
-        DefaultPostStatisticsPageBuilderMixin,
-        DefaultBooruUIMixin
-    implements BooruBuilder {
+class SankakuBuilder extends BaseBooruBuilder {
   SankakuBuilder();
 
   @override
@@ -95,28 +78,5 @@ class SankakuBuilder
       (context) => const SankakuFavoritesPage();
 
   @override
-  final PostDetailsUIBuilder postDetailsUIBuilder = PostDetailsUIBuilder(
-    preview: {
-      DetailsPart.info: (context) =>
-          const DefaultInheritedInformationSection<SankakuPost>(
-            showSource: true,
-          ),
-      DetailsPart.toolbar: (context) =>
-          const DefaultInheritedPostActionToolbar<SankakuPost>(),
-    },
-    full: {
-      DetailsPart.info: (context) =>
-          const DefaultInheritedInformationSection<SankakuPost>(
-            showSource: true,
-          ),
-      DetailsPart.toolbar: (context) =>
-          const DefaultInheritedPostActionToolbar<SankakuPost>(),
-      DetailsPart.tags: (context) =>
-          const DefaultInheritedTagsTile<SankakuPost>(),
-      DetailsPart.fileDetails: (context) =>
-          const DefaultInheritedFileDetailsSection<SankakuPost>(),
-      DetailsPart.artistPosts: (context) =>
-          const DefaultInheritedArtistPostsSection<SankakuPost>(),
-    },
-  );
+  final postDetailsUIBuilder = kSankakuPostDetailsUIBuilder;
 }

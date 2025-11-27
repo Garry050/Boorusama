@@ -2,10 +2,10 @@
 import 'package:foundation/foundation.dart';
 
 // Project imports:
-import '../../../../http/http.dart';
-import '../../../../search/queries/query.dart';
-import '../../../../search/selected_tags/tag.dart';
-import '../../../../settings/settings.dart';
+import '../../../../http/client/types.dart';
+import '../../../../search/queries/types.dart';
+import '../../../../search/selected_tags/types.dart';
+import '../../../../settings/types.dart';
 import '../types/post.dart';
 import '../types/post_repository.dart';
 
@@ -86,7 +86,7 @@ class PostRepositoryBuilder<T extends Post> implements PostRepository<T> {
   PostOrError<T> getPost(
     PostId id, {
     PostFetchOptions? options,
-  }) => TaskEither.Do(($) async {
+  }) => TaskEither.Do(($) {
     return $(
       tryFetchRemoteData(
         fetcher: () => fetchSingle(

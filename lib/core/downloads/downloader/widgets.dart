@@ -1,1 +1,2 @@
-export 'src/widgets/background_downloader_builder.dart';
+export 'src/widgets/downloader_scope.dart'
+    if (dart.library.html) 'src/widgets/downloader_scope_web.dart';

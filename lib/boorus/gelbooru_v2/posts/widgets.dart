@@ -8,17 +8,17 @@ import 'package:foundation/widgets.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../core/boorus/engine/engine.dart';
+import '../../../core/configs/config/providers.dart';
 import '../../../core/configs/config/types.dart';
-import '../../../core/configs/ref.dart';
-import '../../../core/posts/details/details.dart';
 import '../../../core/posts/details/routes.dart';
+import '../../../core/posts/details/types.dart';
 import '../../../core/posts/details/widgets.dart';
+import '../../../core/posts/details_parts/types.dart';
 import '../../../core/posts/details_parts/widgets.dart';
-import '../../../core/posts/post/post.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../core/router.dart';
 import '../../../core/search/search/routes.dart';
-import '../gelbooru_v2.dart';
+import '../gelbooru_v2_provider.dart';
 import 'providers.dart';
 import 'types.dart';
 
@@ -150,18 +150,27 @@ class _PostDetailsDataLoadingTransitionPage extends ConsumerWidget {
   }
 }
 
-class GelbooruV2FileDetailsSection extends ConsumerWidget {
-  const GelbooruV2FileDetailsSection({super.key});
+class GelbooruV2UploaderFileDetailTile extends ConsumerWidget {
+  const GelbooruV2UploaderFileDetailTile({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final post = InheritedPost.of<GelbooruV2Post>(context);
+    final uploaderName = post.uploaderName;
 
-    return SliverToBoxAdapter(
-      child: DefaultFileDetailsSection(
-        post: post,
-        uploaderName: post.uploaderName,
+    return switch (uploaderName) {
+      null => const SizedBox.shrink(),
+      final name => UploaderFileDetailTile(
+        uploaderName: name,
+        onSearch: switch (ref.watch(gelbooruV2UploaderQueryProvider(post))) {
+          final query? => () => goToSearchPage(
+            ref,
+            tag: query.resolveTag(),
+          ),
+          _ => null,
+        },
       ),
-    );
+    };
   }
 }
 
@@ -199,3 +208,45 @@ class GelbooruV2RelatedPostsSection extends ConsumerWidget {
         : const SliverSizedBox.shrink();
   }
 }
+
+class GelbooruV2UploaderPostsSection extends ConsumerWidget {
+  const GelbooruV2UploaderPostsSection({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final post = InheritedPost.of<GelbooruV2Post>(context);
+
+    return UploaderPostsSection<GelbooruV2Post>(
+      query: ref.watch(
+        gelbooruV2UploaderQueryProvider(post),
+      ),
+    );
+  }
+}
+
+final kGelbooruV2PostDetailsUIBuilder = PostDetailsUIBuilder(
+  preview: {
+    DetailsPart.toolbar: (context) =>
+        const DefaultInheritedPostActionToolbar<GelbooruV2Post>(),
+  },
+  full: {
+    DetailsPart.toolbar: (context) =>
+        const DefaultInheritedPostActionToolbar<GelbooruV2Post>(),
+    DetailsPart.source: (context) =>
+        const DefaultInheritedSourceSection<GelbooruV2Post>(),
+    DetailsPart.tags: (context) =>
+        const DefaultInheritedTagsTile<GelbooruV2Post>(),
+    DetailsPart.fileDetails: (context) =>
+        const DefaultInheritedFileDetailsSection<GelbooruV2Post>(
+          uploader: GelbooruV2UploaderFileDetailTile(),
+        ),
+    DetailsPart.artistPosts: (context) =>
+        const DefaultInheritedArtistPostsSection<GelbooruV2Post>(),
+    DetailsPart.uploaderPosts: (context) =>
+        const GelbooruV2UploaderPostsSection(),
+    DetailsPart.relatedPosts: (context) =>
+        const GelbooruV2RelatedPostsSection(),
+    DetailsPart.characterList: (context) =>
+        const DefaultInheritedCharacterPostsSection<GelbooruV2Post>(),
+  },
+);

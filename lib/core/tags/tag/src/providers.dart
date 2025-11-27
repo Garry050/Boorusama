@@ -2,14 +2,13 @@
 import 'dart:async';
 
 // Package imports:
-import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../../foundation/riverpod/riverpod.dart';
-import '../../../configs/config.dart';
-import '../../../posts/post/post.dart';
+import '../../../configs/config/types.dart';
+import '../../../posts/post/types.dart';
 import 'data/providers.dart';
 import 'types/tag.dart';
 import 'types/tag_group_item.dart';
@@ -80,26 +79,11 @@ class ArtistCharacterNotifier
       return const ArtistCharacterGroup.empty();
     }
 
-    final tags = await extractor.extractTags(post);
-    final group = createTagGroupItems(tags);
+    final tags = await extractor.extractArtistCharacterTags(post);
 
     return ArtistCharacterGroup(
-      characterTags:
-          group
-              .firstWhereOrNull(
-                (tag) => tag.groupName.toLowerCase() == 'character',
-              )
-              ?.extractCharacterTags()
-              .toSet() ??
-          {},
-      artistTags:
-          group
-              .firstWhereOrNull(
-                (tag) => tag.groupName.toLowerCase() == 'artist',
-              )
-              ?.extractArtistTags()
-              .toSet() ??
-          {},
+      characterTags: tags.characterTags,
+      artistTags: tags.artistTags,
     );
   }
 }

@@ -1,12 +1,13 @@
 // Package imports:
+import 'package:coreutils/coreutils.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:version/version.dart';
 
 // Project imports:
-import 'app_update_checker.dart';
+import 'types/app_update_checker.dart';
+import 'types/update_status.dart';
 
 class PlayStoreUpdateChecker implements AppUpdateChecker {
   PlayStoreUpdateChecker({
@@ -56,8 +57,16 @@ class PlayStoreUpdateChecker implements AppUpdateChecker {
         return const UpdateError('Failed to parse results');
       }
 
-      final storeVersion = Version.parse(version);
-      final currentVersion = Version.parse(packageInfo.version);
+      final storeVersion = Version.tryParse(version);
+      final currentVersion = Version.tryParse(packageInfo.version);
+
+      if (storeVersion == null) {
+        return const UpdateError('Failed to parse store version');
+      }
+
+      if (currentVersion == null) {
+        return const UpdateError('Failed to parse current version');
+      }
 
       if (currentVersion < storeVersion) {
         return UpdateAvailable(
@@ -152,7 +161,7 @@ extension DocumentX on Document {
       );
 
       // storeVersion might be: 'Varies with device', which is not a valid version.
-      return Version.parse(storeVersion).toString();
+      return Version.tryParse(storeVersion)?.toString();
     } catch (e) {
       return null;
     }

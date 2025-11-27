@@ -1,17 +1,17 @@
 // Package imports:
 import 'package:booru_clients/sankaku.dart';
+import 'package:coreutils/coreutils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../core/boorus/engine/engine.dart';
-import '../../core/configs/config.dart';
+import '../../core/boorus/defaults/types.dart';
+import '../../core/configs/config/types.dart';
 import '../../core/configs/create/create.dart';
 import '../../core/downloads/filename/types.dart';
-import '../../core/downloads/urls/sanitizer.dart';
-import '../../core/http/providers.dart';
-import '../../core/posts/post/post.dart';
+import '../../core/http/client/providers.dart';
+import '../../core/posts/post/types.dart';
 import '../../core/tags/autocompletes/types.dart';
-import '../../core/tags/tag/tag.dart';
+import '../../core/tags/tag/types.dart';
 import 'posts/providers.dart';
 import 'posts/types.dart';
 import 'tags/providers.dart';
@@ -74,7 +74,7 @@ class SankakuRepository extends BooruRepositoryDefault {
         MPixelsTokenHandler(),
         TokenHandler(
           'source',
-          (post, config) => sanitizedUrl(config.downloadUrl),
+          (post, config) => normalizeUrl(config.downloadUrl),
         ),
       ],
     );
@@ -83,38 +83,5 @@ class SankakuRepository extends BooruRepositoryDefault {
   @override
   TagExtractor tagExtractor(BooruConfigAuth config) {
     return ref.watch(sankakuTagExtractorProvider(config));
-  }
-}
-
-class SankakuPostLinkGenerator implements PostLinkGenerator<SankakuPost> {
-  SankakuPostLinkGenerator({
-    required this.baseUrl,
-  });
-
-  final String baseUrl;
-
-  @override
-  String getLink(Post post) => switch (post) {
-    final SankakuPost post => _getLink(post),
-    _ => '',
-  };
-
-  String _getLink(SankakuPost post) {
-    final id = _getId(post);
-
-    if (id == null) return '';
-
-    final url = baseUrl.endsWith('/')
-        ? baseUrl.substring(0, baseUrl.length - 1)
-        : baseUrl;
-
-    return '$url/post/$id';
-  }
-
-  String? _getId(SankakuPost post) {
-    if (post.sankakuId.isNotEmpty) return post.sankakuId;
-    if (post.id != 0) return post.id.toString();
-
-    return null;
   }
 }

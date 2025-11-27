@@ -1,7 +1,6 @@
 // Project imports:
 import '../../../../foundation/loggers.dart';
-import '../../local/tag_cache_repository.dart';
-import '../../local/tag_info.dart';
+import '../../local/types.dart';
 import 'tag_type_store.dart';
 
 class BooruTagTypeStore extends TagTypeStore {
@@ -25,7 +24,7 @@ class BooruTagTypeStore extends TagTypeStore {
   }
 
   @override
-  Future<String?> getTagCategory(String siteHost, String tagName) async {
+  Future<String?> getTagCategory(String siteHost, String tagName) {
     return cacheRepository.getTagCategory(siteHost, tagName);
   }
 

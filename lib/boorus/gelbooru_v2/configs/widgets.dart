@@ -10,12 +10,26 @@ import 'package:i18n/i18n.dart';
 import '../../../core/configs/auth/widgets.dart';
 import '../../../core/configs/create/providers.dart';
 import '../../../core/configs/create/widgets.dart';
-import '../../../core/configs/gesture/gesture.dart';
+import '../../../core/configs/gesture/types.dart';
 import '../../../core/configs/gesture/widgets.dart';
 import '../../../core/configs/search/widgets.dart';
 import '../../../core/configs/viewer/widgets.dart';
 import '../../gelbooru/configs/_internal_widgets.dart';
 import 'internal_widgets.dart';
+
+const _kGelbooruV2SpecificGestureActions = {
+  kToggleFavoriteAction,
+};
+
+const _kGelbooruV2PreviewGestureActions = {
+  ...kDefaultGestureActions,
+  ..._kGelbooruV2SpecificGestureActions,
+};
+
+const _kGelbooruV2FullviewGestureActions = {
+  ...kDefaultFullviewActions,
+  ..._kGelbooruV2SpecificGestureActions,
+};
 
 class CreateGelbooruV2ConfigPage extends StatelessWidget {
   const CreateGelbooruV2ConfigPage({
@@ -38,10 +52,8 @@ class CreateGelbooruV2ConfigPage extends StatelessWidget {
         authConfig: c.GelbooruV2Config.siteCapabilities(url).auth,
       ),
       gestureTab: BooruConfigGesturesView(
-        postDetailsGestureActions: const {
-          ...kDefaultGestureActions,
-          kToggleFavoriteAction,
-        },
+        previewGestureActions: _kGelbooruV2PreviewGestureActions,
+        fullviewGestureActions: _kGelbooruV2FullviewGestureActions,
         describePostDetailsAction: (action) => switch (action) {
           kToggleFavoriteAction => context.t.post.action.toggle_favorite,
           _ => describeDefaultGestureAction(action, context),

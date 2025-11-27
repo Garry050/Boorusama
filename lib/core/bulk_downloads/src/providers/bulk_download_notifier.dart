@@ -12,12 +12,14 @@ import '../../../../foundation/permissions.dart';
 import '../../../../foundation/platform.dart';
 import '../../../../foundation/utils/duration_utils.dart';
 import '../../../analytics/providers.dart';
-import '../../../configs/ref.dart';
+import '../../../configs/config/providers.dart';
 import '../../../download_manager/providers.dart';
 import '../../../downloads/downloader/providers.dart';
-import '../../../downloads/downloader/types.dart';
-import '../../../posts/sources/source.dart';
+import '../../../downloads/downloader/types.dart' as d;
+import '../../../posts/sources/types.dart';
 import '../../../premiums/providers.dart';
+import '../data/filesystem.dart';
+import '../data/providers.dart';
 import '../notifications/providers.dart';
 import '../types/bulk_download_error.dart';
 import '../types/bulk_download_session.dart';
@@ -33,8 +35,6 @@ import '../types/saved_download_task.dart';
 import 'bulk_progress.dart';
 import 'dry_run.dart';
 import 'dry_run_state.dart';
-import 'file_system_exist_checker.dart';
-import 'providers.dart';
 import 'saved_task_lock_notifier.dart';
 import 'session_cancellation_provider.dart';
 
@@ -126,11 +126,9 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
 
           // Only show progress if session is running AND notifications are enabled
           if (session?.status == DownloadSessionStatus.running &&
-              session?.task?.notifications == true &&
+              (session?.task?.notifications ?? false) &&
               !isIOS()) {
-            final notification = await ref.read(
-              bulkDownloadNotificationProvider.future,
-            );
+            final notification = ref.read(bulkDownloadNotificationProvider);
             await notification.showProgressNotification(
               sessionId,
               session?.task?.prettyTags ?? 'Downloading...',
@@ -379,9 +377,9 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     DownloadConfigs? downloadConfigs,
   }) async {
     final path = task.path;
+    final fallbackChecker = ref.read(defaultDirectoryExistCheckerProvider);
     final directoryChecker =
-        downloadConfigs?.directoryExistChecker ??
-        const FileSystemDirectoryExistChecker();
+        downloadConfigs?.directoryExistChecker ?? fallbackChecker;
 
     // Check if directory exists
     if (!directoryChecker.exists(path)) {
@@ -896,9 +894,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
       final downloader = ref.read(downloadServiceProvider);
       final session = await _withRepo((repo) => repo.getSession(sessionId));
       final progressNotifier = ref.read(bulkDownloadProgressProvider.notifier);
-      final notification = await ref.read(
-        bulkDownloadNotificationProvider.future,
-      );
+      final notification = ref.read(bulkDownloadNotificationProvider);
 
       // Cancel notification immediately
       await notification.cancelNotification(sessionId);
@@ -1057,14 +1053,13 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     );
 
     if (currentSessionState?.task.notifications ?? true) {
-      ref.read(bulkDownloadNotificationProvider).whenData(
-        (notification) {
-          notification.showCompleteNotification(
-            currentSessionState?.task.prettyTags ?? 'Download completed',
-            'Downloaded ${stats.totalItems} files',
-            notificationId: sessionId.hashCode,
-          );
-        },
+      final notification = ref.read(bulkDownloadNotificationProvider);
+      unawaited(
+        notification.showCompleteNotification(
+          currentSessionState?.task.prettyTags ?? 'Download completed',
+          'Downloaded ${stats.totalItems} files',
+          notificationId: sessionId.hashCode,
+        ),
       );
     }
 
@@ -1207,9 +1202,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     );
 
     // Handle notifications based on status and notification settings
-    final notification = await ref.read(
-      bulkDownloadNotificationProvider.future,
-    );
+    final notification = ref.read(bulkDownloadNotificationProvider);
 
     // Only show notifications if task.notifications is true
     if (session?.task?.notifications ?? false) {
@@ -1363,7 +1356,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
     String sessionId,
     DownloadTask task,
     int currentPage,
-    DownloadService downloader,
+    d.DownloadService downloader,
     DownloadConfigs? downloadConfigs,
   ) async {
     final records = await _withRepo(
@@ -1386,24 +1379,24 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
         break;
       }
 
-      final result = await downloader
-          .downloadCustomLocation(
-            url: record.url,
-            path: task.path,
-            filename: record.fileName,
-            skipIfExists: false, // We already handled this in the dry run
-            headers: record.headers,
-            metadata: DownloaderMetadata(
-              thumbnailUrl: record.thumbnailImageUrl,
-              fileSize: record.fileSize,
-              siteUrl: PostSource.from(record.thumbnailImageUrl).url,
-              group: sessionId,
-            ),
-          )
-          .run();
+      final result = await downloader.download(
+        d.DownloadOptions(
+          url: record.url,
+          path: task.path,
+          filename: record.fileName,
+          skipIfExists: false, // We already handled this in the dry run
+          headers: record.headers,
+          metadata: d.DownloaderMetadata(
+            thumbnailUrl: record.thumbnailImageUrl,
+            fileSize: record.fileSize,
+            siteUrl: PostSource.from(record.thumbnailImageUrl).url,
+            group: sessionId,
+          ),
+        ),
+      );
 
-      await result.fold(
-        (error) async {
+      switch (result) {
+        case d.DownloadFailure(:final error):
           await _withRepo(
             (repo) => repo.updateRecord(
               url: record.url,
@@ -1412,8 +1405,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
               status: DownloadRecordStatus.failed,
             ),
           );
-        },
-        (info) async {
+        case d.DownloadSuccess(:final info):
           await _withRepo(
             (repo) => repo.updateRecord(
               url: record.url,
@@ -1422,8 +1414,7 @@ class BulkDownloadNotifier extends Notifier<BulkDownloadState> {
               status: DownloadRecordStatus.downloading,
             ),
           );
-        },
-      );
+      }
 
       // Delay to prevent too many requests
       final delay = downloadConfigs?.delayBetweenDownloads;

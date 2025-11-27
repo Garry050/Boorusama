@@ -29,7 +29,7 @@ final packagePurchaseProvider =
 class PackagePurchaseNotifier extends AutoDisposeAsyncNotifier<bool?> {
   @override
   Future<bool?> build() {
-    return Future.value(null);
+    return Future.value();
   }
 
   static const _kServiceName = 'Purchaser';
@@ -122,7 +122,7 @@ class SubscriptionNotifier extends AsyncNotifier<Package?> {
       state = AsyncData(activePackage);
     }
 
-    final success = res == true && activePackage != null;
+    final success = (res ?? false) && activePackage != null;
 
     logger.info('Subscription', 'Restore success: $success');
 

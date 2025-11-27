@@ -11,13 +11,15 @@ import '../blacklists/routes.dart';
 import '../bookmarks/routes.dart';
 import '../boorus/engine/providers.dart';
 import '../bulk_downloads/routes.dart';
+import '../changelogs/routes.dart';
+import '../configs/config/providers.dart';
 import '../configs/config/routes.dart';
 import '../configs/create/routes.dart';
-import '../configs/ref.dart';
+import '../debug/routes.dart';
 import '../donate/routes.dart';
 import '../download_manager/routes.dart';
 import '../downloads/downloader/widgets.dart';
-import '../home/entry_page.dart';
+import '../home/widgets.dart';
 import '../posts/details/routes.dart';
 import '../posts/details_manager/routes.dart';
 import '../posts/favorites/routes.dart';
@@ -34,7 +36,7 @@ import '../widgets/widgets.dart';
 /// When navigate to a page, must query the booru builders first to get the correct builder.
 /// There is case when you want navigate to a different boorus than the current one.
 ///
-///```
+///```dart
 /// final config = ref.read(currentBooruConfigProvider);
 /// final booruBuilderFunc =
 ///     ref.read(booruBuildersProvider)[config.booruType];
@@ -57,7 +59,7 @@ class Routes {
       path: state.uri.toString(),
       child: const AppLockWithSettings(
         child: AppRatingScope(
-          child: BackgroundDownloaderBuilder(
+          child: DownloaderScope(
             child: CustomContextMenuOverlay(
               child: Focus(
                 autofocus: true,
@@ -88,6 +90,8 @@ class Routes {
       premiumRoutes(ref),
       donationRoutes(ref),
       detailsManagerRoutes,
+      changelogRoutes,
+      debuglogRoutes,
     ],
   );
 
@@ -201,7 +205,9 @@ class AppLockWithSettings extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AppLock(
-      enable: ref.watch(settingsProvider.select((s) => s.appLockEnabled)),
+      enable: ref.watch(
+        settingsProvider.select((s) => s.appLockType.appLockEnabled),
+      ),
       child: child,
     );
   }

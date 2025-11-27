@@ -3,8 +3,9 @@ import 'package:booru_clients/danbooru.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../core/configs/config.dart';
-import '../../../core/notes/notes.dart';
+import '../../../core/configs/config/types.dart';
+import '../../../core/notes/note/providers.dart';
+import '../../../core/notes/note/types.dart';
 import '../client_provider.dart';
 
 final danbooruNoteRepoProvider =
@@ -22,7 +23,7 @@ final danbooruNoteRepoProvider =
 
 extension NoteDtoX on NoteDto {
   Note toEntity() {
-    final coord = NoteCoordinate(
+    final coord = RectangleNoteCoordinate(
       x: x?.toDouble() ?? 0,
       y: y?.toDouble() ?? 0,
       width: width?.toDouble() ?? 0,

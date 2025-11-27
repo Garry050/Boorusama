@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../core/configs/config/types.dart';
-import '../../../core/posts/post/post.dart';
+import '../../../core/posts/details/providers.dart';
+import '../../../core/posts/details/types.dart';
 import '../../../core/posts/post/providers.dart';
+import '../../../core/posts/post/types.dart';
 import '../../../core/search/queries/providers.dart';
 import '../../../core/settings/providers.dart';
 import '../../../foundation/riverpod/riverpod.dart';
@@ -23,7 +25,7 @@ final animePicturesPostRepoProvider =
           fetchSingle: (id, {options}) {
             final numericId = id as NumericPostId?;
 
-            if (numericId == null) return Future.value(null);
+            if (numericId == null) return Future.value();
 
             return client.getPostDetails(id: numericId.value).then(
               (e) {
@@ -70,3 +72,8 @@ final postDetailsProvider = FutureProvider.autoDispose
 
       return post;
     });
+
+final animePicturesMediaUrlResolverProvider =
+    Provider.family<MediaUrlResolver, BooruConfigAuth>(
+      (ref, config) => ref.watch(defaultMediaUrlResolverProvider(config)),
+    );

@@ -2,12 +2,9 @@
 import 'package:flutter/material.dart';
 
 // Project imports:
-import '../../boorus/engine/engine.dart';
-import '../../tags/configs/configs.dart';
-import '../../tags/favorites/favorited.dart';
-import '../../tags/metatag/metatag.dart';
-import '../histories/history.dart';
-import '../queries/filter_operator.dart';
+import '../../tags/favorites/types.dart';
+import '../../tags/metatag/types.dart';
+import '../histories/types.dart';
 import 'search_tag_set.dart';
 import 'tag_search_item.dart';
 
@@ -16,13 +13,6 @@ class SelectedTagController extends ValueNotifier<List<TagSearchItem>> {
     required MetatagExtractor? metatagExtractor,
   }) : _tagSet = SearchTagSet(metatagExtractor: metatagExtractor),
        super([]);
-
-  SelectedTagController.fromBooruBuilder({
-    required BooruBuilder? builder,
-    required TagInfo tagInfo,
-  }) : this(
-         metatagExtractor: builder?.metatagExtractorBuilder?.call(tagInfo),
-       );
 
   final SearchTagSet _tagSet;
 
@@ -49,25 +39,13 @@ class SelectedTagController extends ValueNotifier<List<TagSearchItem>> {
     value = _tagSet.tags;
   }
 
-  void addTag(
-    String tag, {
-    bool isRaw = false,
-    FilterOperator operator = FilterOperator.none,
-  }) {
-    _tagSet.addTag(tag, isRaw: isRaw, operator: operator);
+  void addTag(TagSearchItem tag) {
+    _tagSet.addTag(tag);
     value = _tagSet.tags;
   }
 
-  void negateTag(String tag) {
-    _tagSet.negateTag(tag);
-    value = _tagSet.tags;
-  }
-
-  void addTags(
-    List<String> tags, {
-    FilterOperator operator = FilterOperator.none,
-  }) {
-    _tagSet.addTags(tags, operator: operator);
+  void addTags(List<TagSearchItem> tags) {
+    _tagSet.addTags(tags);
     value = _tagSet.tags;
   }
 
@@ -76,7 +54,7 @@ class SelectedTagController extends ValueNotifier<List<TagSearchItem>> {
     value = _tagSet.tags;
   }
 
-  void updateTag(TagSearchItem oldTag, String newTag) {
+  void updateTag(TagSearchItem oldTag, TagSearchItem newTag) {
     _tagSet.updateTag(oldTag, newTag);
     value = _tagSet.tags;
   }

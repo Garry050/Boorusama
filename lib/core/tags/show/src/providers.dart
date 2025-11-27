@@ -3,16 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
 import '../../../configs/config/types.dart';
-import '../../../posts/post/post.dart';
+import '../../../posts/post/types.dart';
 import '../../tag/providers.dart';
-import '../../tag/tag.dart';
+import '../../tag/types.dart';
 
 final selectedViewTagQueryProvider = StateProvider.autoDispose<String>(
   (ref) => '',
 );
 
 final showTagsProvider = FutureProvider.autoDispose
-    .family<List<Tag>, (BooruConfigAuth, Post)>((ref, params) async {
+    .family<List<Tag>, (BooruConfigAuth, Post)>((ref, params) {
       final (config, post) = params;
 
       final tagExtractor = ref.watch(tagExtractorProvider(config));

@@ -1,5 +1,5 @@
 // Package imports:
-import 'package:version/version.dart';
+import 'package:coreutils/coreutils.dart';
 
 extension VersionX on Version? {
   bool significantlyLowerThan(Version? other) {
@@ -28,5 +28,15 @@ extension VersionX on Version? {
     if (v.major == o.major && v.minor > o.minor) return true;
 
     return false;
+  }
+
+  bool isAtLeast(Version? other) {
+    final v = this;
+    final o = other;
+
+    if (v == null) return false;
+    if (o == null) return false;
+
+    return v >= o;
   }
 }

@@ -1,6 +1,4 @@
 // Flutter imports:
-
-// Flutter imports:
 import 'package:flutter/material.dart';
 
 // Package imports:
@@ -10,13 +8,12 @@ import 'package:intl/intl.dart';
 
 // Project imports:
 import '../../../foundation/html.dart';
-import '../../boorus/engine/providers.dart';
-import '../../configs/config.dart';
+import '../../configs/config/types.dart';
 import '../../tags/autocompletes/types.dart';
-import '../../tags/configs/providers.dart';
-import '../../tags/metatag/metatag.dart';
+import '../../tags/metatag/providers.dart';
+import '../../tags/metatag/types.dart';
 import '../../tags/tag/providers.dart';
-import '../../theme.dart';
+import '../../themes/theme/types.dart';
 
 class TagSuggestionItem extends StatelessWidget {
   const TagSuggestionItem({
@@ -111,15 +108,11 @@ class DefaultTagSuggestionItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tagInfo = ref.watch(tagInfoProvider);
     final category = tag.category;
     final color = category != null
         ? ref.watch(tagColorProvider((config, category)))
         : null;
-    final booruBuilder = ref.watch(booruBuilderProvider(config));
-    final metatagExtractor = booruBuilder?.metatagExtractorBuilder?.call(
-      tagInfo,
-    );
+    final metatagExtractor = ref.watch(metatagExtractorProvider(config));
 
     return TagSuggestionItem(
       key: ValueKey(tag.value),

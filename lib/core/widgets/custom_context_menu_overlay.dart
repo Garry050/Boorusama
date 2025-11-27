@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Project imports:
 import '../../foundation/display.dart';
 import '../settings/providers.dart';
-import '../settings/settings.dart';
 
 class CustomContextMenuOverlay extends ConsumerWidget {
   const CustomContextMenuOverlay({
@@ -38,26 +37,25 @@ class CustomContextMenuOverlay extends ConsumerWidget {
           child: Column(children: children),
         ),
       ),
-      buttonBuilder: (context, config, [_]) => ContextMenuTile(config: config),
-      hapticFeedbackOnStart: hapticFeedbackLevel != HapticFeedbackLevel.none,
+      buttonBuilder: (context, config, [_]) => _ContextMenuTile(config: config),
+      hapticFeedbackOnStart: hapticFeedbackLevel.hasHapticFeedback,
       child: child,
     );
   }
 }
 
-class ContextMenuTile extends ConsumerStatefulWidget {
-  const ContextMenuTile({
+class _ContextMenuTile extends ConsumerStatefulWidget {
+  const _ContextMenuTile({
     required this.config,
-    super.key,
   });
 
   final ContextMenuButtonConfig config;
 
   @override
-  ConsumerState<ContextMenuTile> createState() => _ContextMenuTileState();
+  ConsumerState<_ContextMenuTile> createState() => _ContextMenuTileState();
 }
 
-class _ContextMenuTileState extends ConsumerState<ContextMenuTile> {
+class _ContextMenuTileState extends ConsumerState<_ContextMenuTile> {
   var isMouseOver = false;
 
   @override

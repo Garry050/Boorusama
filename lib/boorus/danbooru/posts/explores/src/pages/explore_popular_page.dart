@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../../../../core/configs/ref.dart';
-import '../../../../../../core/posts/explores/explore.dart';
+import '../../../../../../core/configs/config/providers.dart';
+import '../../../../../../core/posts/explores/types.dart';
 import '../../../../../../core/posts/explores/widgets.dart';
 import '../../../../../../core/posts/listing/widgets.dart';
 import '../../../../../../core/widgets/widgets.dart';
@@ -55,11 +55,15 @@ class _ExplorePopularPageState extends ConsumerState<ExplorePopularPage> {
                     controller: controller,
                     safeArea: false,
                     itemBuilder: (context, index, scrollController, useHero) =>
-                        DefaultDanbooruImageGridItem(
+                        DanbooruPostListingContextMenu(
                           index: index,
-                          autoScrollController: scrollController,
                           controller: controller,
-                          useHero: useHero,
+                          child: DefaultDanbooruImageGridItem(
+                            index: index,
+                            autoScrollController: scrollController,
+                            controller: controller,
+                            useHero: useHero,
+                          ),
                         ),
                     sliverHeaders: [
                       ExploreSliverAppBar(

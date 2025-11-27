@@ -9,7 +9,7 @@ import 'package:i18n/i18n.dart';
 import '../../../foundation/info/device_info.dart';
 import '../../../foundation/picker.dart';
 import '../../../foundation/toast.dart';
-import '../../theme.dart';
+import '../../themes/theme/types.dart';
 import '../../widgets/widgets.dart';
 import '../preparation/preparation_pipeline.dart';
 import '../types/backup_data_source.dart';
@@ -127,8 +127,13 @@ class DefaultBackupTile extends ConsumerWidget {
             ),
             if (!isSelectionMode)
               BooruPopupMenuButton(
-                onSelected: (value) => _handleAction(context, ref, value),
-                itemBuilder: actions,
+                items: [
+                  for (final action in actions.entries)
+                    BooruPopupMenuItem(
+                      title: action.value,
+                      onTap: () => _handleAction(context, ref, action.key),
+                    ),
+                ],
               ),
           ],
         ),

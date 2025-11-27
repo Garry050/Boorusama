@@ -19,6 +19,7 @@ import '../../../create/routes.dart';
 import '../pages/remove_booru_alert_dialog.dart';
 import '../providers/booru_config_provider.dart';
 import 'booru_selector_item.dart';
+import 'drag_state_controller.dart';
 
 class BooruSelector extends ConsumerWidget {
   const BooruSelector({
@@ -49,6 +50,9 @@ class BooruSelectorVertical extends ConsumerStatefulWidget {
 class _BooruSelectorVerticalState extends ConsumerState<BooruSelectorVertical>
     with BooruSelectorActionMixin {
   @override
+  Axis get dragAxis => Axis.vertical;
+
+  @override
   Widget build(BuildContext context) {
     final currentConfig = ref.watchConfig;
     final notifier = ref.watch(booruConfigProvider.notifier);
@@ -66,7 +70,9 @@ class _BooruSelectorVerticalState extends ConsumerState<BooruSelectorVertical>
                 slivers: [
                   ReorderableSliverList(
                     onReorderStarted: (index) => show(configs[index], notifier),
-                    onHover: (start, current) => hide(),
+                    onDragStart: onDragStarted,
+                    onDragUpdate: _onDragUpdate,
+                    onDragEnd: onDragEnded,
                     delegate: ReorderableSliverChildBuilderDelegate(
                       (context, index) {
                         final config = configs[index];
@@ -77,6 +83,7 @@ class _BooruSelectorVerticalState extends ConsumerState<BooruSelectorVertical>
                           show: () => show(config, notifier),
                           onTap: () => ref.router.go('/?cid=${config.id}'),
                           selected: currentConfig == config,
+                          dragController: dragController,
                         );
                       },
                       childCount: configs.length,
@@ -120,6 +127,9 @@ class _BooruSelectorHorizontalState
     extends ConsumerState<BooruSelectorHorizontal>
     with BooruSelectorActionMixin {
   @override
+  Axis get dragAxis => Axis.horizontal;
+
+  @override
   Widget build(BuildContext context) {
     final currentConfig = ref.watchConfig;
     final notifier = ref.watch(booruConfigProvider.notifier);
@@ -132,34 +142,38 @@ class _BooruSelectorHorizontalState
         child: ref
             .watch(orderedConfigsProvider)
             .maybeWhen(
-              data: (configs) => Row(
-                children: [
-                  if (reverseScroll) addButton,
-                  Expanded(
-                    child: ReorderableRow(
-                      onReorderStarted: (index) =>
-                          show(configs[index], notifier),
-                      onReorder: (oldIndex, newIndex) =>
-                          onReorder(oldIndex, newIndex, configs),
-                      children: [
-                        for (final config in () {
-                          return reverseScroll ? configs.reversed : configs;
-                        }())
-                          Container(
-                            key: ValueKey(config.id),
-                            child: BooruSelectorItem(
-                              hideLabel: hideLabel,
-                              config: config,
-                              show: () => show(config, notifier),
-                              onTap: () => ref.router.go('/?cid=${config.id}'),
-                              selected: currentConfig == config,
-                              direction: Axis.horizontal,
-                            ),
-                          ),
-                      ],
+              data: (configs) => CustomScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: reverseScroll,
+                slivers: [
+                  ReorderableSliverList(
+                    axis: Axis.horizontal,
+                    onReorderStarted: (index) => show(configs[index], notifier),
+                    onDragStart: onDragStarted,
+                    onDragUpdate: _onDragUpdate,
+                    onDragEnd: onDragEnded,
+                    delegate: ReorderableSliverChildBuilderDelegate(
+                      (context, index) {
+                        final config = configs[index];
+
+                        return BooruSelectorItem(
+                          hideLabel: hideLabel,
+                          config: config,
+                          show: () => show(config, notifier),
+                          onTap: () => ref.router.go('/?cid=${config.id}'),
+                          selected: currentConfig == config,
+                          direction: Axis.horizontal,
+                          dragController: dragController,
+                        );
+                      },
+                      childCount: configs.length,
                     ),
+                    onReorder: (oldIndex, newIndex) =>
+                        onReorder(oldIndex, newIndex, configs),
                   ),
-                  if (!reverseScroll) addButton,
+                  SliverToBoxAdapter(
+                    child: addButton,
+                  ),
                 ],
               ),
               orElse: () => const SizedBox.shrink(),
@@ -171,6 +185,47 @@ class _BooruSelectorHorizontalState
 
 mixin BooruSelectorActionMixin<T extends ConsumerStatefulWidget>
     on ConsumerState<T> {
+  late final DragStateController _dragController;
+  Offset? _startDragOffset;
+
+  @override
+  void initState() {
+    super.initState();
+    _dragController = DragStateController();
+  }
+
+  @override
+  void dispose() {
+    _dragController.dispose();
+    super.dispose();
+  }
+
+  Axis get dragAxis;
+
+  DragStateController get dragController => _dragController;
+
+  void onDragStarted() {
+    _dragController.startDrag();
+  }
+
+  void onDragEnded() {
+    _startDragOffset = null;
+    _dragController.endDrag();
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    _startDragOffset ??= details.globalPosition;
+
+    if (_startDragOffset != null) {
+      final dragDistance = dragAxis == Axis.vertical
+          ? details.globalPosition.dy - _startDragOffset!.dy
+          : details.globalPosition.dx - _startDragOffset!.dx;
+      if (dragDistance.abs() > 16) {
+        hide();
+      }
+    }
+  }
+
   void show(BooruConfig config, BooruConfigNotifier notifier) {
     context.contextMenuOverlay.show(
       GenericContextMenu(
@@ -221,12 +276,15 @@ mixin BooruSelectorActionMixin<T extends ConsumerStatefulWidget>
 
   bool get reverseScroll => ref.watch(
     settingsProvider.select(
-      (value) => value.reverseBooruConfigSelectorScrollDirection,
+      (value) => value.booruConfigSelectorScrollDirection.isReversed,
     ),
   );
 
-  bool get hideLabel =>
-      ref.watch(settingsProvider.select((value) => value.hideBooruConfigLabel));
+  bool get hideLabel => ref.watch(
+    settingsProvider.select(
+      (value) => value.booruConfigLabelVisibility.hideBooruConfigLabel,
+    ),
+  );
 
   Widget get addButton => IconButton(
     splashRadius: 20,

@@ -1,5 +1,5 @@
 // Project imports:
-import '../../../post/post.dart';
+import '../../../post/types.dart';
 
 enum DuplicateCheckMode {
   id,
@@ -42,8 +42,6 @@ class PostDuplicateTracker<T extends Post> {
 
   void rebuildFrom(Iterable<T> items) {
     clear();
-    for (final item in items) {
-      trackItem(item);
-    }
+    items.forEach(trackItem);
   }
 }

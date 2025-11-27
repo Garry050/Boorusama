@@ -1,12 +1,13 @@
 // Project imports:
-import '../../../../proxy/proxy.dart';
-import '../../../../settings/settings.dart';
-import '../../../../theme/theme_configs.dart';
-import '../../../gesture/gesture.dart';
-import '../../../search/search.dart';
+import '../../../../posts/listing/types.dart';
+import '../../../../proxy/types.dart';
+import '../../../../settings/types.dart';
+import '../../../../themes/configs/types.dart';
+import '../../../gesture/types.dart';
+import '../../../search/types.dart';
 import '../types/booru_config.dart';
 import '../types/booru_config_data.dart';
-import '../types/rating_parser.dart';
+import '../types/granular_rating_filter.dart';
 
 extension BooruConfigDataConverter on BooruConfigData? {
   BooruConfig? toBooruConfig({required int? id}) {
@@ -35,7 +36,8 @@ extension BooruConfigDataConverter on BooruConfigData? {
           booruConfigData.customBulkDownloadFileNameFormat,
       customDownloadLocation: booruConfigData.customDownloadLocation,
       imageDetaisQuality: booruConfigData.imageDetaisQuality,
-      granularRatingFilters: parseGranularRatingFilters(
+      videoQuality: booruConfigData.videoQuality,
+      granularRatingFilters: GranularRatingFilter.parse(
         booruConfigData.granularRatingFilterString,
       ),
       postGestures: booruConfigData.postGestures == null
@@ -46,13 +48,18 @@ extension BooruConfigDataConverter on BooruConfigData? {
       listing: booruConfigData.listing == null
           ? null
           : ListingConfigs.fromJsonString(booruConfigData.listing),
+      viewerConfigs: booruConfigData.viewerConfigs == null
+          ? null
+          : ViewerConfigs.fromJsonString(booruConfigData.viewerConfigs),
       theme: booruConfigData.theme == null
           ? null
           : ThemeConfigs.fromJsonString(booruConfigData.theme),
-      alwaysIncludeTags: booruConfigData.alwaysIncludeTags,
-      blacklistConfigs: booruConfigData.blacklistConfigs != null
-          ? BlacklistConfigs.fromJsonString(booruConfigData.blacklistConfigs)
-          : null,
+      alwaysIncludeTags: AlwaysIncludedTags.parse(
+        booruConfigData.alwaysIncludeTags,
+      ),
+      blacklistConfigs: BlacklistConfigs.tryParse(
+        booruConfigData.blacklistConfigs,
+      ),
       layout: booruConfigData.layout != null
           ? LayoutConfigs.fromJsonString(booruConfigData.layout)
           : null,
@@ -63,6 +70,9 @@ extension BooruConfigDataConverter on BooruConfigData? {
           ? BooruConfigViewerNotesFetchBehavior.values[booruConfigData
                 .viewerNotesFetchBehavior!]
           : null,
+      tooltipDisplayMode: TooltipDisplayMode.tryParse(
+        booruConfigData.tooltipDisplayMode,
+      ),
     );
   }
 }
@@ -84,18 +94,19 @@ extension BooruConfigConverter on BooruConfig {
       customBulkDownloadFileNameFormat: customBulkDownloadFileNameFormat,
       customDownloadLocation: customDownloadLocation,
       imageDetaisQuality: imageDetaisQuality,
-      granularRatingFilterString: granularRatingFilterToString(
-        granularRatingFilters,
-      ),
+      videoQuality: videoQuality,
+      granularRatingFilterString: granularRatingFilters?.toFilterString(),
       postGestures: postGestures?.toJsonString(),
       defaultPreviewImageButtonAction: defaultPreviewImageButtonAction,
       listing: listing?.toJsonString(),
+      viewerConfigs: viewerConfigs?.toJsonString(),
       theme: theme?.toJsonString(),
-      alwaysIncludeTags: alwaysIncludeTags,
+      alwaysIncludeTags: alwaysIncludeTags?.toJsonString(),
       blacklistConfigs: blacklistConfigs?.toJsonString(),
       layout: layout?.toJsonString(),
       proxySettings: proxySettings?.toJsonString(),
       viewerNotesFetchBehavior: viewerNotesFetchBehavior?.index,
+      tooltipDisplayMode: tooltipDisplayMode?.toData(),
     );
   }
 }

@@ -4,8 +4,8 @@ import 'package:foundation/foundation.dart';
 
 // Project imports:
 import '../../../../errors/types.dart';
-import '../../../../search/queries/query.dart';
-import '../../../../search/selected_tags/tag.dart';
+import '../../../../search/queries/types.dart';
+import '../../../../search/selected_tags/types.dart';
 import 'post.dart';
 
 class PostFetchOptions {
@@ -15,8 +15,8 @@ class PostFetchOptions {
 
   final bool cascadeRequest;
 
-  static const PostFetchOptions defaults = PostFetchOptions();
-  static const PostFetchOptions raw = PostFetchOptions(
+  static const defaults = PostFetchOptions();
+  static const raw = PostFetchOptions(
     cascadeRequest: false,
   );
 }

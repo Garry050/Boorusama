@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:context_menus/context_menus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 import 'package:foundation/widgets.dart';
@@ -13,16 +12,17 @@ import 'package:selection_mode/selection_mode.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 // Project imports:
+import '../../../../foundation/loggers.dart';
 import '../../../../foundation/url_launcher.dart';
 import '../../../config_widgets/website_logo.dart';
 import '../../../configs/config/providers.dart';
 import '../../../posts/listing/providers.dart';
-import '../../../posts/listing/src/_internal/default_image_grid_item.dart';
-import '../../../posts/listing/src/_internal/post_grid_config_icon_button.dart';
 import '../../../posts/listing/widgets.dart';
-import '../../../posts/post/post.dart';
+import '../../../posts/post/types.dart';
+import '../../../widgets/booru_context_menu.dart';
+import '../../../widgets/context_menu_tile.dart';
 import '../../../widgets/widgets.dart';
-import '../../bookmark.dart';
+import '../../types.dart';
 import '../data/bookmark_convert.dart';
 import '../data/providers.dart';
 import '../providers/bookmark_provider.dart';
@@ -38,22 +38,19 @@ import 'bookmark_sort_button.dart';
 class BookmarkScrollView extends ConsumerStatefulWidget {
   const BookmarkScrollView({
     required this.scrollController,
-    required this.focusNode,
     required this.searchController,
     super.key,
   });
 
   final AutoScrollController scrollController;
   final TextEditingController searchController;
-  final FocusNode focusNode;
 
   @override
   ConsumerState<BookmarkScrollView> createState() => _BookmarkScrollViewState();
 }
 
 class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
-  final SelectionModeController _selectionModeController =
-      SelectionModeController();
+  final _selectionModeController = SelectionModeController();
 
   List<String> _parseTagsFromText(String text) {
     return text.isEmpty
@@ -76,6 +73,9 @@ class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
   @override
   Widget build(BuildContext context) {
     return RawPostScope<BookmarkPost>(
+      onError: (message) {
+        ref.read(loggerProvider).error('Bookmark Listing', message);
+      },
       fetcher: (page) => TaskEither.Do(
         ($) async {
           final searchTags = _parseTagsFromText(widget.searchController.text);
@@ -129,7 +129,7 @@ class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
             selectionModeController: _selectionModeController,
             scrollController: widget.scrollController,
             controller: controller,
-            enablePullToRefresh: false,
+            enablePullToRefresh: true,
             multiSelectActions: DefaultMultiSelectionActions(
               postController: controller,
               bookmark: false,
@@ -211,7 +211,6 @@ class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
               ),
               SliverToBoxAdapter(
                 child: BookmarkSearchBar(
-                  focusNode: widget.focusNode,
                   controller: widget.searchController,
                   postController: controller,
                 ),
@@ -248,10 +247,7 @@ class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
     PostGridController<BookmarkPost> controller,
   ) {
     final edit = ref.watch(bookmarkEditProvider);
-
     final auth = ref.watchConfigAuth;
-    final download = ref.watchConfigDownload;
-    final loginDetails = ref.watch(booruLoginDetailsProvider(auth));
 
     return ValueListenableBuilder(
       valueListenable: controller.itemsNotifier,
@@ -260,59 +256,37 @@ class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
 
         return Stack(
           children: [
-            DefaultImageGridItem(
+            BookmarkContextMenu(
+              post: post,
               index: index,
-              autoScrollController: widget.scrollController,
               controller: controller,
-              imageUrl: post.isVideo
-                  ? post.thumbnailImageUrl
-                  : post.sampleImageUrl,
-              imageCacheManager: ref.watch(bookmarkImageCacheManagerProvider),
-              useHero: false,
-              leadingIcons: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: ConfigAwareWebsiteLogo(url: post.bookmark.sourceUrl),
-                ),
-              ],
-              contextMenu: GenericContextMenu(
-                buttonConfigs: [
-                  ContextMenuButtonConfig(
-                    context.t.download.download,
-                    onPressed: () => ref.bookmarks.downloadBookmarks(
-                      auth,
-                      download,
-                      [post.bookmark],
-                    ),
+              child: DefaultImageGridItem(
+                index: index,
+                autoScrollController: widget.scrollController,
+                controller: controller,
+                imageUrl: post.isVideo
+                    ? post.thumbnailImageUrl
+                    : post.sampleImageUrl,
+                imageCacheManager: ref.watch(bookmarkImageCacheManagerProvider),
+                useHero: false,
+                config: auth,
+                leadingIcons: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConfigAwareWebsiteLogo(url: post.bookmark.sourceUrl),
                   ),
-                  // remove bookmark
-                  ContextMenuButtonConfig(
-                    context.t.post.detail.remove_from_bookmark,
-                    onPressed: () => ref.bookmarks.removeBookmark(
-                      post.bookmark,
-                      onSuccess: () {
-                        controller.remove([post.id], (e) => e.id);
-                      },
-                    ),
-                  ),
-                  if (!loginDetails.hasStrictSFW)
-                    ContextMenuButtonConfig(
-                      'Open source in browser',
-                      onPressed: () =>
-                          launchExternalUrlString(post.bookmark.sourceUrl),
-                    ),
                 ],
+                onTap: () {
+                  goToBookmarkDetailsPage(
+                    ref,
+                    index,
+                    initialThumbnailUrl: post.isVideo
+                        ? post.bookmark.thumbnailUrl
+                        : post.sampleImageUrl,
+                    controller: controller,
+                  );
+                },
               ),
-              onTap: () {
-                goToBookmarkDetailsPage(
-                  ref,
-                  index,
-                  initialThumbnailUrl: post.isVideo
-                      ? post.bookmark.thumbnailUrl
-                      : post.sampleImageUrl,
-                  controller: controller,
-                );
-              },
             ),
             if (edit)
               Positioned(
@@ -332,6 +306,56 @@ class _BookmarkScrollViewState extends ConsumerState<BookmarkScrollView> {
           ],
         );
       },
+    );
+  }
+}
+
+class BookmarkContextMenu extends ConsumerWidget {
+  const BookmarkContextMenu({
+    super.key,
+    required this.post,
+    required this.index,
+    required this.controller,
+    required this.child,
+  });
+
+  final BookmarkPost post;
+  final int index;
+  final PostGridController<BookmarkPost> controller;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watchConfigAuth;
+    final loginDetails = ref.watch(booruLoginDetailsProvider(auth));
+    final download = ref.watchConfigDownload;
+
+    return BooruContextMenu(
+      menuItemsBuilder: (context) => [
+        ContextMenuTile(
+          title: context.t.download.download,
+          onTap: () => ref.bookmarks.downloadBookmarks(
+            auth,
+            download,
+            [post.bookmark],
+          ),
+        ),
+        ContextMenuTile(
+          title: context.t.post.detail.remove_from_bookmark,
+          onTap: () => ref.bookmarks.removeBookmark(
+            post.bookmark,
+            onSuccess: () {
+              controller.remove([post.id], (e) => e.id);
+            },
+          ),
+        ),
+        if (!loginDetails.hasStrictSFW)
+          ContextMenuTile(
+            title: 'Open source in browser',
+            onTap: () => launchExternalUrlString(post.bookmark.sourceUrl),
+          ),
+      ],
+      child: child,
     );
   }
 }

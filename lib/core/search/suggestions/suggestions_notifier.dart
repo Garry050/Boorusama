@@ -1,59 +1,38 @@
 // Package imports:
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 // Project imports:
 import '../../../foundation/debounce_mixin.dart';
-import '../../configs/config.dart';
 import '../../configs/config/providers.dart';
+import '../../configs/config/types.dart';
 import '../../tags/autocompletes/providers.dart';
 import '../../tags/autocompletes/types.dart';
 import '../../tags/configs/providers.dart';
 import '../../tags/local/providers.dart';
-import '../queries/filter_operator.dart';
-import '../queries/query_utils.dart';
-
-final suggestionsNotifierProvider =
-    NotifierProvider.family<
-      SuggestionsNotifier,
-      IMap<String, IList<AutocompleteData>>,
-      BooruConfigAuth
-    >(
-      SuggestionsNotifier.new,
-    );
-
-final fallbackSuggestionsProvider =
-    StateProvider.autoDispose<IList<AutocompleteData>>((ref) {
-      return <AutocompleteData>[].lock;
-    });
-
-final suggestionProvider = Provider.autoDispose
-    .family<IList<AutocompleteData>, (BooruConfigAuth, String)>(
-      (ref, params) {
-        final (config, tag) = params;
-        final suggestions = ref.watch(suggestionsNotifierProvider(config));
-        return suggestions[sanitizeQuery(tag)] ??
-            ref.watch(fallbackSuggestionsProvider);
-      },
-      dependencies: [
-        suggestionsNotifierProvider,
-        fallbackSuggestionsProvider,
-      ],
-    );
+import '../queries/types.dart';
 
 class SuggestionsNotifier
-    extends
-        FamilyNotifier<IMap<String, IList<AutocompleteData>>, BooruConfigAuth>
+    extends FamilyNotifier<SuggestionsState, BooruConfigAuth>
     with DebounceMixin {
   SuggestionsNotifier() : super();
 
   @override
-  IMap<String, IList<AutocompleteData>> build(BooruConfigAuth arg) {
-    return <String, IList<AutocompleteData>>{}.lock;
+  SuggestionsState build(BooruConfigAuth arg) {
+    return SuggestionsState.initial();
   }
 
   void clear() {
-    state = <String, IList<AutocompleteData>>{}.lock;
+    state = state.clear();
+  }
+
+  void setCategory(String? category) {
+    if (state.category == category) return;
+    state = state.copyWith(
+      category: () => category,
+      suggestions: <String, IList<AutocompleteData>>{}.lock,
+    );
   }
 
   void getSuggestions(String query) {
@@ -70,15 +49,16 @@ class SuggestionsNotifier
     final loginDetails = ref.read(booruLoginDetailsProvider(arg));
 
     // if we already have the suggestions, don't fetch again
-    if (state.containsKey(sanitized)) {
-      return;
-    }
+    if (state.hasSuggestions(sanitized)) return;
 
     debounce(
       'suggestions',
       () async {
         final data = await autocompleteRepo.getAutocomplete(
-          AutocompleteQuery.text(sanitized),
+          AutocompleteQuery(
+            text: sanitized,
+            category: state.category,
+          ),
         );
 
         var filter = filterNsfw(
@@ -109,7 +89,7 @@ class SuggestionsNotifier
           }
         }
 
-        state = state.add(sanitized, filter);
+        state = state.addSuggestions(sanitized, filter);
 
         if (fallback.mounted && fallback.hasListeners) {
           fallback.state = filter;
@@ -119,10 +99,67 @@ class SuggestionsNotifier
   }
 }
 
-//   AutocompleteData _resolveCached(AutocompleteData autocomplete, CachedTag tag) {
-//     return autocomplete.copyWith(
-//  type: autocomplete.type ?? tag.category,
-//  postCount: tag.postCount,
-//     );
+class SuggestionsState extends Equatable {
+  const SuggestionsState({
+    required this.suggestions,
+    this.category,
+  });
 
-//   }
+  SuggestionsState.initial()
+    : suggestions = <String, IList<AutocompleteData>>{}.lock,
+      category = null;
+
+  final IMap<String, IList<AutocompleteData>> suggestions;
+  final String? category;
+
+  SuggestionsState copyWith({
+    IMap<String, IList<AutocompleteData>>? suggestions,
+    String? Function()? category,
+  }) => SuggestionsState(
+    suggestions: suggestions ?? this.suggestions,
+    category: category != null ? category() : this.category,
+  );
+
+  SuggestionsState clear() => SuggestionsState.initial();
+
+  bool hasSuggestions(String query) => suggestions.containsKey(query);
+
+  IList<AutocompleteData>? getSuggestionsFor(String query) =>
+      suggestions[query];
+
+  SuggestionsState addSuggestions(
+    String query,
+    IList<AutocompleteData> data,
+  ) => copyWith(
+    suggestions: suggestions.add(query, data),
+  );
+
+  @override
+  List<Object?> get props => [suggestions, category];
+}
+
+final suggestionsNotifierProvider =
+    NotifierProvider.family<
+      SuggestionsNotifier,
+      SuggestionsState,
+      BooruConfigAuth
+    >(SuggestionsNotifier.new);
+
+final fallbackSuggestionsProvider =
+    StateProvider.autoDispose<IList<AutocompleteData>>((ref) {
+      return <AutocompleteData>[].lock;
+    });
+
+final suggestionProvider = Provider.autoDispose
+    .family<IList<AutocompleteData>, (BooruConfigAuth, String)>(
+      (ref, params) {
+        final (config, tag) = params;
+        final state = ref.watch(suggestionsNotifierProvider(config));
+        return state.getSuggestionsFor(sanitizeQuery(tag)) ??
+            ref.watch(fallbackSuggestionsProvider);
+      },
+      dependencies: [
+        suggestionsNotifierProvider,
+        fallbackSuggestionsProvider,
+      ],
+    );

@@ -1,6 +1,6 @@
 // Project imports:
-import '../../post/post.dart';
-import '../../sources/source.dart';
+import '../../post/types.dart';
+import '../../sources/types.dart';
 import 'check_tag.dart';
 import 'tag_expression.dart';
 import 'tag_filter_data.dart';
@@ -63,6 +63,7 @@ extension PostFilterX on Post {
       _ => null,
     }?.toLowerCase(),
     id: id,
+    status: status,
   );
 
   bool containsTagPattern(List<TagExpression> pattern) =>

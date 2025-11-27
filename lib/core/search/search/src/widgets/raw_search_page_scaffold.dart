@@ -13,18 +13,19 @@ import 'package:selection_mode/selection_mode.dart';
 
 // Project imports:
 import '../../../../../foundation/utils/stream/text_editing_controller_utils.dart';
-import '../../../../analytics/analytics_interface.dart';
 import '../../../../analytics/providers.dart';
+import '../../../../analytics/types.dart';
 import '../../../../posts/listing/providers.dart';
+import '../../../../posts/listing/types.dart';
 import '../../../../posts/listing/widgets.dart';
-import '../../../../posts/post/post.dart';
+import '../../../../posts/post/types.dart';
 import '../../../../settings/providers.dart';
-import '../../../../settings/settings.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../histories/providers.dart';
-import '../../../selected_tags/selected_tag_controller.dart';
-import '../../../selected_tags/tag.dart';
-import '../pages/search_page.dart';
+import '../../../selected_tags/providers.dart';
+import '../../../selected_tags/types.dart';
+import '../routes/params.dart';
+import '../types/search_bar_position.dart';
 import 'search_controller.dart';
 
 typedef IndexedSelectableSearchWidgetBuilder<T extends Post> =
@@ -62,18 +63,15 @@ class RawSearchPageScaffold<T extends Post> extends ConsumerStatefulWidget {
     required this.onPostControllerCreated,
     required this.landingView,
     super.key,
-    this.noticeBuilder,
     this.extraHeaders,
     this.itemBuilder,
   });
 
   final SearchParams params;
 
-  String? get initialQuery => params.initialQuery;
-  int? get initialPage => params.initialPage;
-  int? get initialScrollPosition => params.initialScrollPosition;
-
-  final Widget Function(BuildContext context)? noticeBuilder;
+  String? get initialQuery => params.query;
+  int? get initialPage => params.page;
+  int? get initialScrollPosition => params.scrollPosition;
 
   final List<Widget> Function(
     BuildContext context,
@@ -111,7 +109,7 @@ class _SearchPageScaffoldState<T extends Post>
   SelectedTagController get _tagsController => widget.tagsController;
   final _scrollController = AutoScrollController();
 
-  final CompositeSubscription _subscriptions = CompositeSubscription();
+  final _subscriptions = CompositeSubscription();
   SearchPageController get _controller => widget.controller;
 
   late final _searchBarAnimController = AnimationController(
@@ -133,15 +131,15 @@ class _SearchPageScaffoldState<T extends Post>
     } else if (widget.initialQuery case final String query) {
       _controller.skipToResultWithTag(
         query,
-        queryType: widget.params.initialQueryType,
+        queryType: widget.params.queryType,
       );
       ref
           .read(searchHistoryProvider.notifier)
           .addHistoryFromController(_tagsController);
-    } else if (widget.params.initialTags case final SearchTagSet tags) {
+    } else if (widget.params.tags case final SearchTagSet tags) {
       _controller.skipToResultWithTags(
         tags,
-        queryType: widget.params.initialQueryType,
+        queryType: widget.params.queryType,
       );
       ref
           .read(searchHistoryProvider.notifier)
@@ -291,7 +289,9 @@ class _SearchPageScaffoldState<T extends Post>
 
   Widget _buildResult() {
     final persistentSearchBar = ref.watch(
-      settingsProvider.select((value) => value.persistSearchBar),
+      settingsProvider.select(
+        (value) => value.searchBarScrollBehavior.persistSearchBar,
+      ),
     );
     final searchBarPosition = ref.watch(searchBarPositionProvider);
 
@@ -487,7 +487,7 @@ class _ScrollToTopButtonPadding extends ConsumerStatefulWidget {
 
 class __ScrollToTopButtonPaddingState
     extends ConsumerState<_ScrollToTopButtonPadding> {
-  late final CurvedAnimation _animation = CurvedAnimation(
+  late final _animation = CurvedAnimation(
     parent: widget.searchBarAnimController,
     curve: Curves.easeInOut,
   );

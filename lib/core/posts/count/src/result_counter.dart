@@ -22,45 +22,54 @@ class ResultCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return Row(
-        children: [
-          Text(
-            context.t.search.search_in_progress_notice,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(width: 10),
-          const SizedBox(
-            width: 15,
-            height: 15,
-            child: CircularProgressIndicator.adaptive(),
-          ),
-        ],
-      );
-    }
+    return switch ((loading, count)) {
+      (true, _) => _buildLoadingState(context),
+      (false, > 0) => _buildDataState(context, count, onRefresh),
+      (false, _) => _buildEmptyState(context),
+    };
+  }
 
-    if (count > 0) {
-      return Row(
-        children: [
-          Text(
-            context.t.search.result_counter(n: count),
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+  Widget _buildLoadingState(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          context.t.search.search_in_progress_notice,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(width: 10),
+        const SizedBox(
+          width: 15,
+          height: 15,
+          child: CircularProgressIndicator.adaptive(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDataState(
+    BuildContext context,
+    int count,
+    Future<void> Function()? onRefresh,
+  ) {
+    return Row(
+      children: [
+        Text(
+          context.t.search.result_counter(n: count),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
           ),
-          const SizedBox(width: 4),
-          if (onRefresh != null)
-            _RotatingIcon(
-              onPressed: onRefresh!,
-            ),
-        ],
-      );
-    } else {
-      return Text(
-        context.t.search.no_result_notice,
-        style: Theme.of(context).textTheme.titleLarge,
-      );
-    }
+        ),
+        const SizedBox(width: 4),
+        if (onRefresh != null) _RotatingIcon(onPressed: onRefresh),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Text(
+      context.t.search.no_result_notice,
+      style: Theme.of(context).textTheme.titleLarge,
+    );
   }
 }
 
@@ -77,11 +86,11 @@ class _RotatingIcon extends StatefulWidget {
 
 class _RotatingIconState extends State<_RotatingIcon>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+  late final _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 500),
   );
-  late bool _isWaiting = false;
+  late var _isWaiting = false;
 
   @override
   void dispose() {

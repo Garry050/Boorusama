@@ -2,8 +2,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../theme/theme_configs.dart';
-import '../../../gesture/gesture.dart';
+import '../../../../themes/configs/types.dart';
+import '../../../gesture/types.dart';
 import '../../../manage/providers.dart';
 import '../types/booru_config.dart';
 
@@ -77,4 +77,10 @@ extension BooruAutoDisposeProviderRef<T> on Ref<T> {
 
   LayoutConfigs? get readLayoutConfigs =>
       read(currentReadOnlyBooruConfigLayoutProvider);
+
+  BooruConfigDownload get readConfigDownload =>
+      read(currentReadOnlyBooruConfigDownloadProvider);
+
+  BooruConfigDownload get watchConfigDownload =>
+      watch(currentReadOnlyBooruConfigDownloadProvider);
 }

@@ -3,7 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
-import '../../../../search/selected_tags/tag.dart';
+import '../../../../search/selected_tags/types.dart';
 import '../types/favorite_tag.dart';
 import 'providers.dart';
 
@@ -66,7 +66,7 @@ class FavoriteTagsNotifier extends Notifier<List<FavoriteTag>> {
       labels: labels != null && labels.isNotEmpty
           ? labels.where((e) => e.isNotEmpty).toList()
           : null,
-      queryType: isRaw == true ? QueryType.simple : null,
+      queryType: (isRaw ?? false) ? QueryType.simple : null,
     );
 
     final tags = await repo.getAll();

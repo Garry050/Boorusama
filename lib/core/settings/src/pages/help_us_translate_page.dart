@@ -11,8 +11,8 @@ import 'package:material_symbols_icons/symbols.dart';
 // Project imports:
 import '../../../../foundation/info/app_info.dart';
 import '../../../../foundation/url_launcher.dart';
-import '../../../configs/ref.dart';
-import '../../../http/providers.dart';
+import '../../../configs/config/providers.dart';
+import '../../../http/client/providers.dart';
 import '../../../images/providers.dart';
 
 class HelpUseTranslatePage extends ConsumerWidget {

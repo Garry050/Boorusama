@@ -1,6 +1,9 @@
 // Dart imports:
 import 'dart:math' as math;
 
+// Flutter imports:
+import 'package:flutter/foundation.dart';
+
 // Package imports:
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
@@ -114,6 +117,7 @@ class PriorityCalculator {
   }
 }
 
+@immutable
 class PrioritizedUrl implements Comparable<PrioritizedUrl> {
   const PrioritizedUrl({
     required this.url,

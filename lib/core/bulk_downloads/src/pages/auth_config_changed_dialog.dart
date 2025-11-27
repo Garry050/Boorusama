@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:i18n/i18n.dart';
 
 // Project imports:
-import '../../../configs/ref.dart';
-import '../../../theme.dart';
+import '../../../configs/config/providers.dart';
+import '../../../themes/theme/types.dart';
 import '../types/bulk_download_session.dart';
 
 class AuthConfigChangedDialog extends ConsumerWidget {
