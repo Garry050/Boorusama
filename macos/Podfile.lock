@@ -18,17 +18,17 @@ PODS:
   - flutter_local_notifications (0.0.1):
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
-  - fvp (0.35.0):
+  - fvp (0.35.2):
     - Flutter
     - FlutterMacOS
-    - mdk (~> 0.35.0)
+    - mdk (~> 0.35.1)
   - gal (1.0.0):
     - Flutter
     - FlutterMacOS
   - local_auth_darwin (0.0.1):
     - Flutter
     - FlutterMacOS
-  - mdk (0.35.0)
+  - mdk (0.35.1)
   - media_kit_libs_macos_video (1.0.4):
     - FlutterMacOS
   - media_kit_video (0.0.1):
@@ -42,15 +42,15 @@ PODS:
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - purchases_flutter (9.9.4):
+  - purchases_flutter (9.12.0):
     - FlutterMacOS
-    - PurchasesHybridCommon (= 17.16.0)
-  - PurchasesHybridCommon (17.16.0):
-    - RevenueCat (= 5.46.1)
+    - PurchasesHybridCommon (= 17.36.0)
+  - PurchasesHybridCommon (17.36.0):
+    - RevenueCat (= 5.58.0)
   - rate_my_app (2.3.2):
     - Flutter
     - FlutterMacOS
-  - RevenueCat (5.46.1)
+  - RevenueCat (5.58.0)
   - screen_retriever_macos (0.0.1):
     - FlutterMacOS
   - share_plus (0.0.1):
@@ -210,20 +210,20 @@ SPEC CHECKSUMS:
   flutter_avif_macos: 9ed61d67adfbd6964eccb59971020fb55c31fc11
   flutter_local_notifications: 4bf37a31afde695b56091b4ae3e4d9c7a7e6cda0
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  fvp: ecee65308dd86ae46e3c6d5d42cd2aad48095ef5
+  fvp: 4fe77c2b30122233a57f425dafd219ed35565809
   gal: baecd024ebfd13c441269ca7404792a7152fde89
   local_auth_darwin: c3ee6cce0a8d56be34c8ccb66ba31f7f180aaebb
-  mdk: baa616b93f696c7066df0e5ebe057badfa9c462b
+  mdk: 59bbe9e2ac2a052455ab1b076c245680d66cf6c0
   media_kit_libs_macos_video: 85a23e549b5f480e72cae3e5634b5514bc692f65
   media_kit_video: fa6564e3799a0a28bff39442334817088b7ca758
   objective_c: ec13431e45ba099cb734eb2829a5c1cd37986cba
   package_info_plus: f0052d280d17aa382b932f399edf32507174e870
   pasteboard: 278d8100149f940fb795d6b3a74f0720c890ecb7
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
-  purchases_flutter: a6bd0e9bd1e4f19d0204d8f1e2e6bbe1ee4c3481
-  PurchasesHybridCommon: 806c4cb4f287dc125d6e885a1bbf5df326e681b0
+  purchases_flutter: 377f7e197a482dec3d78cb0bb320fd19a08e80b1
+  PurchasesHybridCommon: 4767776bf65153d7a43f284439e7560c42d0c80a
   rate_my_app: cbb89973f870601f80f7bad63aba107260cabc5b
-  RevenueCat: 5615e87d418134b3087370429b17ce92eafe2354
+  RevenueCat: 88bb4229115b2badcce0e5a97f3dd8cc952b38c8
   screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
   share_plus: 510bf0af1a42cd602274b4629920c9649c52f4cc
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
