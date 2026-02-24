@@ -69,11 +69,12 @@ class FavoritesNotifier
   Future<AddFavoriteStatus> add(int postId) async {
     if (state[postId] ?? false) return AddFavoriteStatus.alreadyExists;
 
+    state = state.add(postId, true);
+
     final status = await repo.addToFavorites(postId);
-    if (status == AddFavoriteStatus.success ||
-        status == AddFavoriteStatus.alreadyExists) {
-      final newData = state.add(postId, true);
-      state = newData;
+    if (status != AddFavoriteStatus.success &&
+        status != AddFavoriteStatus.alreadyExists) {
+      state = state.add(postId, false);
     }
 
     return status;
@@ -82,10 +83,11 @@ class FavoritesNotifier
   Future<void> remove(int postId) async {
     if (state[postId] == false) return;
 
+    state = state.add(postId, false);
+
     final success = await repo.removeFromFavorites(postId);
-    if (success) {
-      final newData = state.add(postId, false);
-      state = newData;
+    if (!success) {
+      state = state.add(postId, true);
     }
   }
 

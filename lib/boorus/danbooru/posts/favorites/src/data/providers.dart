@@ -21,12 +21,16 @@ final danbooruFavoriteRepoProvider =
 
         return FavoriteRepositoryBuilder(
           add: (postId) async {
+            final votesNotifier = ref.read(
+              danbooruPostVotesProvider(config).notifier,
+            );
+
+            await votesNotifier.upvote(postId, localOnly: true);
+
             final success = await client.addToFavorites(postId: postId);
 
-            if (success) {
-              await ref
-                  .read(danbooruPostVotesProvider(config).notifier)
-                  .upvote(postId, localOnly: true);
+            if (!success) {
+              votesNotifier.removeLocalVote(postId);
             }
 
             return success
@@ -34,16 +38,22 @@ final danbooruFavoriteRepoProvider =
                 : AddFavoriteStatus.failure;
           },
           remove: (postId) async {
+            final votesNotifier = ref.read(
+              danbooruPostVotesProvider(config).notifier,
+            );
+
+            votesNotifier.removeLocalVote(postId);
+
             final success = await client.removeFromFavorites(postId: postId);
 
             if (success) {
               try {
-                await ref
-                    .read(danbooruPostVotesProvider(config).notifier)
-                    .removeVote(postId, null);
+                await votesNotifier.removeVote(postId, null);
               } catch (e) {
                 return false;
               }
+            } else {
+              await votesNotifier.upvote(postId, localOnly: true);
             }
 
             return success;

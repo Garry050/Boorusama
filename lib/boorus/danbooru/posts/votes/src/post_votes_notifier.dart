@@ -45,19 +45,31 @@ class PostVotesNotifier
   PostVoteRepository get repo => ref.read(danbooruPostVoteRepoProvider(arg));
 
   Future<void> upvote(int postId, {bool localOnly = false}) async {
-    final vote = localOnly
-        ? DanbooruPostVote.local(postId: postId, score: 1)
-        : await repo.upvote(postId);
+    final optimistic = DanbooruPostVote.local(postId: postId, score: 1);
+    state = VotesStateHelpers.updateVote(state, optimistic);
 
-    state = VotesStateHelpers.updateVote(state, vote);
+    if (!localOnly) {
+      final vote = await repo.upvote(postId);
+      if (vote != null) {
+        state = VotesStateHelpers.updateVote(state, vote);
+      } else {
+        removeLocalVote(postId);
+      }
+    }
   }
 
   Future<void> downvote(int postId, {bool localOnly = false}) async {
-    final vote = localOnly
-        ? DanbooruPostVote.local(postId: postId, score: -1)
-        : await repo.downvote(postId);
+    final optimistic = DanbooruPostVote.local(postId: postId, score: -1);
+    state = VotesStateHelpers.updateVote(state, optimistic);
 
-    state = VotesStateHelpers.updateVote(state, vote);
+    if (!localOnly) {
+      final vote = await repo.downvote(postId);
+      if (vote != null) {
+        state = VotesStateHelpers.updateVote(state, vote);
+      } else {
+        removeLocalVote(postId);
+      }
+    }
   }
 
   void removeLocalVote(int postId) {
