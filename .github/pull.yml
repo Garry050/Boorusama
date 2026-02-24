@@ -1,0 +1,10 @@
+version: "1"
+rules:
+  - base: development
+    upstream: khoadng:master
+    mergeMethod: merge
+    mergeUnstable: false
+  - base: master
+    upstream: khoadng:master
+    mergeMethod: merge
+    mergeUnstable: false
