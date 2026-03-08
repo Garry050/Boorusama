@@ -7,6 +7,7 @@ import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../../core/configs/config/providers.dart';
+import '../../../../../../core/configs/config/types.dart';
 import '../../../../../../core/widgets/widgets.dart';
 import '../../../../../../foundation/toast.dart';
 import '../providers/favorite_groups_notifier.dart';
@@ -35,6 +36,7 @@ class _EditFavoriteGroupDialogState
   final textController = TextEditingController();
   final nameController = TextEditingController();
   var isPrivate = false;
+  var _loading = false;
 
   @override
   void initState() {
@@ -54,19 +56,117 @@ class _EditFavoriteGroupDialogState
     nameController.dispose();
   }
 
+  Future<void> _doEdit({
+    required BooruConfigSearch config,
+    required DanbooruFavoriteGroup group,
+    required String name,
+    List<int>? postIds,
+  }) async {
+    setState(() => _loading = true);
+
+    final success = await ref
+        .read(danbooruFavoriteGroupsProvider(config).notifier)
+        .edit(
+          group: group,
+          name: name,
+          isPrivate: isPrivate,
+          postIds: postIds,
+          onFailure: (message) {
+            if (mounted) showErrorToast(context, message);
+          },
+        );
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _loading = false);
+    }
+  }
+
+  void _confirmAndEdit({
+    required BuildContext context,
+    required BooruConfigSearch config,
+    required DanbooruFavoriteGroup group,
+    required String name,
+  }) {
+    final input = textController.text;
+    final parts = input.split(' ').where((e) => e.isNotEmpty);
+    final invalidParts = parts.where((e) => int.tryParse(e) == null).toList();
+
+    if (invalidParts.isNotEmpty) {
+      showErrorToast(
+        context,
+        context.t.favorite_groups.invalid_post_ids.replaceAll(
+          '{0}',
+          invalidParts.join(', '),
+        ),
+      );
+      return;
+    }
+
+    final newIds = _parsePostIds(input).toSet();
+    final oldIds = group.postIds.toSet();
+
+    final added = newIds.difference(oldIds);
+    final removed = oldIds.difference(newIds);
+
+    if (added.isEmpty && removed.isEmpty) {
+      _doEdit(config: config, group: group, name: name);
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.t.favorite_groups.confirm_edit_title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (added.isNotEmpty)
+              Text(
+                dialogContext.t.favorite_groups.confirm_edit_adding(
+                  n: added.length,
+                ),
+              ),
+            if (removed.isNotEmpty)
+              Text(
+                dialogContext.t.favorite_groups.confirm_edit_removing(
+                  n: removed.length,
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(dialogContext.t.generic.action.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _doEdit(
+                config: config,
+                group: group,
+                name: name,
+                postIds: newIds.toList(),
+              );
+            },
+            child: Text(dialogContext.t.generic.action.ok),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final config = ref.watchConfigSearch;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 16,
-      ),
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.all(
-          Radius.circular(8),
-        ),
-      ),
+    return _SheetFrame(
+      loading: _loading,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -141,17 +241,21 @@ class _EditFavoriteGroupDialogState
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onSurface,
                   ),
-                  child: Text(context.t.favorite_groups.create_group_cancel),
+                  child: Text(
+                    context.t.favorite_groups.create_group_cancel,
+                  ),
                 ),
                 ValueListenableBuilder<TextEditingValue>(
                   valueListenable: nameController,
                   builder: (context, value, child) => FilledButton(
-                    onPressed: nameController.text.isNotEmpty
+                    onPressed: nameController.text.isNotEmpty && !_loading
                         ? () {
-                            Navigator.of(context).pop();
                             if (widget.initialData == null) {
+                              Navigator.of(context).pop();
                               ref
                                   .read(
                                     danbooruFavoriteGroupsProvider(
@@ -160,7 +264,9 @@ class _EditFavoriteGroupDialogState
                                   )
                                   .create(
                                     context: context,
-                                    initialIds: textController.text,
+                                    initialPostIds: _parsePostIds(
+                                      textController.text,
+                                    ),
                                     name: value.text,
                                     isPrivate: isPrivate,
                                     onFailure: (message) => showErrorToast(
@@ -169,25 +275,26 @@ class _EditFavoriteGroupDialogState
                                     ),
                                   );
                             } else {
-                              ref
-                                  .read(
-                                    danbooruFavoriteGroupsProvider(
-                                      config,
-                                    ).notifier,
-                                  )
-                                  .edit(
-                                    group: widget.initialData!,
-                                    name: value.text,
-                                    isPrivate: isPrivate,
-                                    initialIds: textController.text,
-                                    onFailure: (message) {
-                                      showErrorToast(context, message);
-                                    },
-                                  );
+                              _confirmAndEdit(
+                                context: context,
+                                config: config,
+                                group: widget.initialData!,
+                                name: value.text,
+                              );
                             }
                           }
                         : null,
-                    child: Text(context.t.favorite_groups.create_group_confirm),
+                    child: _loading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            context.t.favorite_groups.create_group_confirm,
+                          ),
                   ),
                 ),
               ],
@@ -198,3 +305,33 @@ class _EditFavoriteGroupDialogState
     );
   }
 }
+
+class _SheetFrame extends StatelessWidget {
+  const _SheetFrame({
+    required this.loading,
+    required this.child,
+  });
+
+  final bool loading;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !loading,
+      child: AbsorbPointer(
+        absorbing: loading,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+List<int> _parsePostIds(String input) =>
+    input.split(' ').map((e) => int.tryParse(e)).nonNulls.toList();
