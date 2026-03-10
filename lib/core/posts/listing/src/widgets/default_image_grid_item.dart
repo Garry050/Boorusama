@@ -83,38 +83,62 @@ class DefaultImageGridItem<T extends Post> extends StatelessWidget {
                               ),
                             );
 
-                        return SliverPostGridImageGridItem(
-                          post: post,
-                          index: index,
-                          multiSelectEnabled: multiSelect,
-                          onTap:
-                              onTap ??
-                              () {
-                                goToPostDetailsPageFromController(
-                                  ref: ref,
-                                  controller: controller,
-                                  initialIndex: index,
-                                  scrollController: autoScrollController,
-                                  initialThumbnailUrl: imgUrl,
-                                );
-                              },
-                          quickActionButton: !multiSelect
-                              ? DefaultImagePreviewQuickActionButton(
-                                  post: post,
-                                )
-                              : null,
-                          autoScrollOptions: AutoScrollOptions(
-                            controller: autoScrollController,
-                            index: index,
+                        final imageListType = ref.watch(
+                          imageListingSettingsProvider.select(
+                            (v) => v.imageListType,
                           ),
-                          score: post.score,
-                          image: _Image(
+                        );
+
+                        final tapHandler =
+                            onTap ??
+                            () {
+                              goToPostDetailsPageFromController(
+                                ref: ref,
+                                controller: controller,
+                                initialIndex: index,
+                                scrollController: autoScrollController,
+                                initialThumbnailUrl: imgUrl,
+                              );
+                            };
+
+                        if (imageListType == ImageListType.detailed) {
+                          return DetailedPostCard(
                             post: post,
+                            config: config,
                             imageUrl: imgUrl,
-                            imageCacheManager: imageCacheManager,
-                            config: imageConfig,
-                          ),
-                          leadingIcons: leadingIcons,
+                            onTap: tapHandler,
+                          );
+                        }
+
+                        return OverflowClampedItem(
+                          index: index,
+                          scrollController: autoScrollController,
+                          childBuilder: (isClamped) =>
+                              SliverPostGridImageGridItem(
+                                post: post,
+                                index: index,
+                                multiSelectEnabled: multiSelect,
+                                onTap: tapHandler,
+                                quickActionButton: !multiSelect
+                                    ? DefaultImagePreviewQuickActionButton(
+                                        post: post,
+                                      )
+                                    : null,
+                                autoScrollOptions: isClamped
+                                    ? null
+                                    : AutoScrollOptions(
+                                        controller: autoScrollController,
+                                        index: index,
+                                      ),
+                                score: post.score,
+                                image: _Image(
+                                  post: post,
+                                  imageUrl: imgUrl,
+                                  imageCacheManager: imageCacheManager,
+                                  config: imageConfig,
+                                ),
+                                leadingIcons: leadingIcons,
+                              ),
                         );
                       },
                     );
@@ -167,7 +191,6 @@ class _Image<T extends Post> extends ConsumerWidget {
     final imageListType = ref.watch(
       imageListingSettingsProvider.select((v) => v.imageListType),
     );
-
     return BooruImage(
       config: config ?? ref.watchConfigAuth,
       aspectRatio: post.aspectRatio,

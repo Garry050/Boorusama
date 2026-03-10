@@ -306,6 +306,8 @@
       "show_post_list_config_header": "Hiển thị header tuỳ chỉnh",
       "auto_play_gif": "Tự động phát GIF",
       "blur_explicit_media": "Làm mờ nội dung nhạy cảm",
+      "compact_items": "Thu gọn nội dung dài",
+      "compact_items_description": "Ẩn bớt nội dung dài, nhấn để xem đầy đủ",
       "booru_config": "Hồ sơ booru",
       "booru_config_placement": "Vị trí hồ sơ booru",
       "booru_config_placement_options": {
@@ -347,7 +349,8 @@
       "image_list": "Kiểu bố cục ảnh",
       "standard": "Tiêu chuẩn",
       "masonry": "Masonry",
-      "classic": "Cổ điển"
+      "classic": "Cổ điển",
+      "detailed": "Chi tiết"
     },
     "image_grid": {
       "image_grid": "Lưới ảnh",
@@ -1123,7 +1126,9 @@
     "login_required": "Bạn cần đăng nhập để sử dụng tính năng này.",
     "logged_in": "Đã đăng nhập",
     "relogin": "Đăng nhập lại",
-    "clear_credentials": "Xóa thông tin"
+    "clear_credentials": "Xóa thông tin",
+    "login": "Đăng nhập",
+    "login_expires": "Đăng nhập hết hạn:"
   },
   "captcha": {
     "title": "Vui lòng giải captcha",
@@ -1281,6 +1286,19 @@
     "extension": {
       "title": "Tiện ích",
       "failed_to_fetch": "Không thể tải danh sách tiện ích cho trang này"
+    }
+  },
+  "eshuushuu": {
+    "personal_info": {
+      "title": "Thông tin cá nhân",
+      "gender": "Giới tính",
+      "location": "Vị trí",
+      "interests": "Sở thích",
+      "website": "Website"
+    },
+    "profile": {
+      "joined": "Tham gia",
+      "last_active": "Lần cuối"
     }
   }
 }
