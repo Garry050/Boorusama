@@ -307,8 +307,6 @@
       "show_post_list_config_header": "Show posts configuration header",
       "auto_play_gif": "Auto-play GIF",
       "blur_explicit_media": "Blur explicit content",
-      "compact_items": "Collapse tall items",
-      "compact_items_description": "Clamp tall images and cards to screen height with an option to expand",
       "booru_config": "Booru profile",
       "booru_config_placement": "Booru profile placement",
       "booru_config_placement_options": {
@@ -350,8 +348,7 @@
       "image_list": "Image list",
       "classic": "Classic",
       "standard": "Standard",
-      "masonry": "Masonry",
-      "detailed": "Detailed"
+      "masonry": "Masonry"
     },
     "image_grid": {
       "image_grid": "Image grid",
