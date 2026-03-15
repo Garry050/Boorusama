@@ -45,6 +45,8 @@ class AutoRefreshAuthInterceptor extends Interceptor {
     required this.baseUrl,
     required Future<AuthTokenPair?> Function(String refreshToken) onRefresh,
     this.onTokenRefreshed,
+    this.onAuthFailed,
+    this.onLog,
     required String refreshToken,
   }) : _refreshToken = refreshToken,
        _onRefresh = onRefresh;
@@ -53,6 +55,8 @@ class AutoRefreshAuthInterceptor extends Interceptor {
   final String baseUrl;
   final Future<AuthTokenPair?> Function(String refreshToken) _onRefresh;
   final void Function(AuthTokenPair tokens)? onTokenRefreshed;
+  final void Function()? onAuthFailed;
+  final void Function(String message)? onLog;
 
   String _refreshToken;
   String? _accessToken;
@@ -118,14 +122,20 @@ class AutoRefreshAuthInterceptor extends Interceptor {
     if (_isRefreshing) return false;
 
     _isRefreshing = true;
+    onLog?.call('Attempting token refresh');
     try {
       final tokens = await _onRefresh(_refreshToken);
       if (tokens == null) {
+        onLog?.call('Token refresh returned null');
         _accessToken = null;
         _tokenObtainedAt = null;
+        onAuthFailed?.call();
         return false;
       }
 
+      onLog?.call(
+        'Token refresh succeeded, expires in ${tokens.expiresInSeconds}s',
+      );
       _accessToken = tokens.accessToken;
       _refreshToken = tokens.refreshToken;
       _tokenObtainedAt = DateTime.now();
@@ -134,7 +144,9 @@ class AutoRefreshAuthInterceptor extends Interceptor {
       }
       onTokenRefreshed?.call(tokens);
       return true;
-    } catch (_) {
+    } catch (e) {
+      onLog?.call('Token refresh failed: $e');
+      onAuthFailed?.call();
       return false;
     } finally {
       _isRefreshing = false;
