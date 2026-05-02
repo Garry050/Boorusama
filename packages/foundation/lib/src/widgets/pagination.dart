@@ -71,6 +71,21 @@ class PaginationConfig {
   }
 }
 
+const _pageButtonMinWidth = 50.0;
+const _pageButtonHorizontalPadding = 24.0;
+const _estimatedDigitWidth = 10.0;
+const _iconButtonWidth = 40.0;
+const _pageInputWidth = 40.0;
+
+double estimatePageButtonWidth(int page) {
+  final digitWidth = page.toString().length * _estimatedDigitWidth;
+
+  return math.max(
+    _pageButtonMinWidth,
+    digitWidth + _pageButtonHorizontalPadding,
+  );
+}
+
 List<int> generatePage({
   required int current,
   required int? total,
@@ -151,22 +166,59 @@ PaginationInfo calculatePaginationInfo({
   required int currentPage,
   required int? totalResults,
   required int? itemPerPage,
+  bool showLastPage = false,
+  bool pageInput = true,
+  int? maxAccessiblePage,
   PaginationConfig config = const PaginationConfig(),
 }) {
-  // Generate full page range first
-  final visiblePages = generatePage(
-    current: currentPage,
-    total: totalResults,
-    itemPerPage: itemPerPage,
-    maxSelectablePage: config.getPageCount(maxWidth),
+  final totalPages = calculateTotalPage(totalResults, itemPerPage);
+  final accessibleTotalPages = _accessibleTotalPages(
+    totalPages: totalPages,
+    maxAccessiblePage: maxAccessiblePage,
   );
+  final effectiveTotalResults = _effectiveTotalResults(
+    totalResults: totalResults,
+    itemPerPage: itemPerPage,
+    accessibleTotalPages: accessibleTotalPages,
+  );
+  final visibleLastPage = _visibleLastPage(
+    totalPages: totalPages,
+    accessibleTotalPages: accessibleTotalPages,
+  );
+  var maxSelectablePage = config.getPageCount(maxWidth);
+  late List<int> visiblePages;
+
+  while (true) {
+    visiblePages = generatePage(
+      current: currentPage,
+      total: effectiveTotalResults,
+      itemPerPage: itemPerPage,
+      maxSelectablePage: maxSelectablePage,
+    );
+
+    if (_paginationWidth(
+          pages: visiblePages,
+          totalPages: visibleLastPage,
+          showLastPage: showLastPage,
+          pageInput: pageInput,
+        ) <=
+        maxWidth) {
+      break;
+    }
+
+    if (maxSelectablePage <= 1) {
+      break;
+    }
+
+    maxSelectablePage -= 1;
+  }
 
   final lastPage = visiblePages.lastOrNull;
   final isLowPageCount = lastPage != null
       ? lastPage < visiblePages.length
       : false;
   final isSinglePage = visiblePages.length == 1 && visiblePages.first == 1;
-  final isLastPage = lastPage != null && lastPage == totalResults;
+  final isLastPage = lastPage != null && lastPage == accessibleTotalPages;
   final pageInputVisible = visiblePages.length > 1;
 
   return PaginationInfo(
@@ -177,6 +229,61 @@ PaginationInfo calculatePaginationInfo({
     isLastPage: isLastPage,
     pageInputVisible: pageInputVisible,
   );
+}
+
+int? _accessibleTotalPages({
+  required int? totalPages,
+  required int? maxAccessiblePage,
+}) {
+  if (totalPages == null) return maxAccessiblePage;
+  if (maxAccessiblePage == null) return totalPages;
+
+  return math.min(totalPages, maxAccessiblePage);
+}
+
+int? _effectiveTotalResults({
+  required int? totalResults,
+  required int? itemPerPage,
+  required int? accessibleTotalPages,
+}) {
+  if (totalResults == null ||
+      itemPerPage == null ||
+      accessibleTotalPages == null) {
+    return totalResults;
+  }
+
+  return math.min(totalResults, accessibleTotalPages * itemPerPage);
+}
+
+int? _visibleLastPage({
+  required int? totalPages,
+  required int? accessibleTotalPages,
+}) {
+  if (totalPages == null || accessibleTotalPages == null) return totalPages;
+
+  return totalPages <= accessibleTotalPages ? totalPages : null;
+}
+
+double _paginationWidth({
+  required List<int> pages,
+  required int? totalPages,
+  required bool showLastPage,
+  required bool pageInput,
+}) {
+  final pageButtonsWidth = pages.fold<double>(
+    0,
+    (total, page) => total + estimatePageButtonWidth(page),
+  );
+  final pageInputWidth = pageInput && pages.length > 1 ? _pageInputWidth : 0;
+  final lastPageWidth =
+      showLastPage && totalPages != null && !pages.contains(totalPages)
+      ? estimatePageButtonWidth(totalPages)
+      : 0;
+
+  return _iconButtonWidth * 2 +
+      pageButtonsWidth +
+      pageInputWidth +
+      lastPageWidth;
 }
 
 class PageSelector extends StatefulWidget {
@@ -190,6 +297,7 @@ class PageSelector extends StatefulWidget {
     required this.onPageSelect,
     this.pageInput = true,
     this.showLastPage = false,
+    this.maxAccessiblePage,
     this.enableNextButton,
     this.enablePreviousButton,
   });
@@ -202,6 +310,7 @@ class PageSelector extends StatefulWidget {
   final void Function(int page) onPageSelect;
   final bool pageInput;
   final bool showLastPage;
+  final int? maxAccessiblePage;
   final ButtonEnableCallback? enableNextButton;
   final ButtonEnableCallback? enablePreviousButton;
 
@@ -216,6 +325,14 @@ class _PageSelectorState extends State<PageSelector> {
       widget.totalResults,
       widget.itemPerPage,
     );
+    final accessibleTotalPages = _accessibleTotalPages(
+      totalPages: totalPages,
+      maxAccessiblePage: widget.maxAccessiblePage,
+    );
+    final visibleLastPage = _visibleLastPage(
+      totalPages: totalPages,
+      accessibleTotalPages: accessibleTotalPages,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -224,16 +341,19 @@ class _PageSelectorState extends State<PageSelector> {
           currentPage: widget.currentPage,
           totalResults: widget.totalResults,
           itemPerPage: widget.itemPerPage,
+          showLastPage: widget.showLastPage,
+          pageInput: widget.pageInput,
+          maxAccessiblePage: widget.maxAccessiblePage,
         );
 
         final showLastPageButton =
             widget.showLastPage &&
-            totalPages != null &&
-            !paginationInfo.pages.contains(totalPages);
+            visibleLastPage != null &&
+            !paginationInfo.pages.contains(visibleLastPage);
 
         final paginationContext = PaginationContext(
           currentPage: widget.currentPage,
-          totalPages: totalPages,
+          totalPages: accessibleTotalPages,
           info: paginationInfo,
         );
 
@@ -260,32 +380,12 @@ class _PageSelectorState extends State<PageSelector> {
               ),
             ),
             ...paginationInfo.pages.map(
-              (page) => InkWell(
-                borderRadius: BorderRadius.circular(8),
+              (page) => _PageButton(
+                page: page,
+                selected: page == widget.currentPage,
                 onTap: widget.currentPage != page
                     ? () => widget.onPageSelect(page)
                     : null,
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minWidth: 50,
-                    maxWidth: 80,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  child: Text(
-                    '$page',
-                    textAlign: TextAlign.center,
-                    style: page == widget.currentPage
-                        ? const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          )
-                        : TextStyle(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                  ),
-                ),
               ),
             ),
             if (widget.pageInput && paginationInfo.pageInputVisible)
@@ -293,26 +393,10 @@ class _PageSelectorState extends State<PageSelector> {
                 onSubmit: onSubmit,
               ),
             if (showLastPageButton)
-              InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => widget.onPageSelect(totalPages),
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minWidth: 50,
-                    maxWidth: 80,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  child: Text(
-                    '$totalPages',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                ),
+              _PageButton(
+                page: visibleLastPage,
+                selected: false,
+                onTap: () => widget.onPageSelect(visibleLastPage),
               ),
             IconButton(
               onPressed: !enableNextButton ? null : widget.onNext,
@@ -334,15 +418,65 @@ class _PageSelectorState extends State<PageSelector> {
       widget.totalResults,
       widget.itemPerPage,
     );
+    final accessibleLastPage = _accessibleTotalPages(
+      totalPages: lastPage,
+      maxAccessiblePage: widget.maxAccessiblePage,
+    );
     final pageRaw = int.tryParse(value);
     // if the input is not a number or the page is out of range, clamp it to the last page
-    final page = pageRaw == null || (lastPage != null && pageRaw > lastPage)
-        ? lastPage
+    final page =
+        pageRaw == null ||
+            (accessibleLastPage != null && pageRaw > accessibleLastPage)
+        ? accessibleLastPage
         : pageRaw;
 
     if (page != null) {
       widget.onPageSelect(page);
     }
+  }
+}
+
+class _PageButton extends StatelessWidget {
+  const _PageButton({
+    required this.page,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final int page;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = estimatePageButtonWidth(page);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: SizedBox(
+        width: width,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          child: Text(
+            '$page',
+            maxLines: 1,
+            softWrap: false,
+            textAlign: TextAlign.center,
+            style: selected
+                ? const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  )
+                : TextStyle(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

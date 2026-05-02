@@ -17,6 +17,7 @@ import 'image_quality.dart';
 import 'providers.dart';
 
 const _defaultRadius = BorderRadius.all(Radius.circular(8));
+const _placeholderAspectRatioMismatchThreshold = 0.05;
 
 class BooruImage extends ConsumerWidget {
   const BooruImage({
@@ -24,6 +25,8 @@ class BooruImage extends ConsumerWidget {
     required this.config,
     super.key,
     this.placeholderUrl,
+    this.placeholderAspectRatio,
+    this.placeholderFit,
     this.borderRadius,
     this.fit,
     this.aspectRatio = 1,
@@ -32,6 +35,7 @@ class BooruImage extends ConsumerWidget {
     this.forceCover = false,
     this.forceFill = false,
     this.forceLoadPlaceholder = false,
+    this.hideMismatchedPlaceholder = false,
     this.placeholderWidget,
     this.controller,
     this.imageCacheManager,
@@ -40,6 +44,8 @@ class BooruImage extends ConsumerWidget {
   final BooruConfigAuth config;
   final String imageUrl;
   final String? placeholderUrl;
+  final double? placeholderAspectRatio;
+  final BoxFit? placeholderFit;
   final BorderRadius? borderRadius;
   final BoxFit? fit;
   final double? aspectRatio;
@@ -48,6 +54,7 @@ class BooruImage extends ConsumerWidget {
   final bool forceCover;
   final bool forceFill;
   final bool forceLoadPlaceholder;
+  final bool hideMismatchedPlaceholder;
   final Widget? placeholderWidget;
   final ExtendedImageController? controller;
   final ImageCacheManager? imageCacheManager;
@@ -72,6 +79,8 @@ class BooruImage extends ConsumerWidget {
       dio: dio,
       imageUrl: imageUrl,
       placeholderUrl: placeholderUrl,
+      placeholderAspectRatio: placeholderAspectRatio,
+      placeholderFit: placeholderFit,
       borderRadius: borderRadius,
       fit: fit,
       aspectRatio: aspectRatio ?? fallbackAspectRatio,
@@ -81,6 +90,7 @@ class BooruImage extends ConsumerWidget {
       forceFill: forceFill,
       isLargeImage: imageQualitySettings != ImageQuality.low,
       forceLoadPlaceholder: forceLoadPlaceholder,
+      hideMismatchedPlaceholder: hideMismatchedPlaceholder,
       headers: ref.watch(httpHeadersProvider(config)),
       placeholderWidget: placeholderWidget,
       controller: controller,
@@ -96,6 +106,8 @@ class BooruRawImage extends StatelessWidget {
     required this.imageUrl,
     super.key,
     this.placeholderUrl,
+    this.placeholderAspectRatio,
+    this.placeholderFit,
     this.borderRadius,
     this.fit,
     this.aspectRatio = 1,
@@ -106,6 +118,7 @@ class BooruRawImage extends StatelessWidget {
     this.headers = const {},
     this.isLargeImage = false,
     this.forceLoadPlaceholder = false,
+    this.hideMismatchedPlaceholder = false,
     this.gaplessPlayback = false,
     this.placeholderWidget,
     this.controller,
@@ -116,6 +129,8 @@ class BooruRawImage extends StatelessWidget {
   final Dio dio;
   final String imageUrl;
   final String? placeholderUrl;
+  final double? placeholderAspectRatio;
+  final BoxFit? placeholderFit;
   final BorderRadius? borderRadius;
   final BoxFit? fit;
   final double? aspectRatio;
@@ -126,6 +141,7 @@ class BooruRawImage extends StatelessWidget {
   final Map<String, String> headers;
   final bool isLargeImage;
   final bool forceLoadPlaceholder;
+  final bool hideMismatchedPlaceholder;
   final bool gaplessPlayback;
   final Widget? placeholderWidget;
   final ExtendedImageController? controller;
@@ -188,21 +204,34 @@ class BooruRawImage extends StatelessWidget {
                                   isLargeImage: isLargeImage,
                                   forceLoadPlaceholder: forceLoadPlaceholder,
                                 );
+                            final hasMismatchedPlaceholder =
+                                hideMismatchedPlaceholder &&
+                                _hasAspectRatioMismatch(
+                                  placeholderAspectRatio,
+                                  aspectRatio,
+                                );
 
-                            return hasNetworkPlaceholder
-                                ? ExtendedImage.network(
-                                    url,
-                                    dio: dio,
-                                    headers: headers,
-                                    borderRadius: borderRadius,
-                                    width: width,
-                                    height: height,
-                                    fit: fit,
-                                    fetchStrategy: _fetchStrategy,
-                                    placeholderWidget: imagePlaceHolder,
-                                    platform: Theme.of(context).platform,
-                                    androidVersion: androidVersion,
-                                    cacheManager: imageCacheManager,
+                            return hasNetworkPlaceholder &&
+                                    !hasMismatchedPlaceholder
+                                ? _wrapPlaceholderAspectRatio(
+                                    ExtendedImage.network(
+                                      url,
+                                      dio: dio,
+                                      headers: headers,
+                                      borderRadius: borderRadius,
+                                      width: placeholderAspectRatio == null
+                                          ? width
+                                          : null,
+                                      height: placeholderAspectRatio == null
+                                          ? height
+                                          : null,
+                                      fit: placeholderFit ?? fit,
+                                      fetchStrategy: _fetchStrategy,
+                                      placeholderWidget: imagePlaceHolder,
+                                      platform: Theme.of(context).platform,
+                                      androidVersion: androidVersion,
+                                      cacheManager: imageCacheManager,
+                                    ),
                                   )
                                 : imagePlaceHolder;
                           },
@@ -216,6 +245,21 @@ class BooruRawImage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Widget _wrapPlaceholderAspectRatio(Widget child) {
+    final aspectRatio = placeholderAspectRatio;
+
+    return aspectRatio == null
+        ? child
+        : Center(
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: SizedBox.expand(
+                child: child,
+              ),
+            ),
+          );
   }
 }
 
@@ -258,6 +302,16 @@ bool _shouldForceFill(
   if (containerSize.width < imageWidth) return true;
 
   return false;
+}
+
+bool _hasAspectRatioMismatch(
+  double? placeholderAspectRatio,
+  double? imageAspectRatio,
+) {
+  if (placeholderAspectRatio == null || imageAspectRatio == null) return false;
+
+  return (placeholderAspectRatio - imageAspectRatio).abs() >
+      _placeholderAspectRatioMismatchThreshold;
 }
 
 class ImagePlaceHolder extends StatelessWidget {

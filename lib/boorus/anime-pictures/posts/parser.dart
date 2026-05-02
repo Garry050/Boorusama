@@ -29,7 +29,7 @@ AnimePicturesPost dtoToAnimePicturesPost(
     hasParentOrChildren: false,
     source: PostSource.none(),
     score: e.scoreNumber ?? 0,
-    duration: 0,
+    duration: kNoduration,
     fileSize: e.size ?? 0,
     format: e.ext ?? '',
     hasSound: null,
@@ -39,7 +39,7 @@ AnimePicturesPost dtoToAnimePicturesPost(
     videoUrl: e.bigPreview ?? '',
     width: e.width?.toDouble() ?? 0,
     createdAt: e.pubtime != null ? DateTime.tryParse(e.pubtime!) : null,
-    uploaderId: null,
+    uploaderId: e.juserId,
     uploaderName: null,
     metadata: metadata,
     tagsCount: e.tagsCount ?? 0,
@@ -48,4 +48,11 @@ AnimePicturesPost dtoToAnimePicturesPost(
       type: e.statusType,
     ),
   );
+}
+
+extension AnimePicturesPostsDtoX on PostsDto {
+  int? get appMaxPage => switch (maxPages) {
+    final maxPages? => maxPages + 1,
+    _ => null,
+  };
 }

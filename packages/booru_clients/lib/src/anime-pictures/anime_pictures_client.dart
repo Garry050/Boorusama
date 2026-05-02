@@ -16,25 +16,50 @@ class AnimePicturesClient {
     _dio = dio ?? Dio();
 
     var url = baseUrl;
+    _siteUrl = _normalizeUrl(url.replaceFirst('https://api.', 'https://'));
 
     if (url.startsWith('https://anime-pictures')) {
       url = url.replaceFirst('https://', 'https://api.');
     }
 
+    url = _normalizeUrl(url);
+
+    final headers = Map<String, dynamic>.from(_dio.options.headers);
+    headers['Referer'] ??= _siteUrl;
+    headers['cookie'] = CookieUtils.mergeCookieHeaders(
+      headers['cookie']?.toString() ?? '',
+      CookieUtils.mergeCookieHeaders('sitelang=en', cookie ?? ''),
+    );
+
     _dio.options = _dio.options.copyWith(
       baseUrl: url,
-      headers: cookie != null
-          ? {
-              'cookie': cookie,
-            }
-          : null,
+      headers: headers,
     );
   }
 
   late final Dio _dio;
+  late final String _siteUrl;
   final String? cookie;
 
   Future<List<PostDto>> getPosts({
+    List<String>? tags,
+    int? page,
+    int? limit,
+    int? starsBy,
+    PostOrder? orderBy,
+  }) async {
+    final result = await getPostsWithTotal(
+      tags: tags,
+      page: page,
+      limit: limit,
+      starsBy: starsBy,
+      orderBy: orderBy,
+    );
+
+    return result.posts;
+  }
+
+  Future<PostsDto> getPostsWithTotal({
     List<String>? tags,
     int? page,
     int? limit,
@@ -57,16 +82,13 @@ class AnimePicturesClient {
       },
     );
 
-    final results = response.data['posts'] as List;
-
-    return results
-        .map(
-          (item) => PostDto.fromJson(
-            item,
-            _dio.options.baseUrl,
-          ),
-        )
-        .toList();
+    return switch (response.data) {
+      final Map<String, dynamic> json => PostsDto.fromJson(
+        json,
+        _dio.options.baseUrl,
+      ),
+      _ => const PostsDto(posts: []),
+    };
   }
 
   Future<PostDetailsDto> getPostDetails({
@@ -115,34 +137,43 @@ class AnimePicturesClient {
       return null;
     }
 
-    final url = '${_dio.options.baseUrl}pictures/download_image/$fileUrl';
+    final url = _joinUrl(
+      _dio.options.baseUrl,
+      'pictures/download_image/$fileUrl',
+    );
 
     final res = await _dio.get(
       url,
       options: Options(
         followRedirects: false,
-        validateStatus: (status) => status == 302,
-        headers: this.cookie == null
-            ? {
-                'cookie': 'sitelang=en',
-              }
-            : null,
+        validateStatus: (status) =>
+            status != null && status >= 300 && status < 400,
+        headers: {
+          'Referer': _siteUrl,
+          'cookie': CookieUtils.mergeCookieHeaders(
+            'sitelang=en',
+            cookie ?? '',
+          ),
+        },
       ),
     );
 
     final location = res.headers['location']?.firstOrNull;
     final cookieValue = res.headers['set-cookie']?.firstOrNull;
-    final cookie = cookieValue != null
+    final redirectCookie = cookieValue != null
         ? CookieUtils.fromSetCookieValue(cookieValue)
         : null;
 
-    if (location == null || cookie == null) {
+    if (location == null) {
       return null;
     }
 
-    final cookieString = this.cookie != null
-        ? '${this.cookie}; ${cookie.name}=${cookie.value}'
-        : 'sitelang=en; ${cookie.name}=${cookie.value}';
+    final cookieString = CookieUtils.mergeCookieHeaders(
+      CookieUtils.mergeCookieHeaders('sitelang=en', cookie ?? ''),
+      redirectCookie != null
+          ? '${redirectCookie.name}=${redirectCookie.value}'
+          : '',
+    );
 
     final data = (
       url: location,
@@ -192,3 +223,8 @@ class AnimePicturesClient {
 }
 
 typedef AnimePicturesDownloadUrlData = ({String url, String cookie});
+
+String _normalizeUrl(String url) => url.endsWith('/') ? url : '$url/';
+
+String _joinUrl(String baseUrl, String path) =>
+    '${_normalizeUrl(baseUrl)}${path.startsWith('/') ? path.substring(1) : path}';

@@ -187,4 +187,70 @@ void main() {
       expect(pages, [1, 2, 3, 4]);
     });
   });
+
+  group('calculatePaginationInfo', () {
+    test('reserves width for large last page buttons', () {
+      final info = calculatePaginationInfo(
+        maxWidth: 260,
+        currentPage: 1,
+        totalResults: 9999999,
+        itemPerPage: 1,
+        showLastPage: true,
+      );
+
+      expect(info.pages, [1]);
+      expect(info.pageInputVisible, isFalse);
+    });
+
+    test('keeps more pages when no last page button is shown', () {
+      final info = calculatePaginationInfo(
+        maxWidth: 260,
+        currentPage: 1,
+        totalResults: 9999999,
+        itemPerPage: 1,
+        showLastPage: false,
+      );
+
+      expect(info.pages, [1, 2]);
+      expect(info.pageInputVisible, isTrue);
+    });
+
+    test('caps selectable pages when a max accessible page is provided', () {
+      final info = calculatePaginationInfo(
+        maxWidth: 600,
+        currentPage: 250,
+        totalResults: 100000,
+        itemPerPage: 200,
+        maxAccessiblePage: 199,
+        showLastPage: true,
+      );
+
+      expect(info.pages.last, 199);
+      expect(info.isLastPage, isTrue);
+    });
+
+    test('allows the real last page when it is within the cap', () {
+      final info = calculatePaginationInfo(
+        maxWidth: 600,
+        currentPage: 48,
+        totalResults: 10000,
+        itemPerPage: 200,
+        maxAccessiblePage: 199,
+        showLastPage: true,
+      );
+
+      expect(info.pages, contains(50));
+      expect(info.isLastPage, isTrue);
+    });
+  });
+
+  group('estimatePageButtonWidth', () {
+    test('grows with page digit count', () {
+      expect(estimatePageButtonWidth(1), 50);
+      expect(
+        estimatePageButtonWidth(9999999),
+        greaterThan(estimatePageButtonWidth(1)),
+      );
+    });
+  });
 }
