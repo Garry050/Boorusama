@@ -27,7 +27,9 @@ class PostMedia<T extends Post> extends ConsumerWidget {
     required this.config,
     required this.viewer,
     required this.imageUrlBuilder,
-    required this.thumbnailUrlBuilder,
+    required this.mediaAspectRatioBuilder,
+    required this.videoAspectRatioBuilder,
+    required this.placeholderMediaBuilder,
     required this.controller,
     required this.imageCacheManager,
     super.key,
@@ -39,7 +41,9 @@ class PostMedia<T extends Post> extends ConsumerWidget {
   final BooruConfigViewer viewer;
   final PostDetailsPageViewController controller;
   final String Function(T post)? imageUrlBuilder;
-  final String Function(T post)? thumbnailUrlBuilder;
+  final double? Function(T post)? mediaAspectRatioBuilder;
+  final double? Function(T post)? videoAspectRatioBuilder;
+  final PostDetailsPlaceholderMediaBuilder<T>? placeholderMediaBuilder;
   final ImageCacheManager? imageCacheManager;
   final bool isPageSettled;
 
@@ -72,7 +76,9 @@ class PostMedia<T extends Post> extends ConsumerWidget {
                     return BooruVideo(
                       heroTag: heroTag,
                       url: videoUrl,
-                      aspectRatio: post.aspectRatio,
+                      aspectRatio:
+                          videoAspectRatioBuilder?.call(post) ??
+                          post.effectiveVideoAspectRatio,
                       onCurrentPositionChanged: (current, total) =>
                           details.controller.onCurrentPositionChanged(
                             current,
@@ -110,7 +116,8 @@ class PostMedia<T extends Post> extends ConsumerWidget {
         : PostDetailsImage(
             heroTag: heroTag,
             imageUrlBuilder: imageUrlBuilder,
-            thumbnailUrlBuilder: thumbnailUrlBuilder,
+            mediaAspectRatioBuilder: mediaAspectRatioBuilder,
+            placeholderMediaBuilder: placeholderMediaBuilder,
             imageCacheManager: imageCacheManager,
             post: post,
             config: config,
