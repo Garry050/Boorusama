@@ -1,3 +1,13 @@
+# Prereleased-2026.05.03
+- Add support for Nozomi
+- [Sankaku] Add favorite support
+- Add last-page jumping for sites that support it
+- Improve post details copy action with more media and link options
+- Improve Cloudflare/DDOS challenge handling
+- Improve data transfer reliability
+- Fix various site-specific issues
+- UI/UX improvements
+
 # 4.4.0
 - Custom profile icon
 - Instant feedback when favoriting or voting
