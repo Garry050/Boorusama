@@ -1,4 +1,5 @@
 import 'ast.dart';
+import 'characters.dart';
 
 typedef DTextEmojiHtmlBuilder = String Function(DTextEmoji emoji);
 
@@ -13,7 +14,32 @@ class DTextHtmlDocumentRenderer {
 
   String renderNodes(Iterable<DTextNode> nodes) {
     final buffer = StringBuffer();
-    for (final node in nodes) {
+    final nodeList = nodes.toList();
+
+    for (var i = 0; i < nodeList.length; i++) {
+      final node = nodeList[i];
+      if (node is DTextMediaEmbed && node.isGalleryItem) {
+        final galleryNodes = <DTextMediaEmbed>[];
+
+        while (i < nodeList.length) {
+          final galleryNode = nodeList[i];
+          if (galleryNode is! DTextMediaEmbed || !galleryNode.isGalleryItem) {
+            break;
+          }
+
+          galleryNodes.add(galleryNode);
+          i++;
+        }
+
+        i--;
+        buffer.write('<media-gallery>');
+        for (final galleryNode in galleryNodes) {
+          buffer.write(renderNode(galleryNode));
+        }
+        buffer.write('</media-gallery>');
+        continue;
+      }
+
       buffer.write(renderNode(node));
     }
 
@@ -58,6 +84,11 @@ class DTextHtmlDocumentRenderer {
     Map<String, String> attributes,
     List<DTextNode> children,
   ) {
+    if (element == DTextElement.tableHead ||
+        element == DTextElement.tableBody) {
+      return renderNodes(children);
+    }
+
     final (tag, defaultAttributes) = switch (element) {
       DTextElement.paragraph => ('p', const <String, String>{}),
       DTextElement.quote => ('blockquote', const <String, String>{}),
@@ -76,6 +107,9 @@ class DTextHtmlDocumentRenderer {
       DTextElement.table => (
         'table',
         const <String, String>{'class': 'striped'},
+      ),
+      DTextElement.tableHead || DTextElement.tableBody => throw StateError(
+        'Transparent table section should have been rendered before tag lookup.',
       ),
       DTextElement.tableRow => ('tr', const <String, String>{}),
       DTextElement.tableHeader => ('th', const <String, String>{}),
@@ -152,8 +186,25 @@ class DTextHtmlDocumentRenderer {
 
   String _escapeAttribute(String value) => _escapeText(value);
 
-  String _uriEscape(String value) => Uri.encodeComponent(value).replaceAll(
-    RegExp('%7E', caseSensitive: false),
-    '~',
-  );
+  String _uriEscape(String value) =>
+      _restoreEscapedTilde(Uri.encodeComponent(value));
+
+  String _restoreEscapedTilde(String value) {
+    final buffer = StringBuffer();
+    var index = 0;
+    while (index < value.length) {
+      if (index + 2 < value.length &&
+          value.codeUnitAt(index) == percentCode &&
+          value.codeUnitAt(index + 1) == asciiDigit7 &&
+          asciiEqualsIgnoreCase(value.codeUnitAt(index + 2), asciiUpperE)) {
+        buffer.write('~');
+        index += 3;
+      } else {
+        buffer.writeCharCode(value.codeUnitAt(index));
+        index++;
+      }
+    }
+
+    return buffer.toString();
+  }
 }
