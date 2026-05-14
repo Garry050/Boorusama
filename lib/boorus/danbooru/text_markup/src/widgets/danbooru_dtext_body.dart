@@ -30,15 +30,58 @@ class DanbooruDTextBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final emojiNames = extractTextEmojiShortcodes(data);
-    final emojiCache = ref.watch(textEmojiCacheProvider(config)).resolved;
+    final mediaRefs = extractTextMediaEmbedRefs(data);
+    final textMarkupCache = ref.watch(textMarkupCacheProvider(config));
 
     return DTextBody(
       data: data,
       booruUrl: config.url,
       emojiMap: {
-        for (final name in emojiNames) name: ?emojiCache[name],
+        for (final name in emojiNames) name: ?textMarkupCache.resolved[name],
       },
-      emojiImageConfig: config,
+      mediaEmbedMap: {
+        for (final ref in mediaRefs) ref: ?textMarkupCache.mediaEmbeds[ref],
+      },
+      imageConfig: config,
+      style: style,
+      onLinkTap: onLinkTap,
+      selectable: selectable,
+    );
+  }
+}
+
+class DanbooruDTextSliverBody extends ConsumerWidget {
+  const DanbooruDTextSliverBody({
+    required this.data,
+    required this.config,
+    super.key,
+    this.style,
+    this.onLinkTap,
+    this.selectable = true,
+  });
+
+  final String data;
+  final BooruConfigAuth config;
+  final Map<String, Style>? style;
+  final OnTap? onLinkTap;
+  final bool selectable;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final emojiNames = extractTextEmojiShortcodes(data);
+    final mediaRefs = extractTextMediaEmbedRefs(data);
+    final textMarkupCache = ref.watch(textMarkupCacheProvider(config));
+
+    return DTextSliverBody(
+      data: data,
+      booruUrl: config.url,
+      emojiMap: {
+        for (final name in emojiNames) name: ?textMarkupCache.resolved[name],
+      },
+      mediaEmbedMap: {
+        for (final ref in mediaRefs) ref: ?textMarkupCache.mediaEmbeds[ref],
+      },
+      imageConfig: config,
       style: style,
       onLinkTap: onLinkTap,
       selectable: selectable,
