@@ -35,9 +35,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: apk
-            os: ubuntu-latest
-            artifact_name: boorusama-apk
           - target: linux-tar.gz
             os: ubuntu-latest
             artifact_name: boorusama-linux-tar-gz
@@ -133,6 +130,7 @@ jobs:
             build
             "${{ matrix.target }}"
             --ci
+            --allow-dirty
             --output-dir
             "$OUTPUT_DIR"
           )
@@ -203,6 +201,11 @@ jobs:
 
           args+=(--tag "${{ inputs.release_tag }}")
           args+=(--title "Boorusama ${{ inputs.release_tag }}")
+          args+=(--target ipa)
+          args+=(--target dmg)
+          args+=(--target windows-zip)
+          args+=(--target linux-tar.gz)
+          args+=(--target appimage)
 
           if [[ "${{ inputs.prerelease }}" == "true" ]]; then
             args+=(--prerelease)
