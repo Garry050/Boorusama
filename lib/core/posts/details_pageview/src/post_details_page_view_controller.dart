@@ -10,6 +10,7 @@ import '../../../../foundation/mobile.dart';
 import '../../slideshow/types.dart';
 import 'constants.dart';
 import 'post_details_page_view.dart';
+import 'viewer_page_drag_controller.dart';
 
 // Dart imports:
 // ignore_for_file: prefer_int_literals
@@ -32,7 +33,10 @@ class PostDetailsPageViewController extends ChangeNotifier {
        bottomSheet = ValueNotifier(!initialHideOverlay),
        hoverToControlOverlay = ValueNotifier(hoverToControlOverlay),
        sheetState = ValueNotifier(SheetState.collapsed),
-       _initialSlideshowOptions = slideshowOptions;
+       _initialSlideshowOptions = slideshowOptions {
+    sheetState.addListener(_cancelViewerPageDragWhenSheetExpanded);
+    swipe.addListener(_cancelViewerPageDragWhenSwipingDisabled);
+  }
 
   final int initialPage;
   final int totalPage;
@@ -49,6 +53,11 @@ class PostDetailsPageViewController extends ChangeNotifier {
 
   late final _pageController = PageController(
     initialPage: initialPage,
+  );
+  late final _viewerPageDragController = ViewerPageDragController(
+    pageController: _pageController,
+    axis: () => _pageAxis,
+    canDrag: () => _canDragPageFromViewer,
   );
   final _sheetController = DraggableScrollableController();
   late final _slideshowController = SlideshowController(
@@ -458,6 +467,7 @@ class PostDetailsPageViewController extends ChangeNotifier {
   }
 
   void disableAllSwiping() {
+    _viewerPageDragController.cancel();
     swipe.value = false;
     canPull.value = false;
   }
@@ -465,6 +475,38 @@ class PostDetailsPageViewController extends ChangeNotifier {
   void enableAllSwiping() {
     swipe.value = true;
     canPull.value = true;
+  }
+
+  void onViewerInteractionStart(
+    ScaleStartDetails details, {
+    required bool enabled,
+  }) => _viewerPageDragController.start(details, enabled: enabled);
+
+  void onViewerInteractionUpdate(
+    ScaleUpdateDetails details, {
+    required bool enabled,
+  }) => _viewerPageDragController.update(details, enabled: enabled);
+
+  void onViewerInteractionEnd(
+    ScaleEndDetails details, {
+    required bool enabled,
+  }) => _viewerPageDragController.end(details, enabled: enabled);
+
+  bool get _canDragPageFromViewer =>
+      _pageController.hasClients && swipe.value && !isExpanded && !zoom.value;
+
+  Axis get _pageAxis => useVerticalLayout ? Axis.vertical : Axis.horizontal;
+
+  void _cancelViewerPageDragWhenSheetExpanded() {
+    if (isExpanded) {
+      _viewerPageDragController.cancel();
+    }
+  }
+
+  void _cancelViewerPageDragWhenSwipingDisabled() {
+    if (!swipe.value) {
+      _viewerPageDragController.cancel();
+    }
   }
 
   void enableKeyboardShortcuts() {
@@ -598,6 +640,9 @@ class PostDetailsPageViewController extends ChangeNotifier {
   void dispose() {
     _slideshowController.dispose();
     _cancelCooldown();
+    sheetState.removeListener(_cancelViewerPageDragWhenSheetExpanded);
+    swipe.removeListener(_cancelViewerPageDragWhenSwipingDisabled);
+    _viewerPageDragController.dispose();
 
     _pageController.dispose();
     _sheetController.dispose();

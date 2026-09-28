@@ -101,6 +101,9 @@ class KurumiInteractiveViewer extends StatelessWidget {
     this.onLongPress,
     this.controller,
     this.onTransformationChanged,
+    this.onInteractionStart,
+    this.onInteractionUpdate,
+    this.onInteractionEnd,
     this.enable = true,
     this.contentSize,
     this.enableHapticFeedback = false,
@@ -114,6 +117,9 @@ class KurumiInteractiveViewer extends StatelessWidget {
   final VoidCallback? onLongPress;
   final void Function(KurumiTransformationDetails details)?
   onTransformationChanged;
+  final GestureScaleStartCallback? onInteractionStart;
+  final GestureScaleUpdateCallback? onInteractionUpdate;
+  final GestureScaleEndCallback? onInteractionEnd;
   final TransformationController? controller;
   final bool enable;
   final Size? contentSize;
@@ -129,6 +135,9 @@ class KurumiInteractiveViewer extends StatelessWidget {
       onLongPress: onLongPress,
       controller: controller,
       onTransformationChanged: onTransformationChanged,
+      onInteractionStart: onInteractionStart,
+      onInteractionUpdate: onInteractionUpdate,
+      onInteractionEnd: onInteractionEnd,
       enable: enable,
       contentSize: contentSize,
       enableHapticFeedback: enableHapticFeedback,
@@ -148,6 +157,9 @@ class KurumiRawInteractiveViewer extends StatefulWidget {
     this.onLongPress,
     this.controller,
     this.onTransformationChanged,
+    this.onInteractionStart,
+    this.onInteractionUpdate,
+    this.onInteractionEnd,
     this.enable = true,
     this.contentSize,
     this.enableHapticFeedback = false,
@@ -161,6 +173,9 @@ class KurumiRawInteractiveViewer extends StatefulWidget {
   final VoidCallback? onLongPress;
   final void Function(KurumiTransformationDetails details)?
   onTransformationChanged;
+  final GestureScaleStartCallback? onInteractionStart;
+  final GestureScaleUpdateCallback? onInteractionUpdate;
+  final GestureScaleEndCallback? onInteractionEnd;
   final TransformationController? controller;
 
   // This is needed to keep the state of the child widget, remove this widget will cause its child to be recreated
@@ -338,6 +353,9 @@ class _KurumiRawInteractiveViewerState extends State<KurumiRawInteractiveViewer>
           transformationController: _controller,
           panEnabled: enable && widget.panEnabled,
           scaleEnabled: enable && widget.scaleEnabled,
+          onInteractionStart: widget.onInteractionStart,
+          onInteractionUpdate: widget.onInteractionUpdate,
+          onInteractionEnd: widget.onInteractionEnd,
           child: child,
         );
       },

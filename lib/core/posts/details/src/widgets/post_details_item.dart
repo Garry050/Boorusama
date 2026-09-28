@@ -108,6 +108,17 @@ class _PostDetailsItemState<T extends Post>
     final initialPlaceholderMedia = initialThumbnailUrl != null
         ? _initialPlaceholderMedia(post, initialThumbnailUrl)
         : null;
+    final noteOverlayShown = ref.watch(
+      noteOverlayProvider((widget.authConfig, post)),
+    );
+    bool interactionEnabled(SheetState state) => switch (noteOverlayShown) {
+      // If the note overlay is shown, disable all interactions to prevent gesture conflicts
+      true => false,
+      false => switch (state.isExpanded) {
+        true => context.isLargeScreen,
+        false => true,
+      },
+    };
 
     return ValueListenableBuilder(
       valueListenable: pageViewController.sheetState,
@@ -118,17 +129,23 @@ class _PostDetailsItemState<T extends Post>
           key: _videoKey,
           contentSize: Size(post.width, post.height),
           controller: widget.transformController,
-          enable: switch (ref.watch(
-            noteOverlayProvider((widget.authConfig, post)),
-          )) {
-            // If the note overlay is shown, disable all interactions to prevent gesture conflicts
-            true => false,
-            false => switch (state.isExpanded) {
-              true => context.isLargeScreen,
-              false => true,
-            },
-          },
+          enable: interactionEnabled(state),
           onTransformationChanged: pageViewController.onTransformationChanged,
+          onInteractionStart: (details) =>
+              pageViewController.onViewerInteractionStart(
+                details,
+                enabled: interactionEnabled(state),
+              ),
+          onInteractionUpdate: (details) =>
+              pageViewController.onViewerInteractionUpdate(
+                details,
+                enabled: interactionEnabled(state),
+              ),
+          onInteractionEnd: (details) =>
+              pageViewController.onViewerInteractionEnd(
+                details,
+                enabled: interactionEnabled(state),
+              ),
           onTap: onItemTap,
           onDoubleTap: switch ((
             doubleTap: gestures.canDoubleTap,

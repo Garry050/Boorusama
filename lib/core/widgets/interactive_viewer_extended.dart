@@ -15,6 +15,9 @@ class InteractiveViewerExtended extends ConsumerWidget {
     this.onLongPress,
     this.controller,
     this.onTransformationChanged,
+    this.onInteractionStart,
+    this.onInteractionUpdate,
+    this.onInteractionEnd,
     this.enable = true,
     this.contentSize,
     this.panEnabled = true,
@@ -27,6 +30,9 @@ class InteractiveViewerExtended extends ConsumerWidget {
   final VoidCallback? onLongPress;
   final void Function(KurumiTransformationDetails details)?
   onTransformationChanged;
+  final GestureScaleStartCallback? onInteractionStart;
+  final GestureScaleUpdateCallback? onInteractionUpdate;
+  final GestureScaleEndCallback? onInteractionEnd;
   final TransformationController? controller;
   final bool enable;
   final Size? contentSize;
@@ -45,6 +51,9 @@ class InteractiveViewerExtended extends ConsumerWidget {
       onLongPress: onLongPress,
       controller: controller,
       onTransformationChanged: onTransformationChanged,
+      onInteractionStart: onInteractionStart,
+      onInteractionUpdate: onInteractionUpdate,
+      onInteractionEnd: onInteractionEnd,
       enable: enable,
       contentSize: contentSize,
       enableHapticFeedback: enableHapticFeedback,
